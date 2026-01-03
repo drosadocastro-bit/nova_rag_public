@@ -727,7 +727,7 @@ def _build_extractive_troubleshoot_fallback(context_docs_local: list[dict], ques
         return None
 
     alarm_id = _alarm_id_from_q(ql)
-    anchor_terms = ["stalo", "ame", "adaptation", "fo6-4"]
+    anchor_terms = ["ame", "adaptation", "fo6-4"]
     if alarm_id:
         anchor_terms.extend([alarm_id, f"alarm {alarm_id}"])
 
@@ -825,8 +825,6 @@ def _build_extractive_troubleshoot_fallback(context_docs_local: list[dict], ques
         for m in markers:
             if m in ll:
                 s += 2
-        if "stalo" in ql and "stalo" in ll:
-            s += 2
         if "maintenance" in ql and "maintenance" in ll:
             s += 2
         if "adaptation" in ql and "adaptation" in ll:
@@ -1280,9 +1278,6 @@ def execute_agent(
         m_rev = _re.search(r"\b(\d{2,3})\s*alarm\b", ql)
         if m_rev:
             return m_rev.group(1)
-        m2 = _re.search(r"\bstalo\s*(\d{2,3})\b", ql)
-        if m2:
-            return m2.group(1)
         return None
 
     def _attach_verified_citations(payload: dict) -> dict:
@@ -1390,7 +1385,7 @@ def execute_agent(
             return None
 
         alarm_id = _alarm_id_from_q(ql)
-        anchor_terms = ["stalo", "ame", "adaptation", "fo6-4"]
+        anchor_terms = ["ame", "adaptation", "fo6-4"]
         if alarm_id:
             anchor_terms.extend([alarm_id, f"alarm {alarm_id}"])
 
@@ -1488,8 +1483,6 @@ def execute_agent(
                 if m in ll:
                     s += 2
             # Query alignment boosts
-            if "stalo" in ql and "stalo" in ll:
-                s += 2
             if "maintenance" in ql and "maintenance" in ll:
                 s += 2
             if "adaptation" in ql and "adaptation" in ll:
@@ -1679,11 +1672,11 @@ def execute_agent(
                 baseline_conf = (
                     sum(d.get("confidence", 0.0) for d in context_docs) / len(context_docs)
                 ) if context_docs else 0.0
-                # Minimal heuristic steps tailored to alarm/STALO queries
+                # Minimal heuristic fallback steps
                 default_steps = [
-                    "Verify STALO signal path power and cabling",
-                    "Inspect transmitter connections and module seating",
-                    "Run built-in transmitter diagnostics and review logs",
+                    "Verify signal path power and cabling",
+                    "Inspect connections and module seating",
+                    "Run built-in diagnostics and review logs",
                 ]
                 # Build sources from top-3 retrieved docs
                 sources = []
