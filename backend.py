@@ -12,7 +12,14 @@ from datetime import datetime
 import re
 import requests
 from collections import deque
-import pickle
+
+# Import secure pickle if available
+try:
+    from secure_cache import secure_pickle_dump, secure_pickle_load
+    SECURE_CACHE_AVAILABLE = True
+except ImportError:
+    import pickle
+    SECURE_CACHE_AVAILABLE = False
 
 import faiss
 import torch
@@ -367,9 +374,14 @@ class SearchHistory:
         return list(self.history)[:n]
     
     def save(self):
+        """Save search history with HMAC verification for security."""
         try:
-            with SEARCH_HISTORY_PATH.open("wb") as f:
-                pickle.dump(list(self.history), f)
+            if SECURE_CACHE_AVAILABLE:
+                secure_pickle_dump(list(self.history), SEARCH_HISTORY_PATH)
+            else:
+                import pickle
+                with SEARCH_HISTORY_PATH.open("wb") as f:
+                    pickle.dump(list(self.history), f)
         except Exception as e:
             print(f"[!] Failed to save search history: {e}")
     
@@ -381,15 +393,27 @@ class SearchHistory:
             print(f"[!] Failed to save favorites: {e}")
     
     def load(self):
+        """Load search history with HMAC verification for security."""
         try:
             if SEARCH_HISTORY_PATH.exists():
-                with SEARCH_HISTORY_PATH.open("rb") as f:
-                    self.history = deque(pickle.load(f), maxlen=50)
+                if SECURE_CACHE_AVAILABLE:
+                    self.history = deque(secure_pickle_load(SEARCH_HISTORY_PATH), maxlen=50)
+                else:
+                    import pickle
+                    with SEARCH_HISTORY_PATH.open("rb") as f:
+                        self.history = deque(pickle.load(f), maxlen=50)
             if FAVORITES_PATH.exists():
                 with FAVORITES_PATH.open("r", encoding="utf-8") as f:
                     self.favorites = json.load(f)
         except Exception as e:
             print(f"[!] Failed to load search history: {e}")
+            # Clear corrupted cache
+            self.history = deque(maxlen=50)
+            if SEARCH_HISTORY_PATH.exists():
+                try:
+                    SEARCH_HISTORY_PATH.unlink()
+                except Exception:
+                    pass
 
 search_history = SearchHistory()
 

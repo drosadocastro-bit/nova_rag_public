@@ -1,5 +1,5 @@
 flask==3.0.0
-waitress==2.1.2
+waitress==3.0.1
 faiss-cpu==1.13.1
 sentence-transformers==5.2.0
 huggingface-hub==0.36.0

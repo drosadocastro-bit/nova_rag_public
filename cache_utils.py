@@ -4,18 +4,29 @@ Caching utilities for NIC retrieval and audit operations.
 Feature-flagged via environment variables:
 - NOVA_ENABLE_RETRIEVAL_CACHE=1
 - NOVA_ENABLE_SQL_LOG=1
+
+Security: Uses HMAC-verified pickle to prevent code execution from tampered cache files.
 """
 
 import os
 import hashlib
 import json
-import pickle
 from pathlib import Path
 from functools import wraps
 from typing import List, Dict, Any, Optional, Callable
 import sqlite3
 from datetime import datetime
 from threading import Lock
+
+# Import secure pickle functions
+try:
+    from secure_cache import secure_pickle_dump, secure_pickle_load
+    SECURE_CACHE_AVAILABLE = True
+except ImportError:
+    # Fallback to regular pickle if secure_cache not available
+    import pickle
+    SECURE_CACHE_AVAILABLE = False
+    print("[WARNING] secure_cache module not found, using standard pickle (less secure)")
 
 # ===========================
 # Retrieval Cache
@@ -55,12 +66,17 @@ def cache_retrieval(func: Callable) -> Callable:
         # Store in cache
         with _retrieval_cache_lock:
             _retrieval_cache[cache_key] = result
-            # Persist to disk (best-effort; don't fail if write errors)
+            # Persist to disk with HMAC verification (best-effort; don't fail if write errors)
             try:
                 _retrieval_cache_file.parent.mkdir(parents=True, exist_ok=True)
-                with open(_retrieval_cache_file, "wb") as f:
-                    pickle.dump(_retrieval_cache, f)
-            except Exception:
+                if SECURE_CACHE_AVAILABLE:
+                    secure_pickle_dump(_retrieval_cache, _retrieval_cache_file)
+                else:
+                    import pickle
+                    with open(_retrieval_cache_file, "wb") as f:
+                        pickle.dump(_retrieval_cache, f)
+            except Exception as e:
+                print(f"[Cache] Warning: Failed to persist cache: {e}")
                 pass
         
         return result
@@ -69,18 +85,30 @@ def cache_retrieval(func: Callable) -> Callable:
 
 
 def load_retrieval_cache():
-    """Load retrieval cache from disk on startup."""
+    """Load retrieval cache from disk on startup with HMAC verification."""
     if os.environ.get("NOVA_ENABLE_RETRIEVAL_CACHE", "0") != "1":
         return
     
     global _retrieval_cache
     if _retrieval_cache_file.exists():
         try:
-            with open(_retrieval_cache_file, "rb") as f:
-                _retrieval_cache = pickle.load(f)
+            if SECURE_CACHE_AVAILABLE:
+                _retrieval_cache = secure_pickle_load(_retrieval_cache_file)
+            else:
+                import pickle
+                with open(_retrieval_cache_file, "rb") as f:
+                    _retrieval_cache = pickle.load(f)
             print(f"[Cache] Loaded {len(_retrieval_cache)} retrieval cache entries")
         except Exception as e:
             print(f"[Cache] Failed to load retrieval cache: {e}")
+            print(f"[Cache] Cache file may be corrupted or from different SECRET_KEY. Clearing cache.")
+            # Clear corrupted cache
+            _retrieval_cache = {}
+            if _retrieval_cache_file.exists():
+                try:
+                    _retrieval_cache_file.unlink()
+                except Exception:
+                    pass
 
 
 def clear_retrieval_cache():
