@@ -6,7 +6,7 @@ def route_task(query: str):
     # Procedures / steps
     if any(k in q for k in [
         "steps", "procedure", "how to", "measure",
-        "maintenance", "check", "suncheck"
+        "maintenance", "check"
     ]):
         return {
             "agent": "procedure",
