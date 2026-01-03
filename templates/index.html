@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Intelligent Copilot (NIC) – Vehicle Maintenance AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🌌</span>
+                    <h1>Nova Copilot</h1>
+                </div>
+                <p class="tagline">Intelligent Vehicle Maintenance Assistant</p>
+            </div>
+            <div class="status-bar">
+                <div id="connection-status" class="status-indicator">
+                    <span class="spinner"></span> Checking connection...
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Sidebar -->
+            <aside class="sidebar">
+                <section class="sidebar-section">
+                    <h3>🤖 Model Control</h3>
+                    <div id="current-model" class="status-text" style="margin-bottom: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                        Loading...
+                    </div>
+                    <div id="safety-flags" class="status-text" style="margin-bottom: 12px; font-size: 0.8rem; color: var(--text-secondary);">
+                        Safety: --
+                    </div>
+
+                    <div class="safety-toggles" style="margin-bottom: 12px;">
+                        <div class="toggle-row">
+                            <label for="toggle-audit" class="toggle-label">Citation audit</label>
+                            <input id="toggle-audit" type="checkbox" checked />
+                        </div>
+                        <div class="toggle-row">
+                            <label for="toggle-strict" class="toggle-label">Strict mode</label>
+                            <input id="toggle-strict" type="checkbox" checked />
+                        </div>
+                        <div class="toggle-row">
+                            <label for="toggle-metadata" class="toggle-label">Show sources</label>
+                            <input id="toggle-metadata" type="checkbox" checked />
+                        </div>
+                    </div>
+                </section>
+
+                <section class="sidebar-section">
+                    <h3>⚡ Quick Actions</h3>
+                    <button id="rebuild-btn" class="action-btn">
+                        <span>🔄</span> Rebuild Index
+                    </button>
+                    <button id="export-btn" class="action-btn">
+                        <span>📥</span> Export Session
+                    </button>
+                    <button id="metrics-btn" class="action-btn">
+                        <span>📊</span> Show Metrics
+                    </button>
+                </section>
+
+                <section class="sidebar-section">
+                    <h3>📚 Recent Sessions</h3>
+                    <div id="recent-sessions" class="list">
+                        <p class="empty">No sessions yet</p>
+                    </div>
+                </section>
+
+                <section class="sidebar-section">
+                    <h3>📜 Recent Searches</h3>
+                    <div id="recent-searches" class="list">
+                        <p class="empty">No searches yet</p>
+                    </div>
+                </section>
+
+                <section class="sidebar-section">
+                    <h3>⭐ Favorites</h3>
+                    <button id="view-favorites-btn" class="action-btn">View All</button>
+                    <div id="favorites-preview" class="list">
+                        <p class="empty">No favorites yet</p>
+                    </div>
+                </section>
+            </aside>
+
+            <!-- Main Chat Area -->
+            <section class="chat-area">
+                <!-- Session Info -->
+                <div id="session-info" class="session-info" style="display: none;">
+                    <div class="session-badge">
+                        <span>📋 Session Active</span>
+                        <span id="session-topic"></span>
+                        <span id="session-turns"></span>
+                    </div>
+                </div>
+
+                <!-- Chat Messages -->
+                <div id="chat-messages" class="chat-messages">
+                    <div class="welcome-message">
+                        <h2>Welcome to Nova Intelligent Copilot</h2>
+                        <p>Ask me anything about vehicle maintenance and troubleshooting.</p>
+                        <div class="example-queries">
+                            <p>Try asking:</p>
+                            <button class="example-btn" onclick="setQuery('Engine cranks but won\'t start. What should I check?')">
+                                Engine won't start
+                            </button>
+                            <button class="example-btn" onclick="setQuery('What\'s the torque specification for lug nuts?')">
+                                Torque specs
+                            </button>
+                            <button class="example-btn" onclick="setQuery('How do I test if my alternator is charging?')">
+                                Test alternator
+                            </button>
+                        </div>
+                        <div class="ai-disclaimer">
+                            <strong>⚠️ AI Transparency Notice:</strong><br>
+                            This system is powered by AI and can make mistakes. <strong>Always verify critical information against official vehicle service manuals</strong> before performing repairs. This system is designed to assist, not replace, professional mechanical judgment.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="input-area">
+                    <div class="input-group">
+                        <select id="mode-select" class="mode-select">
+                            <option value="Auto">🤖 Auto (Smart Selection)</option>
+                            <option value="LLAMA (Fast)">⚡ Llama 8B (Fast)</option>
+                            <option value="Qwen 14B (Deep)">🧠 Qwen 14B (Deep Reasoning)</option>
+                        </select>
+                        <textarea 
+                            id="question-input" 
+                            placeholder="Ask about vehicle systems, diagnostics, maintenance procedures..."
+                            rows="3"
+                            onkeypress="if(event.key === 'Enter' && event.ctrlKey) submitQuestion()"
+                        ></textarea>
+                        <button id="submit-btn" class="submit-btn" onclick="submitQuestion()">
+                            <span>Send</span>
+                            <span class="shortcut">Ctrl+Enter</span>
+                        </button>
+                    </div>
+
+                    <!-- Confidence & Actions -->
+                    <div class="input-footer">
+                        <div id="confidence-display" style="display: none;" class="confidence">
+                            Confidence: <span id="confidence-value">--</span>
+                        </div>
+                        <div class="action-buttons">
+                            <button id="favorite-btn" class="icon-btn" title="Save to favorites" onclick="saveFavorite()" style="display: none;">
+                                ⭐ Save
+                            </button>
+                            <button id="feedback-btn" class="icon-btn" title="Add feedback" onclick="toggleFeedback()">
+                                💬 Feedback
+                            </button>
+                            <button id="reset-session-btn" class="icon-btn" title="End current session" onclick="resetSession()" style="display: none;">
+                                🔄 Reset Session
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Feedback Buttons (shows after answer) -->
+                    <div id="quick-feedback-bar" class="quick-feedback" style="display: none;">
+                        <p>Was this answer helpful?</p>
+                        <button class="feedback-btn helpful-btn" onclick="submitQuickFeedback(true, true)">✅ Yes, Resolved</button>
+                        <button class="feedback-btn helpful-btn" onclick="submitQuickFeedback(true, false)">👍 Helpful But Not Resolved</button>
+                        <button class="feedback-btn unhelpful-btn" onclick="submitQuickFeedback(false, null)">👎 Not Helpful</button>
+                    </div>
+
+                    <!-- Detailed Feedback Form -->
+                    <div id="feedback-form" class="feedback-form" style="display: none;">
+                        <h4>📝 Share Your Feedback</h4>
+                        <label>
+                            <input type="checkbox" id="feedback-helpful" /> Was this answer helpful?
+                        </label>
+                        <label>
+                            <input type="checkbox" id="feedback-resolved" /> Did it resolve your issue?
+                        </label>
+                        <textarea id="feedback-input" placeholder="Additional notes or suggestions..." rows="2"></textarea>
+                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                            <button onclick="submitDetailedFeedback()" class="btn-small">💾 Submit Feedback</button>
+                            <button onclick="toggleFeedback()" class="btn-small" style="background: #999;">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Sidebar - Favorites Modal -->
+            <div id="favorites-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <button class="close-btn" onclick="closeFavoritesModal()">×</button>
+                    <h2>⭐ Saved Favorites</h2>
+                    <div id="favorites-list"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

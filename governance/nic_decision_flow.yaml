@@ -1,0 +1,100 @@
+nic_decision_flow:
+  version: "1.0"
+  purpose: "Define deterministic decision logic for NIC to prevent hallucinations and unsafe outputs."
+
+  entry_conditions:
+    - user_query_received
+    - system_mode_active
+
+  decision_tree:
+
+    - step: intent_detection
+      description: Determine whether the query is informational, diagnostic, or procedural.
+      outcomes:
+        - informational
+        - diagnostic
+        - procedural
+        - unknown
+
+    - step: source_validation
+      description: Check if requested information exists in authorized documentation.
+      rules:
+        - if_source_found: proceed
+        - if_source_missing: refuse
+
+    - step: safety_classification
+      description: Evaluate whether the request affects safety-critical systems.
+      classifications:
+        - non_safety
+        - safety_sensitive
+        - safety_critical
+
+    - step: response_path_selection
+      logic:
+        - if classification == non_safety:
+            action: verified_response
+        - if classification == safety_sensitive:
+            action: verified_response_with_warning
+        - if classification == safety_critical:
+            action: require_human_confirmation
+        - if source_missing:
+            action: refusal
+
+    - step: hallucination_prevention
+      rules:
+        - prohibit_assumptions: true
+        - prohibit_estimation: true
+        - prohibit_procedural_invention: true
+        - require_explicit_citation: true
+
+    - step: response_generation
+      allowed_outputs:
+        - cited_answer
+        - refusal_notice
+        - safety_warning
+      prohibited_outputs:
+        - inferred_steps
+        - guessed_values
+        - undocumented procedures
+
+    - step: audit_logging
+      log_fields:
+        - timestamp
+        - user_query
+        - classification
+        - source_used
+        - response_type
+        - hallucination_check_result
+
+  refusal_policy:
+    message_template:
+      - "I cannot provide this information because it is not present in the authorized documentation."
+      - "Providing an answer would require inference, which is not permitted."
+      - "Please consult the official technical manual or a certified technician."
+
+  safety_warning_policy:
+    message_template:
+      - "Warning: This request involves a safety-critical system."
+      - "Only authorized procedures may be used."
+      - "Refer to official maintenance documentation before proceeding."
+
+  compliance_flags:
+    hallucination_detected: CRITICAL
+    missing_citation: HIGH
+    unsafe_instruction: CRITICAL
+    ambiguity: MEDIUM
+
+  enforcement:
+    halt_on_violation: true
+    require_human_override: true
+    log_all_failures: true
+
+  intended_use:
+    - technical_copilot
+    - diagnostic_assistance
+    - reference_lookup
+
+  prohibited_use:
+    - autonomous repair
+    - procedural improvisation
+    - decision-making without human validation

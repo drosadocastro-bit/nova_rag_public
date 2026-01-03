@@ -1,0 +1,221 @@
+{
+  "timestamp": "20260102_092032",
+  "config": {
+    "nic_api": "http://127.0.0.1:5000/api",
+    "eval_model": "phi-4-14b",
+    "total_samples": 7
+  },
+  "results": [
+    {
+      "question": "Engine cranks but won't start. What should I check?",
+      "answer": "WARNINGS: Fuel system under pressure - wear eye protection and work in ventilated area away from ignition sources [Safety Notice 1-A] (vehicle_manual.txt p19) | STEPS: Verify fuel level (Check fuel gauge reading) (vehicle_manual.txt p2); Test fuel pressure (Connect pressure gauge to fuel rail test port, Key to ON position (do not crank), Observe pressure: should read 40-50 PSI) (vehicle_manual.txt p2); Check for spark (Remove spark plug from cylinder 1, Reconnect spark plug wire, Ground plug body to engine block using insulated tool) (vehicle_manual.txt p2) | VERIFY: Verify fuel level: check fuel gauge reading and listen for fuel pump operation (2-second prime on key-on) [Citation: Para 1-2.1, Figure 1-2] (vehicle_manual.txt p2); Test fuel pressure: observe pressure reading on gauge (vehicle_manual.txt p2); Check for spark: observe for strong blue spark across gap when cranking engine (vehicle_manual.txt p3)",
+      "contexts": [
+        "[vehicle_manual.txt p.2] ing)\nIgnition switch assembly\nBattery cables (4 AWG minimum)\n[Figure 1-1: Starting System Schematic] --- PAGE 2 ---\nPara 1-2: Engine Cranks But Won't ",
+        "[vehicle_manual.txt p.11] nt Specification\nBrake Fluid Type DOT 3\nFluid Capacity 0.5 quarts\nPad Minimum Thickness 3mm (0.118\") --- PAGE 11 ---\nComponent Specification\nRotor Min",
+        "[vehicle_manual.txt p.19] eration\nMonitor O2 sensor voltages with scan tool\nUpstream sensor: should fluctuate 0.1-0.9V rapidly --- PAGE 19 ---\nDownstream sensor: should be stea",
+        "[vehicle_manual.txt p.3] plug from cylinder 1\nReconnect spark plug wire\nGround plug body to engine block using insulated tool --- PAGE 3 ---\nHave assistant crank engine\nObserv",
+        "[vehicle_manual.txt p.1] --- PAGE 1 ---\nTM 9-2350 Vehicle Maintenance Manual\nDemonstration Dataset for NIC RAG System\nNOTICE: This is synthetic technical documentation created",
+        "[vehicle_manual.txt p.26] ts body. [Safety Notice 7-B]\nStep 3: Test battery\nMeasure resting voltage: should be 12.4V or higher --- PAGE 26 ---\nPerform load test per Para 1-3.2\n"
+      ],
+      "ground_truth": "When engine cranks but won't start, check these in order of likelihood: (1) Fuel system - verify fuel level and pump operation, test fuel pressure at 40-50 PSI [Citation: Para 1-2.1, Table 1-1]. (2) Ignition system - test for spark at plugs [Citation: Para 1-2.3]. (3) Air intake - inspect for severe restrictions [Citation: Para 1-2]. WARNING: Fuel system under pressure, wear eye protection [Safety Notice 1-A].",
+      "id": "PC001",
+      "category": "positive_case"
+    },
+    {
+      "question": "What's the correct torque specification for lug nuts?",
+      "answer": "{\n  \"output\": {\n    \"format\": \"analysis\",\n    \"result\": {\n      \"correct_torque_specification\": \"85-95 ft-lbs\",\n      \"torque_application_instructions\": \"Tighten in star pattern\"\n    },\n    \"confidence_level\": 100,\n    \"certainty_reasoning\": \"Based on provided maintenance manual (Para 7-3.3, Table 7-1)\"\n  }\n}",
+      "contexts": [
+        "[vehicle_manual.txt p.24] o not remove yet [Citation: Para 7-3.1]\nStep 2: Lift vehicle\nUse jack at designated lift points only --- PAGE 24 ---\nSupport with jack stands (never w",
+        "[vehicle_manual.txt p.9] Fluid should be between MIN and MAX marks\nLow fluid indicates leak in system [Citation: Para 3-2.1] --- PAGE 9 ---\n\u26a0  WARNING: Low brake fluid is emer",
+        "[vehicle_manual.txt p.1] --- PAGE 1 ---\nTM 9-2350 Vehicle Maintenance Manual\nDemonstration Dataset for NIC RAG System\nNOTICE: This is synthetic technical documentation created",
+        "[vehicle_manual.txt p.6] ed bearing\nBroken drive belt\n4. Radiator Blockage (10% probability)\nExternal debris blocking airflow --- PAGE 6 ---\nInternal corrosion/scale buildup\nD",
+        "[vehicle_manual.txt p.21] sue [Citation: Para 6-4.1]\nStep 2: Test compression\nRemove all spark plugs\nDisable fuel and ignition --- PAGE 21 ---\nThread compression tester into mi",
+        "[vehicle_manual.txt p.27] icle to fall resulting in crushing\ninjury or death. Always use jack stands rated for vehicle weight. --- PAGE 27 ---\nSafety Notice 7-B: Battery Discon"
+      ],
+      "ground_truth": "Lug nuts should be torqued to 85-95 ft-lbs in a star pattern [Citation: Table 7-1, Para 7-3.3].",
+      "id": "PC002",
+      "category": "positive_case"
+    },
+    {
+      "question": "My temperature gauge is reading high. What could be wrong?",
+      "answer": "```json\n{\n  \"type\": \"chat\",\n  \"response\": {\n    \"message\": \"A high temperature gauge reading can indicate several potential issues with your vehicle's cooling system. Common causes include:\\n\\n1. **Low Coolant Level**: Check the coolant reservoir to ensure it is at the proper level.\\n2. **Radiator Issues**: A clogged or damaged radiator can impede heat dissipation.\\n3. **Water Pump Failure**: The water pump circulates coolant; if it's failing, overheating may occur.\\n4. **Thermostat Malfunction**: If stuck closed, it prevents coolant flow and causes overheating.\\n5. **Fan Problems**: A malfunctioning cooling fan can lead to inadequate air circulation over the radiator.\\n\\nIf you're unsure about diagnosing or fixing these issues, I recommend consulting a professional mechanic for a thorough inspection.\"\n  }\n}\n```",
+      "contexts": [
+        "[vehicle_manual.txt p.5] 9.6V minimum\nCCA Rating 600 minimum\nLoad Test Duration 15 seconds\nReplacement Interval 48-60 months --- PAGE 5 ---\nSECTION 2: COOLING SYSTEM\nPara 2-1:",
+        "[vehicle_manual.txt p.2] ing)\nIgnition switch assembly\nBattery cables (4 AWG minimum)\n[Figure 1-1: Starting System Schematic] --- PAGE 2 ---\nPara 1-2: Engine Cranks But Won't ",
+        "[vehicle_manual.txt p.19] eration\nMonitor O2 sensor voltages with scan tool\nUpstream sensor: should fluctuate 0.1-0.9V rapidly --- PAGE 19 ---\nDownstream sensor: should be stea",
+        "[vehicle_manual.txt p.12] rive Belt Failure (40% probability)\nBelt broken or slipped off\nSeverely worn belt\nLoose belt tension --- PAGE 12 ---\n2. Alternator Failure (35% probab",
+        "[vehicle_manual.txt p.15] , 15K mile replacement)\nFuel pressure regulator (return type)\nFuel injectors (multi-port sequential) --- PAGE 15 ---\nOperating Pressure: 40-50 PSI at ",
+        "[vehicle_manual.txt p.26] ts body. [Safety Notice 7-B]\nStep 3: Test battery\nMeasure resting voltage: should be 12.4V or higher --- PAGE 26 ---\nPerform load test per Para 1-3.2\n"
+      ],
+      "ground_truth": "Engine overheating (gauge above 220\u00b0F) has several probable causes: (1) Low coolant level - 50% probability, check reservoir when cold [Citation: Para 2-2.1]. (2) Thermostat failure - 25% probability, test if upper hose gets hot at 195\u00b0F [Citation: Para 2-2.2]. (3) Water pump failure - 15% probability, inspect for leaks and bearing noise [Citation: Para 2-2.3]. (4) Radiator blockage - 10% probability. WARNING: Never open cooling system when hot, wait 30 minutes minimum [Safety Notice 2-A].",
+      "id": "PC003",
+      "category": "positive_case"
+    },
+    {
+      "question": "How do I test if my alternator is charging?",
+      "answer": "{\n  \"type\": \"analysis\",\n  \"steps\": [\n    {\n      \"step\": \"Step 2: Test charging voltage\",\n      \"description\": \"Connect voltmeter to battery terminals and start engine at 2000 RPM.\",\n      \"expected_result\": \"Voltage should read between 13.8-14.4V.\"\n    },\n    {\n      \"step\": \"Step 3: Load test alternator\",\n      \"description\": \"Turn on headlights, blower motor, rear defroster, and maintain 2000 RPM.\",\n      \"expected_result\": \"Voltage should remain above 13.5V under load.\"\n    }\n  ],\n  \"caution\": [\n    {\n      \"warning\": \"Overcharging (above 14.8V) can cause battery to explode. If detected, turn off engine immediately and disconnect battery.\",\n      \"reference\": \"Safety Notice 4-A\"\n    }\n  ]\n}",
+      "contexts": [
+        "[vehicle_manual.txt p.14] 4-3]\nStep 2: Locate source of draw\nRemove fuses one at a time\nMonitor ammeter when each fuse removed --- PAGE 14 ---\nWhen amperage drops to normal, ci",
+        "[vehicle_manual.txt p.12] rive Belt Failure (40% probability)\nBelt broken or slipped off\nSeverely worn belt\nLoose belt tension --- PAGE 12 ---\n2. Alternator Failure (35% probab",
+        "[vehicle_manual.txt p.16] at door placard specification\nCorrect any low tires\nMonitor MPG for one tank [Citation: Para 5-2.1] --- PAGE 16 ---\nStep 2: Scan for diagnostic codes\n",
+        "[vehicle_manual.txt p.25] housing cover [Citation: Para 7-4.1, Figure 7-3]\nStep 2: Inspect old filter\nHold up to light source --- PAGE 25 ---\nShould see light through filter me",
+        "[vehicle_manual.txt p.26] ts body. [Safety Notice 7-B]\nStep 3: Test battery\nMeasure resting voltage: should be 12.4V or higher --- PAGE 26 ---\nPerform load test per Para 1-3.2\n",
+        "[vehicle_manual.txt p.13] dlights, blower motor, rear defroster\nMaintain 2000 RPM\nVoltage should remain above 13.5V under load --- PAGE 13 ---\nIf voltage drops below 13.0V, alt"
+      ],
+      "ground_truth": "Test alternator charging: Connect voltmeter to battery terminals, start engine and increase RPM to 2000. Voltage should read 13.8-14.4V. Below 13.8V indicates alternator not charging. Above 14.8V indicates regulator failure - turn off engine immediately and disconnect battery [Citation: Para 4-2.2, Table 4-1]. WARNING: Overcharging above 14.8V can cause battery explosion [Safety Notice 4-A].",
+      "id": "PC004",
+      "category": "positive_case"
+    },
+    {
+      "question": "What does diagnostic code P0420 mean?",
+      "answer": "{\n  \"answer\": {\n    \"explanation\": \"Diagnostic code P0420 indicates that the catalytic converter is not operating at required efficiency.\",\n    \"steps\": [\n      \"Verify code is current by clearing codes with a scan tool and driving through a complete drive cycle (Para 6-2.1).\",\n      \"If the code returns, proceed with diagnosis.\"\n    ],\n    \"citation\": \"vehicle_manual.txt, Para 6-2\"\n  }\n}",
+      "contexts": [
+        "[vehicle_manual.txt p.18] PSI\nFuel Pressure (WOT) 35 PSI minimum\nPump Flow Rate 30 GPH minimum\nFilter Replacement 15,000 miles --- PAGE 18 ---\nComponent Specification\nInjector ",
+        "[vehicle_manual.txt p.26] ts body. [Safety Notice 7-B]\nStep 3: Test battery\nMeasure resting voltage: should be 12.4V or higher --- PAGE 26 ---\nPerform load test per Para 1-3.2\n",
+        "[vehicle_manual.txt p.22] itions Include:\nFrequent short trips (under 5 miles)\nExtreme temperatures (below 0\u00b0F or above 100\u00b0F) --- PAGE 22 ---\nDusty or off-road driving\nTrailer",
+        "[vehicle_manual.txt p.16] at door placard specification\nCorrect any low tires\nMonitor MPG for one tank [Citation: Para 5-2.1] --- PAGE 16 ---\nStep 2: Scan for diagnostic codes\n",
+        "[vehicle_manual.txt p.20] tep 2: Inspect MAF sensor\nRemove sensor from air intake tube\nExamine sensing element for oil or dirt --- PAGE 20 ---\nClean with MAF sensor cleaner onl",
+        "[vehicle_manual.txt p.5] 9.6V minimum\nCCA Rating 600 minimum\nLoad Test Duration 15 seconds\nReplacement Interval 48-60 months --- PAGE 5 ---\nSECTION 2: COOLING SYSTEM\nPara 2-1:"
+      ],
+      "ground_truth": "Code P0420 indicates 'Catalyst System Efficiency Below Threshold' - the catalytic converter is not operating at required efficiency [Citation: Para 6-2]. Possible causes: (1) Catalytic converter degradation (most common), (2) Oxygen sensor failure, (3) Exhaust leak before catalyst, (4) Engine running too rich [Citation: Para 6-2]. Verify by monitoring O2 sensor operation - downstream sensor should be steady around 0.45V; if it fluctuates like upstream sensor, converter has failed [Citation: Para 6-2.2].",
+      "id": "PC005",
+      "category": "positive_case"
+    },
+    {
+      "question": "How often should I change my oil?",
+      "answer": "{\n  \"response_type\": \"analysis\",\n  \"steps\": [\n    {\n      \"step_number\": 1,\n      \"description\": \"Interpret what the update implies\"\n    },\n    {\n      \"step_number\": 2,\n      \"description\": \"Refine likely root cause (confirm/eliminate)\"\n    },\n    {\n      \"step_number\": 3,\n      \"description\": \"Give the next 13 concrete steps\",\n      \"steps_list\": [\n        {\n          \"step_number\": 1,\n          \"description\": \"Check oil level and condition\"\n        },\n        {\n          \"step_number\": 2,\n          \"description\": \"Verify engine oil filter replacement interval (15,000 miles)\"\n        },\n        {\n          \"step_number\": 3,\n          \"description\": \"Inspect air filter for blockages or contamination\"\n        },\n        {\n          \"step_number\": 4,\n          \"description\": \"Check fuel pressure gauge reading (40-50 PSI steady)\"\n        },\n        {\n          \"step_number\": 5,\n          \"description\": \"Verify oxygen sensor operation and adjust as needed\"\n        },\n        {\n          \"step_number\": 6,\n          \"description\": \"Inspect mass airflow sensor for oil or dirt contamination\"\n        },\n        {\n          \"step_number\": 7,\n          \"description\": \"Check fuel injectors for clogging or failure\"\n        },\n        {\n          \"step_number\": 8,\n          \"description\": \"Verify spark plug gap and condition (0.040\\\")\"\n        },\n        {\n          \"step_number\": 9,\n          \"description\": \"Inspect ignition coil for damage or wear\"\n        },\n        {\n          \"step_number\": 10,\n          \"description\": \"Check fuel pump flow rate and pressure gauge reading\"\n        },\n        {\n          \"step_number\": 11,\n          \"description\": \"Verify engine compression (remove all spark plugs)\"\n        },\n        {\n          \"step_number\": 12,\n          \"description\": \"Test fuel system for leaks or blockages\"\n        },\n        {\n          \"step_number\": 13,\n          \"description\": \"Consult vehicle manual for specific oil change recommendations\"\n        }\n      ]\n    },\n    {\n      \"step_number\": 4,\n      \"description\": \"If resolved, how to confirm stability\",\n      \"steps_list\": [\n        {\n          \"step_number\": 1,\n          \"description\": \"Monitor engine performance and check for any issues\"\n        },\n        {\n          \"step_number\": 2,\n          \"description\": \"Verify oil level and condition after driving\"\n        }\n      ]\n    }\n  ],\n  \"next_steps\": [\n    {\n      \"step_number\": 14,\n      \"description\": \"Perform a complete drive cycle to clear any stored codes\"\n    },\n    {\n      \"step_number\": 15,\n      \"description\": \"Check for any other diagnostic trouble codes (DTCs)\"\n    }\n  ],\n  \"limitations\": \"The provided manual does not specify the exact oil change interval. Consult the vehicle manufacturer's recommendations or consult a professional mechanic if unsure.\"\n}",
+      "contexts": [
+        "[vehicle_manual.txt p.22] itions Include:\nFrequent short trips (under 5 miles)\nExtreme temperatures (below 0\u00b0F or above 100\u00b0F) --- PAGE 22 ---\nDusty or off-road driving\nTrailer",
+        "[vehicle_manual.txt p.20] tep 2: Inspect MAF sensor\nRemove sensor from air intake tube\nExamine sensing element for oil or dirt --- PAGE 20 ---\nClean with MAF sensor cleaner onl",
+        "[vehicle_manual.txt p.25] housing cover [Citation: Para 7-4.1, Figure 7-3]\nStep 2: Inspect old filter\nHold up to light source --- PAGE 25 ---\nShould see light through filter me",
+        "[vehicle_manual.txt p.15] , 15K mile replacement)\nFuel pressure regulator (return type)\nFuel injectors (multi-port sequential) --- PAGE 15 ---\nOperating Pressure: 40-50 PSI at ",
+        "[vehicle_manual.txt p.4] Para 1-3.1, Table 1-2]\nStep 2: Perform battery load test\nApply load equivalent to 50% of CCA rating --- PAGE 4 ---\nVoltage should remain above 9.6V fo",
+        "[vehicle_manual.txt p.7] ner\nDispose of old coolant per environmental regulations [Citation: Para 2-3.1]\nStep 2: Flush system --- PAGE 7 ---\nClose drain plug\nFill with clean w"
+      ],
+      "ground_truth": "Oil change intervals: Normal conditions - 5,000 miles or 6 months. Severe conditions - 3,000 miles or 3 months [Citation: Para 7-2]. Severe conditions include frequent short trips under 5 miles, extreme temperatures, dusty/off-road driving, trailer towing, or commercial use [Citation: Para 7-1].",
+      "id": "PC006",
+      "category": "positive_case"
+    },
+    {
+      "question": "What's the fuel pressure supposed to be?",
+      "answer": "{\n  \"output\": {\n    \"type\": \"analysis\",\n    \"steps\": [\n      {\n        \"step\": 1,\n        \"description\": \"Verify code is current\"\n      },\n      {\n        \"step\": 2,\n        \"description\": \"Check oxygen sensor operation\"\n      },\n      {\n        \"step\": 3,\n        \"description\": \"Test fuel pressure\"\n      }\n    ],\n    \"conclusion\": \"Fuel pressure should be between 40-50 PSI with key ON, engine OFF. If below 40 PSI, it indicates a pump or filter problem.\",\n    \"citation\": \"Para 6-3.3 in vehicle_manual.txt (pg. 20)\"\n  },\n  \"answer\": {\n    \"type\": \"short\",\n    \"description\": \"Fuel pressure should be between 40-50 PSI with key ON, engine OFF.\"\n  }\n}",
+      "contexts": [
+        "[vehicle_manual.txt p.4] Para 1-3.1, Table 1-2]\nStep 2: Perform battery load test\nApply load equivalent to 50% of CCA rating --- PAGE 4 ---\nVoltage should remain above 9.6V fo",
+        "[vehicle_manual.txt p.15] , 15K mile replacement)\nFuel pressure regulator (return type)\nFuel injectors (multi-port sequential) --- PAGE 15 ---\nOperating Pressure: 40-50 PSI at ",
+        "[vehicle_manual.txt p.2] ing)\nIgnition switch assembly\nBattery cables (4 AWG minimum)\n[Figure 1-1: Starting System Schematic] --- PAGE 2 ---\nPara 1-2: Engine Cranks But Won't ",
+        "[vehicle_manual.txt p.26] ts body. [Safety Notice 7-B]\nStep 3: Test battery\nMeasure resting voltage: should be 12.4V or higher --- PAGE 26 ---\nPerform load test per Para 1-3.2\n",
+        "[vehicle_manual.txt p.20] tep 2: Inspect MAF sensor\nRemove sensor from air intake tube\nExamine sensing element for oil or dirt --- PAGE 20 ---\nClean with MAF sensor cleaner onl",
+        "[vehicle_manual.txt p.21] sue [Citation: Para 6-4.1]\nStep 2: Test compression\nRemove all spark plugs\nDisable fuel and ignition --- PAGE 21 ---\nThread compression tester into mi"
+      ],
+      "ground_truth": "Fuel pressure should be 40-50 PSI at idle [Citation: Table 1-1, Table 5-1]. Test using pressure gauge at fuel rail test port with key ON, engine OFF [Citation: Para 1-2.2]. Under wide-open throttle, pressure should remain above 35 PSI minimum [Citation: Table 5-1].",
+      "id": "PC008",
+      "category": "positive_case"
+    }
+  ],
+  "aggregate_scores": {
+    "faithfulness": null,
+    "answer_relevancy": 0.5809761526358692,
+    "context_precision": null,
+    "context_recall": null
+  },
+  "per_sample_scores": [
+    {
+      "user_input": "Engine cranks but won't start. What should I check?",
+      "retrieved_contexts": [
+        "[vehicle_manual.txt p.2] ing)\nIgnition switch assembly\nBattery cables (4 AWG minimum)\n[Figure 1-1: Starting System Schematic] --- PAGE 2 ---\nPara 1-2: Engine Cranks But Won't ",
+        "[vehicle_manual.txt p.11] nt Specification\nBrake Fluid Type DOT 3\nFluid Capacity 0.5 quarts\nPad Minimum Thickness 3mm (0.118\") --- PAGE 11 ---\nComponent Specification\nRotor Min",
+        "[vehicle_manual.txt p.19] eration\nMonitor O2 sensor voltages with scan tool\nUpstream sensor: should fluctuate 0.1-0.9V rapidly --- PAGE 19 ---\nDownstream sensor: should be stea",
+        "[vehicle_manual.txt p.3] plug from cylinder 1\nReconnect spark plug wire\nGround plug body to engine block using insulated tool --- PAGE 3 ---\nHave assistant crank engine\nObserv",
+        "[vehicle_manual.txt p.1] --- PAGE 1 ---\nTM 9-2350 Vehicle Maintenance Manual\nDemonstration Dataset for NIC RAG System\nNOTICE: This is synthetic technical documentation created",
+        "[vehicle_manual.txt p.26] ts body. [Safety Notice 7-B]\nStep 3: Test battery\nMeasure resting voltage: should be 12.4V or higher --- PAGE 26 ---\nPerform load test per Para 1-3.2\n"
+      ],
+      "response": "WARNINGS: Fuel system under pressure - wear eye protection and work in ventilated area away from ignition sources [Safety Notice 1-A] (vehicle_manual.txt p19) | STEPS: Verify fuel level (Check fuel gauge reading) (vehicle_manual.txt p2); Test fuel pressure (Connect pressure gauge to fuel rail test port, Key to ON position (do not crank), Observe pressure: should read 40-50 PSI) (vehicle_manual.txt p2); Check for spark (Remove spark plug from cylinder 1, Reconnect spark plug wire, Ground plug body to engine block using insulated tool) (vehicle_manual.txt p2) | VERIFY: Verify fuel level: check fuel gauge reading and listen for fuel pump operation (2-second prime on key-on) [Citation: Para 1-2.1, Figure 1-2] (vehicle_manual.txt p2); Test fuel pressure: observe pressure reading on gauge (vehicle_manual.txt p2); Check for spark: observe for strong blue spark across gap when cranking engine (vehicle_manual.txt p3)",
+      "reference": "When engine cranks but won't start, check these in order of likelihood: (1) Fuel system - verify fuel level and pump operation, test fuel pressure at 40-50 PSI [Citation: Para 1-2.1, Table 1-1]. (2) Ignition system - test for spark at plugs [Citation: Para 1-2.3]. (3) Air intake - inspect for severe restrictions [Citation: Para 1-2]. WARNING: Fuel system under pressure, wear eye protection [Safety Notice 1-A].",
+      "answer_relevancy": 0.34682312267408916
+    },
+    {
+      "user_input": "What's the correct torque specification for lug nuts?",
+      "retrieved_contexts": [
+        "[vehicle_manual.txt p.24] o not remove yet [Citation: Para 7-3.1]\nStep 2: Lift vehicle\nUse jack at designated lift points only --- PAGE 24 ---\nSupport with jack stands (never w",
+        "[vehicle_manual.txt p.9] Fluid should be between MIN and MAX marks\nLow fluid indicates leak in system [Citation: Para 3-2.1] --- PAGE 9 ---\n\u26a0  WARNING: Low brake fluid is emer",
+        "[vehicle_manual.txt p.1] --- PAGE 1 ---\nTM 9-2350 Vehicle Maintenance Manual\nDemonstration Dataset for NIC RAG System\nNOTICE: This is synthetic technical documentation created",
+        "[vehicle_manual.txt p.6] ed bearing\nBroken drive belt\n4. Radiator Blockage (10% probability)\nExternal debris blocking airflow --- PAGE 6 ---\nInternal corrosion/scale buildup\nD",
+        "[vehicle_manual.txt p.21] sue [Citation: Para 6-4.1]\nStep 2: Test compression\nRemove all spark plugs\nDisable fuel and ignition --- PAGE 21 ---\nThread compression tester into mi",
+        "[vehicle_manual.txt p.27] icle to fall resulting in crushing\ninjury or death. Always use jack stands rated for vehicle weight. --- PAGE 27 ---\nSafety Notice 7-B: Battery Discon"
+      ],
+      "response": "{\n  \"output\": {\n    \"format\": \"analysis\",\n    \"result\": {\n      \"correct_torque_specification\": \"85-95 ft-lbs\",\n      \"torque_application_instructions\": \"Tighten in star pattern\"\n    },\n    \"confidence_level\": 100,\n    \"certainty_reasoning\": \"Based on provided maintenance manual (Para 7-3.3, Table 7-1)\"\n  }\n}",
+      "reference": "Lug nuts should be torqued to 85-95 ft-lbs in a star pattern [Citation: Table 7-1, Para 7-3.3].",
+      "answer_relevancy": 0.665245550141313
+    },
+    {
+      "user_input": "My temperature gauge is reading high. What could be wrong?",
+      "retrieved_contexts": [
+        "[vehicle_manual.txt p.5] 9.6V minimum\nCCA Rating 600 minimum\nLoad Test Duration 15 seconds\nReplacement Interval 48-60 months --- PAGE 5 ---\nSECTION 2: COOLING SYSTEM\nPara 2-1:",
+        "[vehicle_manual.txt p.2] ing)\nIgnition switch assembly\nBattery cables (4 AWG minimum)\n[Figure 1-1: Starting System Schematic] --- PAGE 2 ---\nPara 1-2: Engine Cranks But Won't ",
+        "[vehicle_manual.txt p.19] eration\nMonitor O2 sensor voltages with scan tool\nUpstream sensor: should fluctuate 0.1-0.9V rapidly --- PAGE 19 ---\nDownstream sensor: should be stea",
+        "[vehicle_manual.txt p.12] rive Belt Failure (40% probability)\nBelt broken or slipped off\nSeverely worn belt\nLoose belt tension --- PAGE 12 ---\n2. Alternator Failure (35% probab",
+        "[vehicle_manual.txt p.15] , 15K mile replacement)\nFuel pressure regulator (return type)\nFuel injectors (multi-port sequential) --- PAGE 15 ---\nOperating Pressure: 40-50 PSI at ",
+        "[vehicle_manual.txt p.26] ts body. [Safety Notice 7-B]\nStep 3: Test battery\nMeasure resting voltage: should be 12.4V or higher --- PAGE 26 ---\nPerform load test per Para 1-3.2\n"
+      ],
+      "response": "```json\n{\n  \"type\": \"chat\",\n  \"response\": {\n    \"message\": \"A high temperature gauge reading can indicate several potential issues with your vehicle's cooling system. Common causes include:\\n\\n1. **Low Coolant Level**: Check the coolant reservoir to ensure it is at the proper level.\\n2. **Radiator Issues**: A clogged or damaged radiator can impede heat dissipation.\\n3. **Water Pump Failure**: The water pump circulates coolant; if it's failing, overheating may occur.\\n4. **Thermostat Malfunction**: If stuck closed, it prevents coolant flow and causes overheating.\\n5. **Fan Problems**: A malfunctioning cooling fan can lead to inadequate air circulation over the radiator.\\n\\nIf you're unsure about diagnosing or fixing these issues, I recommend consulting a professional mechanic for a thorough inspection.\"\n  }\n}\n```",
+      "reference": "Engine overheating (gauge above 220\u00b0F) has several probable causes: (1) Low coolant level - 50% probability, check reservoir when cold [Citation: Para 2-2.1]. (2) Thermostat failure - 25% probability, test if upper hose gets hot at 195\u00b0F [Citation: Para 2-2.2]. (3) Water pump failure - 15% probability, inspect for leaks and bearing noise [Citation: Para 2-2.3]. (4) Radiator blockage - 10% probability. WARNING: Never open cooling system when hot, wait 30 minutes minimum [Safety Notice 2-A].",
+      "answer_relevancy": 0.6983626436294484
+    },
+    {
+      "user_input": "How do I test if my alternator is charging?",
+      "retrieved_contexts": [
+        "[vehicle_manual.txt p.14] 4-3]\nStep 2: Locate source of draw\nRemove fuses one at a time\nMonitor ammeter when each fuse removed --- PAGE 14 ---\nWhen amperage drops to normal, ci",
+        "[vehicle_manual.txt p.12] rive Belt Failure (40% probability)\nBelt broken or slipped off\nSeverely worn belt\nLoose belt tension --- PAGE 12 ---\n2. Alternator Failure (35% probab",
+        "[vehicle_manual.txt p.16] at door placard specification\nCorrect any low tires\nMonitor MPG for one tank [Citation: Para 5-2.1] --- PAGE 16 ---\nStep 2: Scan for diagnostic codes\n",
+        "[vehicle_manual.txt p.25] housing cover [Citation: Para 7-4.1, Figure 7-3]\nStep 2: Inspect old filter\nHold up to light source --- PAGE 25 ---\nShould see light through filter me",
+        "[vehicle_manual.txt p.26] ts body. [Safety Notice 7-B]\nStep 3: Test battery\nMeasure resting voltage: should be 12.4V or higher --- PAGE 26 ---\nPerform load test per Para 1-3.2\n",
+        "[vehicle_manual.txt p.13] dlights, blower motor, rear defroster\nMaintain 2000 RPM\nVoltage should remain above 13.5V under load --- PAGE 13 ---\nIf voltage drops below 13.0V, alt"
+      ],
+      "response": "{\n  \"type\": \"analysis\",\n  \"steps\": [\n    {\n      \"step\": \"Step 2: Test charging voltage\",\n      \"description\": \"Connect voltmeter to battery terminals and start engine at 2000 RPM.\",\n      \"expected_result\": \"Voltage should read between 13.8-14.4V.\"\n    },\n    {\n      \"step\": \"Step 3: Load test alternator\",\n      \"description\": \"Turn on headlights, blower motor, rear defroster, and maintain 2000 RPM.\",\n      \"expected_result\": \"Voltage should remain above 13.5V under load.\"\n    }\n  ],\n  \"caution\": [\n    {\n      \"warning\": \"Overcharging (above 14.8V) can cause battery to explode. If detected, turn off engine immediately and disconnect battery.\",\n      \"reference\": \"Safety Notice 4-A\"\n    }\n  ]\n}",
+      "reference": "Test alternator charging: Connect voltmeter to battery terminals, start engine and increase RPM to 2000. Voltage should read 13.8-14.4V. Below 13.8V indicates alternator not charging. Above 14.8V indicates regulator failure - turn off engine immediately and disconnect battery [Citation: Para 4-2.2, Table 4-1]. WARNING: Overcharging above 14.8V can cause battery explosion [Safety Notice 4-A].",
+      "answer_relevancy": 0.5795337395931444
+    },
+    {
+      "user_input": "What does diagnostic code P0420 mean?",
+      "retrieved_contexts": [
+        "[vehicle_manual.txt p.18] PSI\nFuel Pressure (WOT) 35 PSI minimum\nPump Flow Rate 30 GPH minimum\nFilter Replacement 15,000 miles --- PAGE 18 ---\nComponent Specification\nInjector ",
+        "[vehicle_manual.txt p.26] ts body. [Safety Notice 7-B]\nStep 3: Test battery\nMeasure resting voltage: should be 12.4V or higher --- PAGE 26 ---\nPerform load test per Para 1-3.2\n",
+        "[vehicle_manual.txt p.22] itions Include:\nFrequent short trips (under 5 miles)\nExtreme temperatures (below 0\u00b0F or above 100\u00b0F) --- PAGE 22 ---\nDusty or off-road driving\nTrailer",
+        "[vehicle_manual.txt p.16] at door placard specification\nCorrect any low tires\nMonitor MPG for one tank [Citation: Para 5-2.1] --- PAGE 16 ---\nStep 2: Scan for diagnostic codes\n",
+        "[vehicle_manual.txt p.20] tep 2: Inspect MAF sensor\nRemove sensor from air intake tube\nExamine sensing element for oil or dirt --- PAGE 20 ---\nClean with MAF sensor cleaner onl",
+        "[vehicle_manual.txt p.5] 9.6V minimum\nCCA Rating 600 minimum\nLoad Test Duration 15 seconds\nReplacement Interval 48-60 months --- PAGE 5 ---\nSECTION 2: COOLING SYSTEM\nPara 2-1:"
+      ],
+      "response": "{\n  \"answer\": {\n    \"explanation\": \"Diagnostic code P0420 indicates that the catalytic converter is not operating at required efficiency.\",\n    \"steps\": [\n      \"Verify code is current by clearing codes with a scan tool and driving through a complete drive cycle (Para 6-2.1).\",\n      \"If the code returns, proceed with diagnosis.\"\n    ],\n    \"citation\": \"vehicle_manual.txt, Para 6-2\"\n  }\n}",
+      "reference": "Code P0420 indicates 'Catalyst System Efficiency Below Threshold' - the catalytic converter is not operating at required efficiency [Citation: Para 6-2]. Possible causes: (1) Catalytic converter degradation (most common), (2) Oxygen sensor failure, (3) Exhaust leak before catalyst, (4) Engine running too rich [Citation: Para 6-2]. Verify by monitoring O2 sensor operation - downstream sensor should be steady around 0.45V; if it fluctuates like upstream sensor, converter has failed [Citation: Para 6-2.2].",
+      "answer_relevancy": 0.9367665763462842
+    },
+    {
+      "user_input": "How often should I change my oil?",
+      "retrieved_contexts": [
+        "[vehicle_manual.txt p.22] itions Include:\nFrequent short trips (under 5 miles)\nExtreme temperatures (below 0\u00b0F or above 100\u00b0F) --- PAGE 22 ---\nDusty or off-road driving\nTrailer",
+        "[vehicle_manual.txt p.20] tep 2: Inspect MAF sensor\nRemove sensor from air intake tube\nExamine sensing element for oil or dirt --- PAGE 20 ---\nClean with MAF sensor cleaner onl",
+        "[vehicle_manual.txt p.25] housing cover [Citation: Para 7-4.1, Figure 7-3]\nStep 2: Inspect old filter\nHold up to light source --- PAGE 25 ---\nShould see light through filter me",
+        "[vehicle_manual.txt p.15] , 15K mile replacement)\nFuel pressure regulator (return type)\nFuel injectors (multi-port sequential) --- PAGE 15 ---\nOperating Pressure: 40-50 PSI at ",
+        "[vehicle_manual.txt p.4] Para 1-3.1, Table 1-2]\nStep 2: Perform battery load test\nApply load equivalent to 50% of CCA rating --- PAGE 4 ---\nVoltage should remain above 9.6V fo",
+        "[vehicle_manual.txt p.7] ner\nDispose of old coolant per environmental regulations [Citation: Para 2-3.1]\nStep 2: Flush system --- PAGE 7 ---\nClose drain plug\nFill with clean w"
+      ],
+      "response": "{\n  \"response_type\": \"analysis\",\n  \"steps\": [\n    {\n      \"step_number\": 1,\n      \"description\": \"Interpret what the update implies\"\n    },\n    {\n      \"step_number\": 2,\n      \"description\": \"Refine likely root cause (confirm/eliminate)\"\n    },\n    {\n      \"step_number\": 3,\n      \"description\": \"Give the next 13 concrete steps\",\n      \"steps_list\": [\n        {\n          \"step_number\": 1,\n          \"description\": \"Check oil level and condition\"\n        },\n        {\n          \"step_number\": 2,\n          \"description\": \"Verify engine oil filter replacement interval (15,000 miles)\"\n        },\n        {\n          \"step_number\": 3,\n          \"description\": \"Inspect air filter for blockages or contamination\"\n        },\n        {\n          \"step_number\": 4,\n          \"description\": \"Check fuel pressure gauge reading (40-50 PSI steady)\"\n        },\n        {\n          \"step_number\": 5,\n          \"description\": \"Verify oxygen sensor operation and adjust as needed\"\n        },\n        {\n          \"step_number\": 6,\n          \"description\": \"Inspect mass airflow sensor for oil or dirt contamination\"\n        },\n        {\n          \"step_number\": 7,\n          \"description\": \"Check fuel injectors for clogging or failure\"\n        },\n        {\n          \"step_number\": 8,\n          \"description\": \"Verify spark plug gap and condition (0.040\\\")\"\n        },\n        {\n          \"step_number\": 9,\n          \"description\": \"Inspect ignition coil for damage or wear\"\n        },\n        {\n          \"step_number\": 10,\n          \"description\": \"Check fuel pump flow rate and pressure gauge reading\"\n        },\n        {\n          \"step_number\": 11,\n          \"description\": \"Verify engine compression (remove all spark plugs)\"\n        },\n        {\n          \"step_number\": 12,\n          \"description\": \"Test fuel system for leaks or blockages\"\n        },\n        {\n          \"step_number\": 13,\n          \"description\": \"Consult vehicle manual for specific oil change recommendations\"\n        }\n      ]\n    },\n    {\n      \"step_number\": 4,\n      \"description\": \"If resolved, how to confirm stability\",\n      \"steps_list\": [\n        {\n          \"step_number\": 1,\n          \"description\": \"Monitor engine performance and check for any issues\"\n        },\n        {\n          \"step_number\": 2,\n          \"description\": \"Verify oil level and condition after driving\"\n        }\n      ]\n    }\n  ],\n  \"next_steps\": [\n    {\n      \"step_number\": 14,\n      \"description\": \"Perform a complete drive cycle to clear any stored codes\"\n    },\n    {\n      \"step_number\": 15,\n      \"description\": \"Check for any other diagnostic trouble codes (DTCs)\"\n    }\n  ],\n  \"limitations\": \"The provided manual does not specify the exact oil change interval. Consult the vehicle manufacturer's recommendations or consult a professional mechanic if unsure.\"\n}",
+      "reference": "Oil change intervals: Normal conditions - 5,000 miles or 6 months. Severe conditions - 3,000 miles or 3 months [Citation: Para 7-2]. Severe conditions include frequent short trips under 5 miles, extreme temperatures, dusty/off-road driving, trailer towing, or commercial use [Citation: Para 7-1].",
+      "answer_relevancy": 0.07192005132896952
+    },
+    {
+      "user_input": "What's the fuel pressure supposed to be?",
+      "retrieved_contexts": [
+        "[vehicle_manual.txt p.4] Para 1-3.1, Table 1-2]\nStep 2: Perform battery load test\nApply load equivalent to 50% of CCA rating --- PAGE 4 ---\nVoltage should remain above 9.6V fo",
+        "[vehicle_manual.txt p.15] , 15K mile replacement)\nFuel pressure regulator (return type)\nFuel injectors (multi-port sequential) --- PAGE 15 ---\nOperating Pressure: 40-50 PSI at ",
+        "[vehicle_manual.txt p.2] ing)\nIgnition switch assembly\nBattery cables (4 AWG minimum)\n[Figure 1-1: Starting System Schematic] --- PAGE 2 ---\nPara 1-2: Engine Cranks But Won't ",
+        "[vehicle_manual.txt p.26] ts body. [Safety Notice 7-B]\nStep 3: Test battery\nMeasure resting voltage: should be 12.4V or higher --- PAGE 26 ---\nPerform load test per Para 1-3.2\n",
+        "[vehicle_manual.txt p.20] tep 2: Inspect MAF sensor\nRemove sensor from air intake tube\nExamine sensing element for oil or dirt --- PAGE 20 ---\nClean with MAF sensor cleaner onl",
+        "[vehicle_manual.txt p.21] sue [Citation: Para 6-4.1]\nStep 2: Test compression\nRemove all spark plugs\nDisable fuel and ignition --- PAGE 21 ---\nThread compression tester into mi"
+      ],
+      "response": "{\n  \"output\": {\n    \"type\": \"analysis\",\n    \"steps\": [\n      {\n        \"step\": 1,\n        \"description\": \"Verify code is current\"\n      },\n      {\n        \"step\": 2,\n        \"description\": \"Check oxygen sensor operation\"\n      },\n      {\n        \"step\": 3,\n        \"description\": \"Test fuel pressure\"\n      }\n    ],\n    \"conclusion\": \"Fuel pressure should be between 40-50 PSI with key ON, engine OFF. If below 40 PSI, it indicates a pump or filter problem.\",\n    \"citation\": \"Para 6-3.3 in vehicle_manual.txt (pg. 20)\"\n  },\n  \"answer\": {\n    \"type\": \"short\",\n    \"description\": \"Fuel pressure should be between 40-50 PSI with key ON, engine OFF.\"\n  }\n}",
+      "reference": "Fuel pressure should be 40-50 PSI at idle [Citation: Table 1-1, Table 5-1]. Test using pressure gauge at fuel rail test port with key ON, engine OFF [Citation: Para 1-2.2]. Under wide-open throttle, pressure should remain above 35 PSI minimum [Citation: Table 5-1].",
+      "answer_relevancy": 0.768181384737836
+    }
+  ]
+}

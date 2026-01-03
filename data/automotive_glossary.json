@@ -1,0 +1,88 @@
+{
+  "_comment": "Automotive Glossary for Glossary-Augmented Retrieval (GAR). Maps user terms to technical synonyms.",
+  "_version": "1.0",
+  
+  "diagnostic_codes": {
+    "p0420": ["catalyst system efficiency", "catalytic converter code", "cat efficiency below threshold", "converter failed"],
+    "p0171": ["system too lean", "lean fuel mixture", "bank 1 lean", "insufficient fuel", "excessive air"],
+    "p0174": ["system too lean bank 2", "lean fuel mixture bank 2"],
+    "p0301": ["cylinder 1 misfire", "misfire detected cylinder 1"],
+    "p0302": ["cylinder 2 misfire", "misfire detected cylinder 2"],
+    "p0303": ["cylinder 3 misfire", "misfire detected cylinder 3"],
+    "p0304": ["cylinder 4 misfire", "misfire detected cylinder 4"],
+    "dtc": ["diagnostic trouble code", "error code", "fault code", "obd code"],
+    "obd": ["on-board diagnostics", "diagnostic port", "obd-ii", "obd2", "scan tool port"],
+    "check engine light": ["malfunction indicator lamp", "mil", "cel", "engine warning light"]
+  },
+  
+  "symptoms": {
+    "turn over": ["crank", "cranks", "cranking", "starter engage", "engine rotation"],
+    "won't turn over": ["no crank", "won't crank", "no starter operation", "starter not engaging"],
+    "won't start": ["fails to fire", "no start", "cranks but won't start", "engine won't fire"],
+    "dies": ["stalls", "cuts out", "shuts off", "engine stops"],
+    "hesitates": ["stumbles", "flat spot", "bogs down", "lacks power", "hesitation"],
+    "rough idle": ["unstable idle", "idle fluctuates", "hunting idle", "rough running"],
+    "overheating": ["running hot", "temperature high", "temp gauge high", "engine hot"],
+    "pulls to one side": ["veers", "drifts", "steering pull", "brake pull"],
+    "spongy pedal": ["soft pedal", "pedal sinks", "brake pedal sinks", "low pedal"],
+    "squealing": ["squeaking", "chirping", "belt noise", "brake squeal"],
+    "clicking": ["ticking", "knocking", "tapping", "lifter noise"]
+  },
+  
+  "components": {
+    "alternator": ["generator", "charging system", "alt"],
+    "starter": ["starter motor", "starting motor", "cranking motor"],
+    "battery": ["12v battery", "car battery", "lead acid battery"],
+    "thermostat": ["t-stat", "coolant thermostat", "engine thermostat"],
+    "water pump": ["coolant pump", "wp"],
+    "radiator": ["rad", "cooling radiator"],
+    "fuel pump": ["fuel delivery pump", "in-tank pump", "electric fuel pump"],
+    "fuel filter": ["inline filter", "fuel strainer"],
+    "spark plugs": ["plugs", "spark plug", "ignition plugs"],
+    "ignition coil": ["coil pack", "coil-on-plug", "cop", "ignition coils"],
+    "catalytic converter": ["cat", "catalyst", "catalytic", "converter"],
+    "oxygen sensor": ["o2 sensor", "lambda sensor", "exhaust sensor"],
+    "maf sensor": ["mass airflow sensor", "air flow sensor", "maf"],
+    "brake pads": ["pads", "brake linings", "friction material"],
+    "brake rotor": ["disc", "brake disc", "rotor"],
+    "caliper": ["brake caliper", "disc brake caliper"],
+    "master cylinder": ["brake master", "mc"],
+    "lug nuts": ["wheel nuts", "wheel fasteners", "wheel bolts", "lugs"]
+  },
+  
+  "specifications": {
+    "torque": ["ft-lbs", "foot-pounds", "tightening spec", "torque specification", "torque spec"],
+    "psi": ["pressure", "pounds per square inch"],
+    "fuel pressure": ["rail pressure", "fuel rail pressure", "pump pressure"],
+    "voltage": ["volts", "v", "electrical potential"],
+    "amperage": ["amps", "current", "electrical current"],
+    "cca": ["cold cranking amps", "cranking amps", "battery rating"],
+    "gap": ["spark plug gap", "electrode gap", "plug gap"]
+  },
+  
+  "procedures": {
+    "bleed brakes": ["brake bleeding", "bleed the brakes", "hydraulic bleeding"],
+    "rotate tires": ["tire rotation", "wheel rotation"],
+    "change oil": ["oil change", "oil and filter change", "lube service"],
+    "replace": ["swap", "change out", "install new"],
+    "test": ["check", "diagnose", "verify", "measure"],
+    "inspect": ["examine", "look at", "visual inspection"]
+  },
+  
+  "measurements": {
+    "40-50 psi": ["40 to 50 psi", "forty to fifty psi", "fuel pressure spec"],
+    "12.4v": ["12.4 volts", "resting voltage", "battery voltage"],
+    "13.8-14.4v": ["charging voltage", "alternator output", "running voltage"],
+    "0.040": ["forty thousandths", "plug gap", "spark plug gap specification"]
+  },
+  
+  "acronyms": {
+    "abs": ["anti-lock brakes", "anti-lock braking system", "antilock"],
+    "mpg": ["miles per gallon", "fuel economy", "gas mileage", "fuel mileage"],
+    "rpm": ["revolutions per minute", "engine speed"],
+    "wot": ["wide open throttle", "full throttle"],
+    "tps": ["throttle position sensor"],
+    "iac": ["idle air control", "idle control valve"],
+    "pcm": ["powertrain control module", "engine computer", "ecm", "ecu"]
+  }
+}

@@ -1,0 +1,121 @@
+user_input,retrieved_contexts,response,reference,answer_relevancy
+Engine cranks but won't start. What should I check?,"[""[vehicle_manual.txt p.2] ing)\nIgnition switch assembly\nBattery cables (4 AWG minimum)\n[Figure 1-1: Starting System Schematic] --- PAGE 2 ---\nPara 1-2: Engine Cranks But Won't "", '[vehicle_manual.txt p.11] nt Specification\nBrake Fluid Type DOT 3\nFluid Capacity 0.5 quarts\nPad Minimum Thickness 3mm (0.118"") --- PAGE 11 ---\nComponent Specification\nRotor Min', '[vehicle_manual.txt p.19] eration\nMonitor O2 sensor voltages with scan tool\nUpstream sensor: should fluctuate 0.1-0.9V rapidly --- PAGE 19 ---\nDownstream sensor: should be stea', '[vehicle_manual.txt p.3] plug from cylinder 1\nReconnect spark plug wire\nGround plug body to engine block using insulated tool --- PAGE 3 ---\nHave assistant crank engine\nObserv', '[vehicle_manual.txt p.1] --- PAGE 1 ---\nTM 9-2350 Vehicle Maintenance Manual\nDemonstration Dataset for NIC RAG System\nNOTICE: This is synthetic technical documentation created', '[vehicle_manual.txt p.26] ts body. [Safety Notice 7-B]\nStep 3: Test battery\nMeasure resting voltage: should be 12.4V or higher --- PAGE 26 ---\nPerform load test per Para 1-3.2\n']","{
+  ""type"": ""analysis"",
+  ""steps"": [
+    {
+      ""step"": 1,
+      ""description"": ""Verify that the engine is getting fuel and spark."",
+      ""action"": ""Check fuel pressure (Para 5-3.1) and ignition system for proper function.""
+    },
+    {
+      ""step"": 2,
+      ""description"": ""Inspect the air filter for blockages or contamination."",
+      ""action"": ""Replace air filter if necessary (Para 5-2.3)""
+    },
+    {
+      ""step"": 3,
+      ""description"": ""Check the fuel system for leaks or clogs."",
+      ""action"": ""Inspect fuel lines, connections, and tank for damage or blockages.""
+    },
+    {
+      ""step"": 4,
+      ""description"": ""Verify that the spark plugs are functioning properly."",
+      ""action"": ""Check spark plug gap (Para 6-4.1) and replace if necessary""
+    },
+    {
+      ""step"": 5,
+      ""description"": ""Test the fuel injectors for proper function."",
+      ""action"": ""Use a fuel injector cleaner to clean the injectors, then test again.""
+    },
+    {
+      ""step"": 6,
+      ""description"": ""Check the mass airflow sensor for contamination or damage."",
+      ""action"": ""Clean the MAF sensor with a specialized cleaner (Para 6-3.2)""
+    },
+    {
+      ""step"": 7,
+      ""description"": ""Inspect the ignition coil for proper function."",
+      ""action"": ""Test the ignition coil and replace if necessary""
+    },
+    {
+      ""step"": 8,
+      ""description"": ""Verify that the engine is getting proper compression."",
+      ""action"": ""Perform a compression test (Para 6-4.2)""
+    },
+    {
+      ""step"": 9,
+      ""description"": ""Check the fuel pump for proper function and pressure."",
+      ""action"": ""Test fuel pressure with a gauge (Para 5-3.1)""
+    },
+    {
+      ""step"": 10,
+      ""description"": ""Inspect the catalytic converter for damage or blockages."",
+      ""action"": ""Use a scan tool to check for code P0420 and diagnose accordingly""
+    },
+    {
+      ""step"": 11,
+      ""description"": ""Verify that the oxygen sensor is functioning properly."",
+      ""action"": ""Monitor O2 sensor voltages with a scan tool (Para 6-2.1)""
+    },
+    {
+      ""step"": 12,
+      ""description"": ""Check the fuel filter for blockages or contamination."",
+      ""action"": ""Replace the fuel filter if necessary""
+    },
+    {
+      ""step"": 13,
+      ""description"": ""Perform a thorough inspection of the engine and its components."",
+      ""action"": ""Consult a repair manual or seek professional assistance if needed.""
+    }
+  ]
+}","When engine cranks but won't start, check these in order of likelihood: (1) Fuel system - verify fuel level and pump operation, test fuel pressure at 40-50 PSI [Citation: Para 1-2.1, Table 1-1]. (2) Ignition system - test for spark at plugs [Citation: Para 1-2.3]. (3) Air intake - inspect for severe restrictions [Citation: Para 1-2]. WARNING: Fuel system under pressure, wear eye protection [Safety Notice 1-A].",0.7293199071384925
+What's the correct torque specification for lug nuts?,"['[vehicle_manual.txt p.24] o not remove yet [Citation: Para 7-3.1]\nStep 2: Lift vehicle\nUse jack at designated lift points only --- PAGE 24 ---\nSupport with jack stands (never w', '[vehicle_manual.txt p.9] Fluid should be between MIN and MAX marks\nLow fluid indicates leak in system [Citation: Para 3-2.1] --- PAGE 9 ---\n⚠  WARNING: Low brake fluid is emer', '[vehicle_manual.txt p.1] --- PAGE 1 ---\nTM 9-2350 Vehicle Maintenance Manual\nDemonstration Dataset for NIC RAG System\nNOTICE: This is synthetic technical documentation created', '[vehicle_manual.txt p.6] ed bearing\nBroken drive belt\n4. Radiator Blockage (10% probability)\nExternal debris blocking airflow --- PAGE 6 ---\nInternal corrosion/scale buildup\nD', '[vehicle_manual.txt p.21] sue [Citation: Para 6-4.1]\nStep 2: Test compression\nRemove all spark plugs\nDisable fuel and ignition --- PAGE 21 ---\nThread compression tester into mi', '[vehicle_manual.txt p.27] icle to fall resulting in crushing\ninjury or death. Always use jack stands rated for vehicle weight. --- PAGE 27 ---\nSafety Notice 7-B: Battery Discon']","{
+  ""session"": {
+    ""topic"": ""Diagnostic Code P0420"",
+    ""findings"": [
+      {
+        ""question"": ""What does diagnostic code P0420 mean?"",
+        ""answer"": ""Catalytic converter not operating at required efficiency.""
+      }
+    ],
+    ""next_steps"": [
+      {
+        ""step"": 1,
+        ""description"": ""Verify code is current"",
+        ""action"": ""Clear codes with scan tool and drive vehicle through complete drive cycle""
+      },
+      {
+        ""step"": 2,
+        ""description"": ""Check oxygen sensor operation"",
+        ""action"": ""Monitor O2 sensor voltages with scan tool, upstream sensor should fluctuate 0.1-0.9V rapidly""
+      }
+    ]
+  },
+  ""user_update"": {
+    ""question"": ""Engine cranks but won't start. What should I check?"",
+    ""interpretation"": ""Possible causes: low battery voltage, faulty starter motor, or issues with the ignition system."",
+    ""next_steps"": [
+      {
+        ""step"": 1,
+        ""description"": ""Check battery voltage"",
+        ""action"": ""Measure resting voltage, it should be 12.4V or higher""
+      },
+      {
+        ""step"": 2,
+        ""description"": ""Inspect starter motor and ignition system"",
+        ""action"": ""Check for signs of wear or damage, replace if necessary""
+      }
+    ]
+  },
+  ""user_update_2"": {
+    ""question"": ""What's the correct torque specification for lug nuts?"",
+    ""interpretation"": ""The manual does not specify a torque value for lug nuts."",
+    ""next_steps"": [
+      {
+        ""step"": 1,
+        ""description"": ""Consult manufacturer's recommendations"",
+        ""action"": ""Check owner's manual or contact dealership for specific torque specifications""
+      }
+    ]
+  }
+}","Lug nuts should be torqued to 85-95 ft-lbs in a star pattern [Citation: Table 7-1, Para 7-3.3].",0.018154008738951406
