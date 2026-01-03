@@ -4,6 +4,19 @@ const API_BASE = '/api';
 let currentQuestion = '';
 let currentAnswer = '';
 
+// Security: HTML escaping function to prevent XSS attacks
+function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') {
+        unsafe = String(unsafe);
+    }
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function getSafetyPrefs() {
     const rawAudit = localStorage.getItem('nova_safety_audit');
     const rawStrict = localStorage.getItem('nova_safety_strict');
@@ -258,12 +271,12 @@ async function submitQuestion() {
 // Format answer - handles both string and dict (refusal schema)
 function formatAnswer(answer) {
     if (typeof answer === 'string') {
-        return answer;
+        return escapeHtml(answer);
     }
     if (typeof answer === 'object' && answer !== null) {
         // Handle refusal schema
         if (answer.response_type === 'refusal') {
-            return `⚠️ <strong>${answer.reason || 'Request Declined'}</strong><br><br>${answer.message || 'Unable to process this request.'}`;
+            return `⚠️ <strong>${escapeHtml(answer.reason || 'Request Declined')}</strong><br><br>${escapeHtml(answer.message || 'Unable to process this request.')}`;
         }
         
         // Handle full diagnostic response with query/context/response structure
@@ -276,9 +289,9 @@ function formatAnswer(answer) {
                 html += '<div class="probable-causes"><strong>🔍 Probable Causes:</strong><ol>';
                 for (const cause of analysis.probable_causes) {
                     html += `<li>`;
-                    html += `<strong>${cause.cause_type}</strong> (${cause.probability}% probability)`;
+                    html += `<strong>${escapeHtml(cause.cause_type)}</strong> (${escapeHtml(String(cause.probability))}% probability)`;
                     if (cause.description) {
-                        html += `<br><span class="cause-description">${cause.description}</span>`;
+                        html += `<br><span class="cause-description">${escapeHtml(cause.description)}</span>`;
                     }
                     html += `</li>`;
                 }
@@ -289,7 +302,7 @@ function formatAnswer(answer) {
             if (analysis.diagnostic_steps && analysis.diagnostic_steps.length > 0) {
                 html += '<div class="diagnostic-steps"><strong>🔧 Diagnostic Steps:</strong><ol>';
                 for (const step of analysis.diagnostic_steps) {
-                    html += `<li>${step.description}</li>`;
+                    html += `<li>${escapeHtml(step.description)}</li>`;
                 }
                 html += '</ol></div>';
             }
@@ -306,7 +319,7 @@ function formatAnswer(answer) {
             if (answer.risks && answer.risks.length > 0) {
                 html += '<div class="caution-box"><strong>⚠️ Safety Warnings:</strong><ul>';
                 for (const r of answer.risks) {
-                    html += `<li>${r}</li>`;
+                    html += `<li>${escapeHtml(r)}</li>`;
                 }
                 html += '</ul></div>';
             }
@@ -318,12 +331,12 @@ function formatAnswer(answer) {
                 const why = answer.why && answer.why[i] ? answer.why[i] : '';
                 const verify = answer.verification && answer.verification[i] ? answer.verification[i] : '';
                 
-                html += `<li><strong>${step}</strong>`;
+                html += `<li><strong>${escapeHtml(step)}</strong>`;
                 if (why) {
-                    html += `<br><em class="step-why">Why: ${why}</em>`;
+                    html += `<br><em class="step-why">Why: ${escapeHtml(why)}</em>`;
                 }
                 if (verify) {
-                    html += `<br><span class="step-verify">✓ Verify: ${verify}</span>`;
+                    html += `<br><span class="step-verify">✓ Verify: ${escapeHtml(verify)}</span>`;
                 }
                 html += '</li>';
             }
@@ -332,7 +345,7 @@ function formatAnswer(answer) {
             // Sources (if present in answer, not traced_sources)
             if (answer.sources && answer.sources.length > 0) {
                 html += '<div class="inline-sources"><strong>📖 References:</strong> ';
-                html += answer.sources.map(s => `${s.source} p.${s.page}`).join(', ');
+                html += answer.sources.map(s => `${escapeHtml(s.source)} p.${escapeHtml(String(s.page))}`).join(', ');
                 html += '</div>';
             }
             
@@ -343,30 +356,30 @@ function formatAnswer(answer) {
         // Handle structured analysis response (type: "analysis")
         if (answer.type === 'analysis' && answer.steps) {
             let html = '<div class="analysis-response">';
-            html += '<strong>� Diagnostic Steps:</strong><ol>';
+            html += '<strong>🔍 Diagnostic Steps:</strong><ol>';
             for (const step of answer.steps) {
                 html += `<li>`;
                 if (step.description) {
-                    html += `<strong>${step.description}</strong>`;
+                    html += `<strong>${escapeHtml(step.description)}</strong>`;
                 }
                 if (step.action) {
-                    html += `<br><span class="step-action">➜ ${step.action}</span>`;
+                    html += `<br><span class="step-action">➜ ${escapeHtml(step.action)}</span>`;
                 }
                 if (step.expected_result) {
-                    html += `<br><em class="step-expected">Expected: ${step.expected_result}</em>`;
+                    html += `<br><em class="step-expected">Expected: ${escapeHtml(step.expected_result)}</em>`;
                 }
                 html += '</li>';
             }
             html += '</ol>';
             
             if (answer.conclusion) {
-                html += `<div class="analysis-conclusion"><strong>✓ Conclusion:</strong> ${answer.conclusion}</div>`;
+                html += `<div class="analysis-conclusion"><strong>✓ Conclusion:</strong> ${escapeHtml(answer.conclusion)}</div>`;
             }
             
             if (answer.caution && answer.caution.length > 0) {
                 html += '<div class="caution-box"><strong>⚠️ Caution:</strong><ul>';
                 for (const c of answer.caution) {
-                    html += `<li>${c}</li>`;
+                    html += `<li>${escapeHtml(c)}</li>`;
                 }
                 html += '</ul></div>';
             }
@@ -377,12 +390,12 @@ function formatAnswer(answer) {
         // Handle retrieval-only fallback response
         if (answer.notes && answer.summary) {
             let html = '<div class="retrieval-fallback-response">';
-            html += `<div class="fallback-notice"><strong>⚠️ ${answer.notes}</strong></div>`;
+            html += `<div class="fallback-notice"><strong>⚠️ ${escapeHtml(answer.notes)}</strong></div>`;
             html += '<div class="fallback-summary">';
             
             if (Array.isArray(answer.summary)) {
                 for (const excerpt of answer.summary) {
-                    html += `<div class="fallback-excerpt"><blockquote>${excerpt}</blockquote></div>`;
+                    html += `<div class="fallback-excerpt"><blockquote>${escapeHtml(excerpt)}</blockquote></div>`;
                 }
             }
             

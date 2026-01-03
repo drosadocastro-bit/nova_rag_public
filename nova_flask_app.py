@@ -8,6 +8,7 @@ from backend import (
 )
 import cache_utils
 import re
+import hmac
 from pathlib import Path
 
 retrieve = cache_utils.cache_retrieval(_retrieve_uncached)
@@ -39,6 +40,27 @@ app.config["PROPAGATE_EXCEPTIONS"] = True
 def home():
     return render_template("index.html")
 
+@app.after_request
+def set_security_headers(response):
+    """Add security headers to all responses."""
+    # Content Security Policy - prevents XSS attacks
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "font-src 'self'; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none';"
+    )
+    # Prevent MIME sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    # Prevent clickjacking
+    response.headers['X-Frame-Options'] = 'DENY'
+    # XSS protection (legacy browsers)
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    return response
+
 @app.before_request
 def setup():
     pass
@@ -47,10 +69,14 @@ API_TOKEN = os.environ.get("NOVA_API_TOKEN")
 REQUIRE_TOKEN = bool(os.environ.get("NOVA_REQUIRE_TOKEN", "0") == "1")
 
 def _check_auth():
+    """Check API authentication using constant-time comparison to prevent timing attacks."""
     if not REQUIRE_TOKEN:
         return True
     token = request.headers.get("X-API-TOKEN", "")
-    return token == API_TOKEN if API_TOKEN else False
+    if not API_TOKEN:
+        return False
+    # Use constant-time comparison to prevent timing attacks
+    return hmac.compare_digest(token, API_TOKEN)
 
 @app.route("/api/ask", methods=["POST"])
 def api_ask():
