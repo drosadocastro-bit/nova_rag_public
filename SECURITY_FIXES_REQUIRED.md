@@ -132,11 +132,17 @@ import hashlib
 import os
 from pathlib import Path
 
-# Get secret key from environment or generate one
-SECRET_KEY = os.environ.get('NOVA_CACHE_SECRET', 'change-me-in-production')
-if SECRET_KEY == 'change-me-in-production':
+# Get secret key from environment - REQUIRED for security
+SECRET_KEY = os.environ.get('NOVA_CACHE_SECRET')
+if not SECRET_KEY:
+    # Generate a random secret key and warn user
+    import secrets
+    SECRET_KEY = secrets.token_hex(32)
     import warnings
-    warnings.warn("Using default cache secret key. Set NOVA_CACHE_SECRET in production!")
+    warnings.warn(
+        "No NOVA_CACHE_SECRET set! Generated temporary key for this session. "
+        "Set NOVA_CACHE_SECRET environment variable for persistent cache verification."
+    )
 
 def _compute_hmac(data: bytes) -> bytes:
     """Compute HMAC-SHA256 of data."""
@@ -395,13 +401,19 @@ Add stronger input validation:
 
 ```python
 def validate_question(question: str) -> bool:
-    """Validate question meets security requirements."""
+    """Validate question meets security requirements.
+    
+    Note: Pattern matching is not sufficient for comprehensive XSS prevention.
+    This is defense-in-depth; primary protection is HTML escaping in the frontend.
+    Consider using a library like bleach for more robust validation.
+    """
     # Max length
     if len(question) > 5000:
         return False
     
-    # Check for suspicious patterns
-    suspicious = ['<script', 'javascript:', 'onerror=', 'onclick=']
+    # Basic validation - suspicious patterns (defense in depth only)
+    # Primary XSS defense is HTML escaping in frontend via escapeHtml()
+    suspicious = ['<script', 'javascript:', 'onerror=', 'onclick=', 'onload=']
     q_lower = question.lower()
     if any(pattern in q_lower for pattern in suspicious):
         return False

@@ -303,9 +303,9 @@ def retrieve(query: str, k: int = 12, top_n: int = 6) -> List[Dict[str, Any]]:
 **Test Date**: December 29, 2025
 ```
 
-**Issue:** Test date is in the past (relative to review date).
+**Issue:** Test date appears to be from previous testing, may be outdated.
 
-**Recommendation:** Update or remove date references.
+**Recommendation:** Update test date to reflect current validation status, or use relative timestamps (e.g., "Last validated: 5 days ago").
 
 ---
 
