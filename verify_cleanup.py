@@ -32,7 +32,6 @@ def main():
         "Old Path (C:\\nova_rag)": r"C:\\nova_rag[^_]",
         "Nova Reyes": r"Nova Reyes",
         "Danny (technician)": r"\bDanny\b",
-        "STALO": r"\bSTALO\b|\bstalo\b",
         "Klystron": r"\bklystron\b",
         "RDA/RPG": r"\bRDA\b|\bRPG\b",
         "Alarm Code (old)": r"ALARM_CODE|alarm_code|detect_alarm",
