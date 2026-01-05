@@ -377,6 +377,7 @@ class SearchHistory:
         """Save search history with HMAC verification for security."""
         try:
             if SECURE_CACHE_AVAILABLE:
+                from secure_cache import secure_pickle_dump
                 secure_pickle_dump(list(self.history), SEARCH_HISTORY_PATH)
             else:
                 import pickle
@@ -397,6 +398,7 @@ class SearchHistory:
         try:
             if SEARCH_HISTORY_PATH.exists():
                 if SECURE_CACHE_AVAILABLE:
+                    from secure_cache import secure_pickle_load
                     self.history = deque(secure_pickle_load(SEARCH_HISTORY_PATH), maxlen=50)
                 else:
                     import pickle
