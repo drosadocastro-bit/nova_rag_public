@@ -1,5 +1,7 @@
 # Native LLM Engine Setup Complete! ✅
 
+> Note: This document describes the legacy LM Studio → native-engine migration. The current stack runs on Ollama (http://127.0.0.1:11434) for local inference. Keep this for archival reference.
+
 ## What Changed
 
 ### Before

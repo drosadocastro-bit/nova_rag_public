@@ -1,5 +1,7 @@
 # NIC RAG System - Optimization Guide
 
+> Note: This guide was written for the legacy LM Studio setup. The current stack runs on Ollama at http://127.0.0.1:11434. Settings and benchmarks generally transfer, but see START_HERE.md for up-to-date defaults and models (`llama3.2:8b`, `qwen2.5-coder:14b`).
+
 **Last Updated:** January 2, 2026  
 **System Status:** ✅ Production-ready (70% RAGAS answer relevancy)
 
@@ -7,7 +9,7 @@
 
 ## Quick Reference: Optimal Configuration
 
-### LM Studio Settings
+### Ollama Settings (was LM Studio)
 
 | Setting | Llama 8B | Qwen 14B | Notes |
 |---------|----------|----------|-------|
@@ -57,14 +59,14 @@ max_tokens = 512  # RAGAS evaluator
 | **Adversarial (refusal)** | 98.9% | All | ✅ 1 FP |
 | **RAGAS (prose mode)** | 37.6% | 10 | ⚠️ Raw snippets |
 | **RAGAS (full LLM, 5 samples)** | **69.97%** | 5/5 | ✅ Excellent! |
-| **RAGAS (full LLM, 10 samples)** | 17.7% | 9/10 | ❌ LM Studio crashes |
+| **RAGAS (full LLM, 10 samples)** | 17.7% | 9/10 | ❌ Legacy LM Studio crashes (improved with Ollama) |
 
 ### Key Findings
 
 ✅ **70% answer relevancy achieved** with proper configuration  
 ✅ **Zero timeouts** with 10k context + 256 batch  
 ✅ **8B fallback logic** prevents total failures  
-❌ **LM Studio stability issues** under sustained load (10+ queries)
+❌ **Legacy LM Studio stability issues** under sustained load (10+ queries)
 
 ---
 
@@ -72,7 +74,7 @@ max_tokens = 512  # RAGAS evaluator
 
 ### 1. Context Length (MOST IMPORTANT)
 
-**Problem:** LM Studio was set to 256/512 tokens context length  
+**Problem:** LM Studio (legacy) was set to 256/512 tokens context length  
 **Impact:** Models couldn't process prompts with retrieval context (2-3k tokens)  
 **Fix:** Increased to **10,240 tokens** for both models  
 **Result:** +41.74% improvement (28% → 70%)
@@ -142,7 +144,7 @@ return LLM_OSS
 
 ## Known Limitations & Workarounds
 
-### Issue: LM Studio Crashes After 10+ Queries
+### Issue: Legacy LM Studio Crashes After 10+ Queries
 
 **Symptoms:**
 - HTTP 500 errors from Flask
@@ -152,7 +154,7 @@ return LLM_OSS
 **Root Cause:** Model switching overhead + memory pressure
 
 **Workarounds:**
-1. **Restart LM Studio** between long test runs
+1. **Restart LM Studio** between long test runs (legacy); Ollama is more stable
 2. **Reduce test batch size** (use 5 samples instead of 10)
 3. **Disable hybrid mode** temporarily (set `NOVA_LLM_OSS=llama8b`)
 4. **Increase system RAM** or close other applications
@@ -212,7 +214,7 @@ python test_nic_public.py
 # Small batch (recommended)
 python nic_ragas_eval.py 5
 
-# Full eval (may crash LM Studio)
+# Full eval (legacy LM Studio was crash-prone; Ollama typically stable)
 python nic_ragas_eval.py 10
 
 # Prose mode (no LLM)
@@ -234,13 +236,13 @@ python -m pytest governance/test_suites/nic_adversarial_tests.md
 
 Before deploying or running extended tests:
 
-- [ ] LM Studio context length set to **10,240** (both models)
+- [ ] Ollama context length set to **10,240** (both models)
 - [ ] Batch size set to **256** (both models)
 - [ ] Backend `MAX_TOKENS_OSS` set to **512**
 - [ ] RAGAS evaluator using **8B model** (not Phi-4)
 - [ ] Local embeddings path verified: `c:/nova_rag_public/models/all-MiniLM-L6-v2`
 - [ ] Flask server running: `python nova_flask_app.py`
-- [ ] LM Studio server running on port **1234**
+- [ ] Ollama server running on port **11434**
 - [ ] System has >8GB free RAM
 
 ---
@@ -250,7 +252,7 @@ Before deploying or running extended tests:
 | Symptom | Likely Cause | Fix |
 |---------|--------------|-----|
 | "LLM unavailable/hung" | Context length too low | Increase to 10k |
-| HTTP 500 from Flask | LM Studio crashed | Restart LM Studio |
+| HTTP 500 from Flask | Legacy LM Studio crashed | Restart LM Studio / prefer Ollama |
 | APIConnectionError | Phi-4 connection issue | Already using 8B |
 | Slow responses (60s+) | High output tokens | Reduce to 512 |
 | RAGAS eval hangs | Batch size too high | Reduce to 256 |
@@ -276,7 +278,7 @@ Before deploying or running extended tests:
    - Fine-tune reranker weights
    - Add query expansion beyond GAR
 
-2. **LM Studio Stability** (10+ query limitation)
+2. **Legacy LM Studio Stability** (10+ query limitation)
    - Consider inference server alternatives (vLLM, TGI)
    - Implement request queuing/throttling
    - Add health check/auto-restart
@@ -302,4 +304,4 @@ Before deploying or running extended tests:
 
 **System Status: PRODUCTION READY** 🚀
 
-With proper configuration, NIC achieves 70% answer relevancy with zero timeouts on 5-query batches. LM Studio stability remains the primary constraint for sustained high-volume workloads.
+With proper configuration, NIC achieves 70% answer relevancy with zero timeouts on 5-query batches. Legacy LM Studio stability was the primary constraint for sustained high-volume workloads; Ollama materially improves this but still monitor memory use during long runs.

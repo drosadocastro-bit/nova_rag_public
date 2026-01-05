@@ -38,7 +38,7 @@ try:
     if USE_NATIVE_ENGINE:
         print("[NovaRAG] Using native llama-cpp-python engine (30k context, optimized)")
     else:
-        print("[NovaRAG] Using HTTP client (LM Studio API)")
+        print("[NovaRAG] Using HTTP client (Ollama API)")
 except ImportError:
     USE_NATIVE_ENGINE = False
     print("[NovaRAG] llama-cpp-python not available, using HTTP client")
@@ -280,14 +280,14 @@ def init_tfidf_vectorizer():
         tfidf_vectorizer_fitted = False
 
 
-# ======================="
-# LM STUDIO CLIENT
+# =======================
+# OLLAMA CLIENT
 # =======================
 
 # Timeouts: prefer correctness over speed for safety-critical troubleshooting.
 # These can be overridden per environment.
-LMSTUDIO_TIMEOUT_S = float(os.environ.get("NOVA_LMSTUDIO_TIMEOUT_S", "1200"))
-LMSTUDIO_MODEL_LOAD_TIMEOUT_S = float(os.environ.get("NOVA_LMSTUDIO_MODEL_LOAD_TIMEOUT_S", str(min(LMSTUDIO_TIMEOUT_S, 1200.0))))
+OLLAMA_TIMEOUT_S = float(os.environ.get("NOVA_OLLAMA_TIMEOUT_S", "1200"))
+OLLAMA_MODEL_LOAD_TIMEOUT_S = float(os.environ.get("NOVA_OLLAMA_MODEL_LOAD_TIMEOUT_S", str(min(OLLAMA_TIMEOUT_S, 1200.0))))
 
 
 # HTTP client (fallback when native engine not available)
@@ -297,24 +297,24 @@ if not USE_NATIVE_ENGINE:
         # Use a custom httpx client with SSL verification disabled to avoid
         # Windows SSL context initialization delays for local HTTP endpoints.
         import httpx
-        _httpx_client = httpx.Client(verify=False, timeout=httpx.Timeout(LMSTUDIO_TIMEOUT_S))
+        _httpx_client = httpx.Client(verify=False, timeout=httpx.Timeout(OLLAMA_TIMEOUT_S))
         client = OpenAI(
-            base_url="http://127.0.0.1:1234/v1",
-            api_key="lm-studio",
+            base_url="http://127.0.0.1:11434/v1",
+            api_key="ollama",
             http_client=_httpx_client,
         )
-        print("[NovaRAG] HTTP client initialized (port 1234)")
+        print("[NovaRAG] HTTP client initialized for Ollama (port 11434)")
     except Exception as e:
-        print(f"[NovaRAG] Warning: LM Studio client initialization failed ({e}); will retry on first LLM call")
+        print(f"[NovaRAG] Warning: Ollama client initialization failed ({e}); will retry on first LLM call")
         client = None
 # Allow overriding LLAMA model via env to avoid GPU OOM with heavier builds
 LLM_LLAMA = os.environ.get(
     "NOVA_LLM_LLAMA",
-    "fireball-meta-llama-3.2-8b-instruct-agent-003-128k-code-dpo",
+    "llama3.2:8b",
 )
 LLM_OSS = os.environ.get(
     "NOVA_LLM_OSS",
-    "qwen/qwen2.5-coder-14b",
+    "qwen2.5-coder:14b",
 )
 
 # Max output tokens per response (configurable via env)
@@ -422,18 +422,18 @@ search_history = SearchHistory()
 # CONNECTION STATUS
 # =======================
 
-def check_lm_studio_connection() -> tuple[bool, str]:
-    """Check if LM Studio is reachable."""
+def check_ollama_connection() -> tuple[bool, str]:
+    """Check if Ollama is reachable."""
     try:
-        response = requests.get("http://127.0.0.1:1234/v1/models", timeout=2)
+        response = requests.get("http://127.0.0.1:11434/api/tags", timeout=2)
         if response.status_code == 200:
-            return True, " LM Studio Connected"
+            return True, " Ollama Connected"
         else:
-            return False, " LM Studio responded but with errors"
+            return False, " Ollama responded but with errors"
     except requests.exceptions.ConnectionError:
-        return False, " LM Studio Offline - Check if server is running"
+        return False, " Ollama Offline - Check if server is running"
     except requests.exceptions.Timeout:
-        return False, " LM Studio Timeout - Server slow to respond"
+        return False, " Ollama Timeout - Server slow to respond"
     except Exception as e:
         return False, f" Connection Error: {str(e)[:50]}"
 
@@ -1062,7 +1062,7 @@ Respond concise and numbered.
 
 
 def ensure_model_loaded(model_name: str, max_tokens: int | None = None) -> None:
-    """Force LM Studio to load the requested model by sending a minimal request.
+    """Force Ollama to load the requested model by sending a minimal request.
     This avoids 400 'Model is unloaded' errors on first call.
     """
     try:
@@ -1075,19 +1075,19 @@ def ensure_model_loaded(model_name: str, max_tokens: int | None = None) -> None:
             "stream": False,
         }
         requests.post(
-            "http://localhost:1234/v1/chat/completions",
+            "http://localhost:11434/v1/chat/completions",
             json=payload,
-            timeout=LMSTUDIO_MODEL_LOAD_TIMEOUT_S,
+            timeout=OLLAMA_MODEL_LOAD_TIMEOUT_S,
         )
     except Exception as e:
-        print(f"[NovaRAG] LM Studio model load check failed: {e}")
+        print(f"[NovaRAG] Ollama model load check failed: {e}")
 
 
 def resolve_model_name(requested_model: str) -> str:
-    """Ensure the model exists in LM Studio; fall back to the first available."""
+    """Ensure the model exists in Ollama; fall back to the first available."""
     try:
         import requests
-        resp = requests.get("http://localhost:1234/v1/models", timeout=5)
+        resp = requests.get("http://localhost:11434/v1/models", timeout=5)
         if resp.status_code == 200:
             models = resp.json().get("data", [])
             ids = [m.get("id") for m in models if m.get("id")]
@@ -1096,16 +1096,16 @@ def resolve_model_name(requested_model: str) -> str:
                 return requested_model
             if ids:
                 fallback = ids[0]
-                print(f"[NovaRAG]  Model '{requested_model}' not loaded in LM Studio")
+                print(f"[NovaRAG]  Model '{requested_model}' not loaded in Ollama")
                 print(f"[NovaRAG]  Falling back to: {fallback}")
                 print(f"[NovaRAG]  Available models: {', '.join(ids)}")
                 print(f"[NovaRAG]  Set NOVA_LLM_LLAMA or NOVA_LLM_OSS env vars to avoid fallback")
                 return fallback
             else:
-                print(f"[NovaRAG]  No models loaded in LM Studio. Load at least one model.")
+                print(f"[NovaRAG]  No models loaded in Ollama. Load at least one model.")
     except Exception as e:
         print(f"[NovaRAG]  Model resolution check failed: {e}")
-        print(f"[NovaRAG]  Ensure LM Studio is running on localhost:1234")
+        print(f"[NovaRAG]  Ensure Ollama is running on localhost:11434")
     return requested_model
 
 
@@ -1156,19 +1156,19 @@ def call_llm(prompt: str, model_name: str, fallback_on_timeout: bool = True) -> 
                     raise
             raise
     
-    # === HTTP CLIENT PATH (LM Studio API) ===
-    # Ensure client exists (can be None if LM Studio was unavailable at import time)
+    # === HTTP CLIENT PATH (Ollama API) ===
+    # Ensure client exists (can be None if Ollama was unavailable at import time)
     global client
     if client is None:
         try:
             from openai import OpenAI
             client = OpenAI(
-                base_url="http://127.0.0.1:1234/v1",
-                api_key="lm-studio",
-                timeout=LMSTUDIO_TIMEOUT_S,
+                base_url="http://127.0.0.1:11434/v1",
+                api_key="ollama",
+                timeout=OLLAMA_TIMEOUT_S,
             )
         except Exception as e:
-            raise RuntimeError(f"LM Studio client unavailable: {e}")
+            raise RuntimeError(f"Ollama client unavailable: {e}")
 
     # Resolve to an available model and pre-load it
     resolved_model = resolve_model_name(model_name)
@@ -1177,7 +1177,7 @@ def call_llm(prompt: str, model_name: str, fallback_on_timeout: bool = True) -> 
     try:
         completion = client.chat.completions.create(
             model=resolved_model,
-            # Some LM Studio prompt templates only allow user/assistant roles;
+            # Some local prompt templates only allow user/assistant roles;
             # fold the system prompt into the user message to avoid template errors.
             messages=[
                 {
@@ -1552,7 +1552,7 @@ def nova_text_handler(question: str, mode: str, npc_name: str | None = None, res
         if mode and ("LLAMA" in mode.upper() or "GPT" in mode.upper()):
             print(f"[NIC-SAFETY] Mode override '{mode}' bypasses safety routing for query: {q_raw[:50]}...")
 
-    # Track the actual model used after LM Studio availability/fallback resolution.
+    # Track the actual model used after Ollama availability/fallback resolution.
     last_resolved_model: str | None = None
 
     # Provide an LLM callable that supports both 1-arg and 2-arg (prompt, model) styles.
@@ -1567,10 +1567,10 @@ def nova_text_handler(question: str, mode: str, npc_name: str | None = None, res
             elif alias in {"gpt-oss", "gpt_oss", "oss", "deep"}:
                 target_model = LLM_OSS
             else:
-                # Allow passing an explicit LM Studio model id (e.g., "qwen/qwen2.5-coder-14b")
+                # Allow passing an explicit Ollama model id (e.g., "qwen2.5-coder:14b")
                 target_model = requested_model
 
-        # Resolve to what LM Studio will actually run (may fall back).
+        # Resolve to what Ollama will actually run (may fall back).
         try:
             last_resolved_model = resolve_model_name(target_model)
         except Exception:

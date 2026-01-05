@@ -36,7 +36,7 @@ required_libs = {
     "torch": "PyTorch (ML backend)",
     
     # LLM client
-    "openai": "OpenAI-compatible client (LM Studio)",
+    "openai": "OpenAI-compatible client (Ollama)",
     
     # PDF/document processing
     "pypdf": "PDF reader",
@@ -45,7 +45,7 @@ required_libs = {
     # RAGAS evaluation (optional)
     "datasets": "HuggingFace datasets",
     "ragas": "RAGAS evaluation framework",
-    "langchain_openai": "LangChain LM Studio integration",
+    "langchain_openai": "LangChain Ollama integration",
     "langchain_community": "LangChain community integrations",
 }
 
@@ -86,16 +86,16 @@ for name, path in model_checks.items():
 print()
 
 # =============================================================================
-# 3. CHECK LM STUDIO MODELS
+# 3. CHECK OLLAMA MODELS
 # =============================================================================
-print("[3/4] Checking LM Studio connection (models must be loaded manually)...")
+print("[3/4] Checking Ollama connection (pull models first)...")
 
 try:
     import requests
-    r = requests.get("http://127.0.0.1:1234/v1/models", timeout=3)
+    r = requests.get("http://127.0.0.1:11434/v1/models", timeout=3)
     if r.status_code == 200:
         models = r.json().get("data", [])
-        print(f"  ✅ LM Studio running with {len(models)} model(s) loaded")
+        print(f"  ✅ Ollama running with {len(models)} model(s) available")
         for model in models:
             model_id = model.get("id", "unknown")
             print(f"     - {model_id}")
@@ -103,18 +103,18 @@ try:
         # Check for expected models
         model_ids = [m.get("id", "") for m in models]
         expected = [
-            "fireball-meta-llama-3.2-8b-instruct-agent-003-128k-code-dpo",
-            "qwen/qwen2.5-coder-14b"
+            "llama3.2:8b",
+            "qwen2.5-coder:14b"
         ]
         for exp in expected:
             if not any(exp in mid for mid in model_ids):
-                warnings.append(f"Expected model '{exp}' not loaded in LM Studio")
+                warnings.append(f"Expected model '{exp}' not available in Ollama")
     else:
-        print(f"  ⚠️  LM Studio responded with HTTP {r.status_code}")
-        warnings.append("LM Studio connection issue")
+        print(f"  ⚠️  Ollama responded with HTTP {r.status_code}")
+        warnings.append("Ollama connection issue")
 except Exception as e:
-    print(f"  ⚠️  LM Studio not accessible: {e}")
-    warnings.append("LM Studio not running - start it manually with required models")
+    print(f"  ⚠️  Ollama not accessible: {e}")
+    warnings.append("Ollama not running - start it manually with required models")
 
 print()
 
@@ -172,5 +172,5 @@ else:
     print("  1. Install missing libraries: pip install <library>")
     print("  2. Download missing models to C:\\nova_rag_public\\models\\")
     print("  3. Build FAISS index: python ingest_vehicle_manual.py")
-    print("  4. Start LM Studio and load required models")
+    print("  4. Start Ollama and pull required models")
     sys.exit(1)

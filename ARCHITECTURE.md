@@ -10,7 +10,7 @@ NIC (Nova Intelligent Copilot) is an offline-first, safety-critical RAG system d
 
 ### 1. **Offline-First**
 - All models, embeddings, and indexes are local on-disk
-- Zero external API calls for inference (LM Studio runs locally on port 1234)
+- Zero external API calls for inference (Ollama runs locally on port 11434)
 - Works in no-connectivity zones (remote or restricted-connectivity environments)
 - Air-gappable: no telemetry, no cloud dependencies
 
@@ -95,7 +95,7 @@ NIC (Nova Intelligent Copilot) is an offline-first, safety-critical RAG system d
                                │
                                ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                   LLM INFERENCE (LM Studio)                      │
+│                   LLM INFERENCE (Ollama)                         │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │   THREE-TIER MODEL ARCHITECTURE (Automatic Routing)    │   │
 │  │                                                         │   │
@@ -116,7 +116,7 @@ NIC (Nova Intelligent Copilot) is an offline-first, safety-critical RAG system d
 │  └─────────────────────────────────────────────────────────┘   │
 │  - Response timeout: 1200s (model loading overhead)            │
 │  - Max tokens: 4096 (8B), 512 (14B), configurable              │
-│  - Runs locally on port 1234 (air-gappable)                    │
+│  - Runs locally on port 11434 (air-gappable)                   │
 └──────────────────────────────┬──────────────────────────────────┘
                                │
                                ▼
@@ -347,7 +347,7 @@ FROM python:3.13-slim
 WORKDIR /app
 COPY . .
 RUN pip install -r requirements.txt
-# Optionally pre-download LM Studio models and embed them in image
+# Optionally pre-pull Ollama models and embed them in image
 ENV NOVA_OFFLINE=1
 CMD ["python", "nova_flask_app.py"]
 ```
@@ -357,8 +357,9 @@ CMD ["python", "nova_flask_app.py"]
 # 1. Activate venv
 source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 
-# 2. Start LM Studio (on port 1234)
-# Open LM Studio → Load fireball-meta-llama-3.2-8b-instruct → Start Server
+# 2. Start Ollama (on port 11434)
+# ollama pull llama3.2:8b
+# ollama pull qwen2.5-coder:14b
 
 # 3. Start NIC
 python nova_flask_app.py
@@ -407,7 +408,7 @@ STRESS_TEST: Add medical-specific adversarial cases (drug interactions, contrain
 | Metric | Value | Notes |
 |--------|-------|-------|
 | Cold start | ~3-5s | Load models, index |
-| First query | ~700-800s | LM Studio model loading overhead (one-time per session) |
+| First query | ~700-800s | Ollama model loading overhead (one-time per session) |
 | Subsequent queries | ~3-10s | Inference only (8B: 2-5s, 14B: 5-10s) |
 | Memory | ~2-4GB | Single LLM + embeddings (8B footprint) |
 | Retrieval only | ~200ms | FAISS search + rerank |

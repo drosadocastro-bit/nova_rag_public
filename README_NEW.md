@@ -78,7 +78,7 @@ See [SAFETY_MODEL.md](SAFETY_MODEL.md) for detailed validation methodology.
 ### Prerequisites
 - Python 3.13+
 - 4GB RAM (8GB+ recommended)
-- LM Studio (for offline LLM inference)
+- Ollama (local LLM server, listens on http://127.0.0.1:11434)
 
 ### Installation (5 minutes)
 
@@ -94,8 +94,11 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Download & start LM Studio locally
-# Open LM Studio → Load "fireball-meta-llama-3.2-8b-instruct" → Start Server (port 1234)
+# 4. Install & start Ollama locally
+#   winget install Ollama.Ollama
+#   ollama pull llama3.2:8b
+#   ollama pull qwen2.5-coder:14b
+#   (Service runs on http://127.0.0.1:11434 by default)
 
 # 5. Start NIC
 python nova_flask_app.py
@@ -157,7 +160,7 @@ No internet required for:
 - Model loading
 - Embedding computation
 - Vector search
-- LLM inference (runs locally via LM Studio)
+- LLM inference (runs locally via Ollama)
 - Query audit logging
 
 ---
@@ -368,7 +371,7 @@ Built with:
 - **FAISS** (Meta) — vector similarity search
 - **sentence-transformers** (UKP-TUDA) — embeddings
 - **Flask** (Pallets) — web framework
-- **LM Studio** — offline LLM inference
+- **Ollama** — offline LLM runner
 - **PyTorch** — deep learning backend
 
 ---

@@ -1,7 +1,11 @@
 """
-LM Studio Manager
+LM Studio Manager (legacy)
 Starts LM Studio as a Python subprocess (no GUI) to avoid resource conflicts.
 Compatible with LM Studio CLI mode or can use llama-cpp-python as fallback.
+
+Deprecated: The current stack uses Ollama at http://127.0.0.1:11434 with models
+`llama3.2:8b` and `qwen2.5-coder:14b`. Keep this script only if you need to
+support the historical LM Studio flow.
 """
 
 import subprocess
@@ -137,8 +141,11 @@ def verify_lm_studio_models(required_models=None):
 
 if __name__ == "__main__":
     print("=" * 70)
-    print("LM Studio Server Manager")
+    print("LM Studio Server Manager (legacy)")
     print("=" * 70)
+
+    print("[LMStudioManager] Deprecated: current stack uses Ollama at http://127.0.0.1:11434.")
+    print("[LMStudioManager] This script is kept for archival LM Studio support only.\n")
     
     if start_lm_studio_server():
         print("\n[LMStudioManager] Verifying models...")

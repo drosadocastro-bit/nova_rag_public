@@ -1,7 +1,7 @@
 ﻿from flask import Flask, render_template, request, jsonify
 import backend as backend_mod
 from backend import (
-    nova_text_handler, check_lm_studio_connection, export_session_to_text,
+    nova_text_handler, check_ollama_connection, export_session_to_text,
     save_session_report, session_state, list_recent_sessions,
     reset_session, start_new_session, retrieve as _retrieve_uncached, build_index,
     vision_model, vision_embeddings, vision_paths
@@ -14,15 +14,9 @@ from pathlib import Path
 retrieve = cache_utils.cache_retrieval(_retrieve_uncached)
 
 import os
-# Start LM Studio as a background subprocess on Flask startup
-from lm_studio_manager import start_lm_studio_server, verify_lm_studio_models
+
 print("\n" + "=" * 70)
-print("Starting LM Studio Server (Background Process)...")
-print("=" * 70)
-if start_lm_studio_server():
-    verify_lm_studio_models()
-else:
-    print("[WARNING] Failed to start LM Studio - verify it's installed and PATH is configured")
+print("Using Ollama for local LLM inference (ensure service is running at http://127.0.0.1:11434)")
 print("=" * 70 + "\n")
 
 if os.environ.get("NOVA_WARMUP_ON_START", "0") == "1":
@@ -186,10 +180,10 @@ def api_ask():
 @app.route("/api/status", methods=["GET"])
 def api_status():
     try:
-        lm_studio_ok = check_lm_studio_connection()
-        return jsonify({"lm_studio": lm_studio_ok, "index_loaded": True})
-    except:
-        return jsonify({"lm_studio": False, "index_loaded": False})
+        ok, detail = check_ollama_connection()
+        return jsonify({"ollama": ok, "ollama_status": detail.strip(), "index_loaded": True})
+    except Exception:
+        return jsonify({"ollama": False, "ollama_status": "error", "index_loaded": False})
 
 @app.route("/api/retrieve", methods=["POST"])
 def api_retrieve():

@@ -8,7 +8,7 @@ Evaluates NIC's RAG quality using RAGAS metrics:
 - Context Precision: Are retrieved docs relevant?
 - Context Recall: Does context contain needed info?
 
-Uses LM Studio as the evaluator LLM (no OpenAI API needed).
+Uses Ollama as the evaluator LLM (no external API needed).
 """
 
 import json
@@ -30,7 +30,7 @@ from ragas.metrics._context_recall import ContextRecall
 from ragas.llms import LangchainLLMWrapper
 from ragas.embeddings import LangchainEmbeddingsWrapper
 
-# LangChain for LM Studio integration
+# LangChain for local Ollama integration
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
@@ -38,7 +38,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 # CONFIGURATION
 # =============================================================================
 NIC_API_BASE = "http://127.0.0.1:5000/api"
-LM_STUDIO_BASE = "http://127.0.0.1:1234/v1"
+OLLAMA_BASE = "http://127.0.0.1:11434/v1"
 
 # RAGAS needs an LLM for evaluation - 20B model achieved best score (77.22% on test)
 EVAL_MODEL = "phi-4-14b"  # Fallback to Phi-4 (lighter, still good evaluator)
@@ -62,10 +62,10 @@ def check_server_ready() -> bool:
     except Exception:
         return False
 
-def check_lm_studio_ready() -> bool:
-    """Check if LM Studio is running."""
+def check_ollama_ready() -> bool:
+    """Check if Ollama is running."""
     try:
-        r = requests.get(f"{LM_STUDIO_BASE}/models", timeout=5)
+        r = requests.get(f"{OLLAMA_BASE}/models", timeout=5)
         return r.status_code == 200
     except Exception:
         return False
@@ -182,11 +182,11 @@ def run_ragas_evaluation(max_samples: Optional[int] = 20, prose_mode: bool = Fal
         return None
     print("      NIC server: OK")
     
-    if not check_lm_studio_ready():
-        print("ERROR: LM Studio not running at", LM_STUDIO_BASE)
-        print("       Start LM Studio and load a model")
+    if not check_ollama_ready():
+        print("ERROR: Ollama not running at", OLLAMA_BASE)
+        print("       Start Ollama and pull a model (e.g., llama3.2:8b)")
         return None
-    print("      LM Studio: OK")
+    print("      Ollama: OK")
     
     # Load test dataset
     print("\n[2/5] Loading test dataset...")
@@ -244,11 +244,11 @@ def run_ragas_evaluation(max_samples: Optional[int] = 20, prose_mode: bool = Fal
     }
     dataset = Dataset.from_dict(ragas_data)
     
-    # Configure LM Studio as the evaluator LLM
+    # Configure Ollama as the evaluator LLM
     eval_llm = ChatOpenAI(  # type: ignore[arg-type]
         model=EVAL_MODEL,
-        base_url=LM_STUDIO_BASE,
-        api_key="lm-studio",  # type: ignore[arg-type]  # LM Studio ignores key but client requires it
+        base_url=OLLAMA_BASE,
+        api_key="ollama",  # type: ignore[arg-type]  # Ollama ignores key but client requires it
         temperature=0.1,
         timeout=450,
         max_retries=2,
@@ -273,7 +273,7 @@ def run_ragas_evaluation(max_samples: Optional[int] = 20, prose_mode: bool = Fal
         from ragas.embeddings import embedding_factory
         from openai import OpenAI as OpenAIClient
         
-        openai_client = OpenAIClient(base_url=LM_STUDIO_BASE, api_key="lm-studio")
+        openai_client = OpenAIClient(base_url=OLLAMA_BASE, api_key="ollama")
         wrapped_llm = cast(object, llm_factory(EVAL_MODEL, client=openai_client))
         wrapped_embeddings = None  # Use default or skip for local eval
         print("      Using modern RAGAS API")
@@ -292,7 +292,7 @@ def run_ragas_evaluation(max_samples: Optional[int] = 20, prose_mode: bool = Fal
     ]
     
     try:
-        # Run evaluation with limited parallelism to avoid overwhelming LM Studio
+        # Run evaluation with limited parallelism to avoid overwhelming Ollama
         from ragas.run_config import RunConfig
         run_config = RunConfig(
             max_workers=1,  # Sequential execution - no parallel calls

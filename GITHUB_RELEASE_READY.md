@@ -1,5 +1,7 @@
 # GitHub Release Readiness - Polish Pass Complete
 
+> Note: Earlier iterations relied on LM Studio. The current stack runs on Ollama at http://127.0.0.1:11434 with models `llama3.2:8b` and `qwen2.5-coder:14b`. Keep LM Studio notes for historical context only.
+
 ## ✅ Completed Tasks
 
 ### 1. Domain Reference Cleanup
@@ -20,10 +22,10 @@
   - Falls back to legacy LangchainLLMWrapper if needed
   - Silences deprecation warnings on newer RAGAS versions
 
-- ✅ LM Studio headless management
+- ✅ LM Studio headless management (legacy; replaced by Ollama)
   - Created `lm_studio_manager.py` for programmatic server control
   - Integrated auto-launch into `nova_flask_app.py`
-  - Eliminates GUI/Flask resource contention
+  - Superseded by Ollama; retained here for archival notes
 
 ### 3. Documentation
 - ✅ Created `DEVELOPMENT_JOURNAL.md` with:
@@ -52,13 +54,13 @@
 - **RAGAS**: 53.6% (8B eval), 69.97% (Phi-4), **77.22% (20B eval)**
 
 ### Configuration
-**LM Studio (Recommended):**
+**Ollama (Current, replaces LM Studio):**
 ```
-Context Length: 30,000 tokens
+Context Length: 30,000 tokens (goal; align prompts accordingly)
 Max Tokens: 1,024 (8B), 512 (Qwen)
 Batch Size: 256
 Temperature: 0.15
-Timeout: 1200s
+Timeout: 1200s (NOVA_OLLAMA_TIMEOUT_S)
 ```
 
 ### Architecture Highlights
@@ -98,7 +100,7 @@ Timeout: 1200s
 - [x] Update RAGAS to modern API
 - [x] Add comprehensive documentation (journal, optimization guide)
 - [x] Verify offline requirements
-- [x] Add LM Studio headless manager
+- [x] Add LM Studio headless manager (legacy)
 
 ### Recommended (Next Session)
 - [ ] Test with 30k context length (currently configured for 10k)
@@ -107,7 +109,7 @@ Timeout: 1200s
 - [ ] Add .gitignore entries for logs and temp files
 - [ ] Create comprehensive README with:
   - Quick start guide
-  - LM Studio setup instructions
+  - Ollama setup instructions
   - Offline mode documentation
   - Troubleshooting section
 
@@ -131,7 +133,7 @@ Timeout: 1200s
 ### Configuration
 - `requirements.txt` - Python dependencies
 - `.env.example` - Environment variable template
-- `OPTIMIZATION_GUIDE.md` - LM Studio tuning guide
+- `OPTIMIZATION_GUIDE.md` - Legacy LM Studio tuning guide (see START_HERE.md for Ollama)
 
 ### Testing
 - `test_nic_public.py` - Basic functionality tests
@@ -142,7 +144,7 @@ Timeout: 1200s
 - `verify_offline_requirements.py` - **NEW** Dependency checker
 
 ### Management
-- `lm_studio_manager.py` - **NEW** Headless LM Studio control
+- `lm_studio_manager.py` - **NEW** Headless LM Studio control (legacy)
 - `ingest_vehicle_manual.py` - Vector index builder
 - `cache_utils.py` - Retrieval caching
 
@@ -159,7 +161,7 @@ Timeout: 1200s
 
 ## 🎯 Next Steps
 
-1. **Test 30k context**: Increase LM Studio context → 30k and re-run RAGAS
+1. **Test 30k context**: Increase Ollama context → 30k and re-run RAGAS
 2. **Final RAGAS run**: Use 20B evaluator for best scores (target: 70%+)
 3. **Offline mode test**: Enable NOVA_FORCE_OFFLINE=1 and validate
 4. **GitHub prep**: Add .gitignore, update README with setup instructions
@@ -190,7 +192,7 @@ Timeout: 1200s
            │
            ▼
     ┌──────────────┐
-    │  LM Studio   │
+    │   Ollama     │
     │  (Headless)  │
     │  - Llama 8B  │
     │  - Qwen 14B  │

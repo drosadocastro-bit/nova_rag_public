@@ -12,7 +12,7 @@ The Flask app is live at: **http://localhost:5000**
 ✅ **FAISS Index**: Ready for semantic search  
 ✅ **Flask Web Server**: Running on port 5000  
 ✅ **Web UI**: Fully operational  
-✅ **LM Studio Ready**: Configured for local AI models  
+✅ **Ollama Ready**: Configured for local AI models  
 
 ---
 
@@ -30,27 +30,26 @@ The Flask app is live at: **http://localhost:5000**
 
 ---
 
-## 🤖 Using with LM Studio (Offline AI)
+## 🤖 Using with Ollama (Offline AI)
 
-### Step 1: Start LM Studio Server
-1. Open **LM Studio** application
-2. Go to **"Local Server"** tab (left sidebar)
-3. Load your model:
-   - `fireball-meta-llama-3.2-8b-instruct-agent-003-128k-code-dpo` (Recommended - Fast)
-   - OR `qwen/qwen2.5-coder-14b` (Tier 2: deeper reasoning, ~5-10s per query)
-4. Click **"Start Server"**
-5. Verify it shows: `Server running on http://127.0.0.1:1234`
+### Step 1: Start Ollama
+1. Install Ollama (https://ollama.com)
+2. Pull models:
+    - `ollama pull llama3.2:8b` (Recommended - Fast)
+    - `ollama pull qwen2.5-coder:14b` (Tier 2: deeper reasoning)
+3. Ensure service is running (it auto-starts): `ollama list`
+4. Verify API: should respond at `http://127.0.0.1:11434`
 
-### Step 2: Test LM Studio Connection
+### Step 2: Test Ollama Connection
 ```powershell
 # In a new PowerShell window:
-curl http://127.0.0.1:1234/v1/models
+curl http://127.0.0.1:11434/api/tags
 ```
 
 If working, you'll see JSON with your model info.
 
 ### Step 3: Use the App
-- The Flask app **automatically detects** LM Studio
+- The Flask app **automatically detects** Ollama
 - No configuration needed!
 - Just ask questions in the web UI
 
@@ -77,12 +76,12 @@ What's the tire pressure for a 2024 Tesla?
 
 ## ⚙️ How It Works
 
-### Without LM Studio (Retrieval Only)
+### Without Ollama (Retrieval Only)
 - You get **raw context chunks** from the manual
 - Fast, works offline
 - No AI summarization
 
-### With LM Studio (Full AI)
+### With Ollama (Full AI)
 - Gets context chunks
 - **AI summarizes** and explains
 - **Citations** to manual sections
@@ -101,7 +100,7 @@ What's the tire pressure for a 2024 Tesla?
 - **LLAMA (Fast)**: Quick responses, good for simple questions
 - **GPT-OSS (Deep)**: Better for complex troubleshooting
 
-*Both use your LM Studio models!*
+*Both use your Ollama models!*
 
 ---
 
@@ -113,20 +112,20 @@ What's the tire pressure for a 2024 Tesla?
 curl http://localhost:5000
 ```
 
-### "LM Studio not connecting"
-1. Verify LM Studio server is running (`http://127.0.0.1:1234`)
-2. Check for firewall blocking port 1234
-3. Try restarting LM Studio server
+### "Ollama not connecting"
+1. Verify Ollama service is running (`ollama list`)
+2. Check API at `http://127.0.0.1:11434`
+3. Check firewall on port 11434
 
 ### "Slow responses"
 - Use the **8B model** (fireball-llama-3.2) instead of 20B
-- Enable **GPU offload** in LM Studio settings
-- Reduce **Context Length** to 4096 in LM Studio
+- Prefer quantized variants (q4_K_M) when available
+- Reduce output tokens via NOVA_MAX_TOKENS_* env vars
 
 ### "Out of memory"
 - Use **quantized models** (Q4_K_M or Q5_K_M)
 - Close other GPU-intensive applications
-- Reduce batch size in LM Studio
+- Reduce parallel requests; keep one tab while testing
 
 ---
 
@@ -139,10 +138,10 @@ $env:NOVA_ENABLE_RETRIEVAL_CACHE="1"
 python nova_flask_app.py
 ```
 
-### Optimize LM Studio
-1. Settings → **GPU Offload** → Set to maximum (or adjust for VRAM)
-2. Context Length → **4096** (faster) or **8192** (better quality)
-3. Use **Q4_K_M** quantized models for 3-4x speed boost
+### Optimize Ollama
+1. Use quantized models (q4_K_M) for 3-4x speed boost
+2. Keep output tokens moderate (see NOVA_MAX_TOKENS_* env vars)
+3. Limit concurrent requests; single-user tests run fastest
 
 ---
 
@@ -189,7 +188,7 @@ waitress-serve --port=5000 nova_flask_app:app
 
 ### Share with Team
 - Works on any machine with Python
-- No API keys needed (uses LM Studio)
+- No API keys needed (uses Ollama)
 - Fully offline capable
 
 ---
@@ -200,7 +199,7 @@ waitress-serve --port=5000 nova_flask_app:app
 |------|---------|
 | **Start Server** | `python nova_flask_app.py` |
 | **Access UI** | `http://localhost:5000` |
-| **LM Studio URL** | `http://127.0.0.1:1234` |
+| **Ollama URL** | `http://127.0.0.1:11434` |
 | **Stop Server** | `Ctrl+C` in terminal |
 | **Check Status** | `curl http://localhost:5000` |
 
@@ -211,7 +210,7 @@ waitress-serve --port=5000 nova_flask_app:app
 Your NIC Public system is running and ready to answer vehicle maintenance questions!
 
 🌐 **Open**: http://localhost:5000  
-🤖 **With AI**: Start LM Studio first  
+🤖 **With AI**: Start Ollama first  
 📖 **Documentation**: See LM_STUDIO_SETUP.md for details  
 
 **Happy troubleshooting!** 🚗🔧

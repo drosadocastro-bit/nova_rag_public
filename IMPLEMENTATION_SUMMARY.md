@@ -199,6 +199,8 @@ curl -s -X POST http://localhost:5000/api/ask \
 
 ---
 
+> Note: This document captured the prior LM Studio setup. Current builds use Ollama at http://127.0.0.1:11434 with models `llama3.2:8b` (fast) and `qwen2.5-coder:14b` (deep). Update references accordingly when running the latest stack.
+
 ## Files Changed
 
 | File | Change | Impact |
@@ -235,7 +237,7 @@ curl -s -X POST http://localhost:5000/api/ask \
 ## Testing Notes
 
 ### Known Limitations
-1. **LM Studio Dependency:** Tests require LM Studio running on localhost:1234
+1. **Ollama Dependency (current):** Tests now expect Ollama running on localhost:11434 with required models pulled
 2. **600s Timeout:** Some adversarial queries still time out without fallback
 3. **Manual Context:** No real-world vehicle manual coverage outside synthetic test data
 4. **Keyword-based Injection Detection:** Semantic attacks may slip through; recommend semantic similarity in future

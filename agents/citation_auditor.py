@@ -44,7 +44,7 @@ def _tokenize(text: str) -> list[str]:
 # CITATION VALIDATION
 # =======================
 
-def extract_page_from_source(source_text: str) -> Optional[int]:
+def extract_page_from_source(source_text: str | int | None) -> Optional[int]:
     """
     Extract page number from source metadata.
     
@@ -60,8 +60,11 @@ def extract_page_from_source(source_text: str) -> Optional[int]:
         r'p\.\s*(\d+)',
     ]
     
+    # Normalize to string to avoid regex errors on int/None inputs.
+    text = "" if source_text is None else str(source_text)
+
     for pattern in patterns:
-        match = re.search(pattern, source_text, re.IGNORECASE)
+        match = re.search(pattern, text, re.IGNORECASE)
         if match:
             return int(match.group(1))
     
@@ -90,7 +93,11 @@ def validate_citation(
             "source": str
         }
     """
-    source_text = source_doc.get("text") or source_doc.get("snippet") or ""
+    # Normalize source text early to avoid regex type errors (e.g., ints from malformed docs)
+    raw_source_text = source_doc.get("text") if isinstance(source_doc, dict) else ""
+    if not raw_source_text:
+        raw_source_text = source_doc.get("snippet") if isinstance(source_doc, dict) else ""
+    source_text = raw_source_text if isinstance(raw_source_text, str) else str(raw_source_text or "")
     source_name = source_doc.get("source", "unknown")
     page = source_doc.get("page") or extract_page_from_source(source_text)
     
@@ -184,7 +191,11 @@ def build_audit_trail(
         if isinstance(claim, dict):
             claim_text = claim.get("step") or claim.get("action") or claim.get("cause") or str(claim)
         else:
-            claim_text = str(claim)
+            claim_text = claim
+
+        # Normalize claim to string for downstream tokenization
+        if not isinstance(claim_text, str):
+            claim_text = str(claim_text)
         
         best_citation = None
         best_confidence = 0.0

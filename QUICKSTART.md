@@ -12,7 +12,7 @@ Welcome to NIC Public! This guide will get you running in 5 minutes.
 
 ## Quick Start
 
-### 1. Set OpenAI API Key (Required)
+### 1. Set OpenAI API Key (if using cloud) or use Ollama locally
 
 ```bash
 # Windows PowerShell
@@ -27,6 +27,14 @@ Or create `.env` file:
 cp .env.example .env
 # Edit .env and add your API key
 ```
+
+If you prefer fully local:
+- Install Ollama (https://ollama.com)
+- Pull models: `ollama pull llama3.2:8b` and `ollama pull qwen2.5-coder:14b`
+- (Optional) set in `.env`:
+   - `OLLAMA_BASE_URL=http://localhost:11434/v1`
+   - `NOVA_LLM_LLAMA=llama3.2:8b`
+   - `NOVA_LLM_OSS=qwen2.5-coder:14b`
 
 ### 2. Start the Server
 
