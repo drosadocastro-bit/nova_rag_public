@@ -1,0 +1,7 @@
+FROM "C:\Users\draku\.lmstudio\models\lmstudio-community\Qwen2.5-Coder-14B-Instruct-GGUF\Qwen2.5-Coder-14B-Instruct-Q4_K_M.gguf"
+TEMPLATE """{{ .System }}
+
+{{ .Prompt }}"""
+PARAMETER temperature 0.15
+PARAMETER num_ctx 32768
+SYSTEM You are a helpful AI assistant.

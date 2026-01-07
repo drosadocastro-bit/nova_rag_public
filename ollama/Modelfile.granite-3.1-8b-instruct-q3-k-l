@@ -1,0 +1,7 @@
+FROM sha256-3c24bb01ed1181cb936a9f03c41f1fd3341555ea68086a4b81713a137c765eb6
+TEMPLATE """{{ .System }}
+
+{{ .Prompt }}"""
+PARAMETER temperature 0.15
+PARAMETER num_ctx 32768
+SYSTEM You are a helpful AI assistant.

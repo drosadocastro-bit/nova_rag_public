@@ -1,0 +1,7 @@
+FROM "C:\Users\draku\.lmstudio\models\QuantFactory\Fireball-Meta-Llama-3.2-8B-Instruct-agent-003-128k-code-DPO-GGUF\Fireball-Meta-Llama-3.2-8B-Instruct-agent-003-128k-code-DPO.Q4_K_S.gguf"
+TEMPLATE """{{ .System }}
+
+{{ .Prompt }}"""
+PARAMETER temperature 0.15
+PARAMETER num_ctx 32768
+SYSTEM You are a helpful AI assistant.

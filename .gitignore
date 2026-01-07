@@ -179,3 +179,15 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# NIC Project Specific
+models/                    # Large embedding/LLM model files
+vector_db/*.pkl           # Cached vector indexes (regenerate from data/)
+vector_db/*.faiss         # FAISS index files
+ragas_results/            # Evaluation output (regenerate via nic_ragas_eval.py)
+*_results.json            # Test result artifacts
+*_output.txt              # Test output artifacts
+
+# PowerShell scripts (local tooling)
+link_lmstudio_to_ollama.ps1
+register_*.ps1

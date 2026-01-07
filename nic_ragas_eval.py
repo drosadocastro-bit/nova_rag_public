@@ -33,6 +33,7 @@ from ragas.embeddings import LangchainEmbeddingsWrapper
 # LangChain for local Ollama integration
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_ollama import ChatOllama  # Native Ollama client with num_ctx/format support
 
 # =============================================================================
 # CONFIGURATION
@@ -40,8 +41,9 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 NIC_API_BASE = "http://127.0.0.1:5000/api"
 OLLAMA_BASE = "http://127.0.0.1:11434/v1"
 
-# RAGAS needs an LLM for evaluation - 20B model achieved best score (77.22% on test)
-EVAL_MODEL = "phi-4-14b"  # Fallback to Phi-4 (lighter, still good evaluator)
+# RAGAS needs an LLM for evaluation - using registered Ollama models
+# Use Qwen2.5 Coder 14B as evaluator (better quality than 8B, faster than Phi-4)
+EVAL_MODEL = "qwen2.5-coder-14b"
 
 # Test dataset path
 DATASET_PATH = "governance/nic_qa_dataset.json"
@@ -244,51 +246,37 @@ def run_ragas_evaluation(max_samples: Optional[int] = 20, prose_mode: bool = Fal
     }
     dataset = Dataset.from_dict(ragas_data)
     
-    # Configure Ollama as the evaluator LLM
-    eval_llm = ChatOpenAI(  # type: ignore[arg-type]
+    # Configure Ollama as the evaluator LLM and ensure env points to Ollama
+    os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "ollama")
+    os.environ["OPENAI_BASE_URL"] = os.environ.get("OPENAI_BASE_URL", OLLAMA_BASE)
+    os.environ["OLLAMA_DEBUG"] = "1"  # Debug output for troubleshooting
+
+    # Use native ChatOllama for full Ollama param support (num_ctx, format)
+    eval_llm = ChatOllama(
         model=EVAL_MODEL,
-        base_url=OLLAMA_BASE,
-        api_key="ollama",  # type: ignore[arg-type]  # Ollama ignores key but client requires it
-        temperature=0.1,
-        timeout=450,
-        max_retries=2,
+        base_url="http://127.0.0.1:11434",
+        temperature=0.0,  # Strict determinism for JSON compliance
+        num_ctx=16384,  # Large context window for full RAGAS prompts
+        format="json",  # Enforce JSON output (no code fences)
+        num_predict=2048,  # Larger output for complex RAGAS responses
     )
     
-    # Use local embeddings (same as NIC uses)
-    try:
-        eval_embeddings = HuggingFaceEmbeddings(
-            model_name=str(Path(__file__).parent / "models" / "all-MiniLM-L6-v2"),
-            model_kwargs={"device": "cpu"}
-        )
-    except Exception as e:
-        print(f"      Warning: Could not load local embeddings: {e}")
-        print("      Falling back to basic evaluation without embeddings")
-        eval_embeddings = None
+    # Skip embeddings entirely - run LLM-only evaluation
+    eval_embeddings = None
+    wrapped_embeddings = None
+    print("      Running LLM-only evaluation (no embeddings)")
+    print("      Config: num_ctx=16384, format=json, temperature=0.0, num_predict=2048")
     
-    # Wrap for RAGAS - try modern API first, fall back to legacy
-    try:
-        # Modern API (RAGAS 0.2+)
-        from ragas.llms import llm_factory
-        from typing import cast
-        from ragas.embeddings import embedding_factory
-        from openai import OpenAI as OpenAIClient
-        
-        openai_client = OpenAIClient(base_url=OLLAMA_BASE, api_key="ollama")
-        wrapped_llm = cast(object, llm_factory(EVAL_MODEL, client=openai_client))
-        wrapped_embeddings = None  # Use default or skip for local eval
-        print("      Using modern RAGAS API")
-    except (ImportError, AttributeError):
-        # Legacy API (RAGAS 0.1.x)
-        wrapped_llm = LangchainLLMWrapper(eval_llm)
-        wrapped_embeddings = LangchainEmbeddingsWrapper(eval_embeddings) if eval_embeddings else None
-        print("      Using legacy RAGAS API (consider upgrading to RAGAS 0.2+)")
+    # Wrap for RAGAS compatibility
+    wrapped_llm = LangchainLLMWrapper(eval_llm)
+    wrapped_llm_for_eval = wrapped_llm  # Use wrapped version for RAGAS
+    print("      Using ChatOllama (qwen2.5-coder-14b via Ollama)")
     
-    # Initialize metric instances - using just answer_relevancy for faster eval
-    # Full metrics can overwhelm local LLMs with parallel calls
-    # RAGAS expects a BaseRagasLLM; legacy wrappers are acceptable for runtime even if typing complains.
-    wrapped_llm_for_eval = wrapped_llm  # type: ignore[arg-type]
+    # Initialize metric instances - LLM-only (no embeddings)
+    # AnswerRelevancy requires embeddings internally, so only using Faithfulness
     metrics = [
-        AnswerRelevancy(llm=wrapped_llm_for_eval, embeddings=wrapped_embeddings),  # type: ignore[arg-type]
+        Faithfulness(llm=wrapped_llm_for_eval),  # type: ignore[arg-type]
+        # AnswerRelevancy removed - requires embeddings internally
     ]
     
     try:
@@ -296,8 +284,8 @@ def run_ragas_evaluation(max_samples: Optional[int] = 20, prose_mode: bool = Fal
         from ragas.run_config import RunConfig
         run_config = RunConfig(
             max_workers=1,  # Sequential execution - no parallel calls
-            max_wait=600,   # 10 minute max wait
-            max_retries=2,
+            max_wait=900,   # 15 minute max wait (increased)
+            max_retries=4,  # More retries for JSON parsing failures
         )
         
         eval_result = evaluate(
