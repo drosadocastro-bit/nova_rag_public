@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="220" viewBox="0 0 960 220">
+  <defs>
+    <style>
+      .box { fill:#f7f7f9; stroke:#333; stroke-width:1.5; rx:8; ry:8; }
+      .arrow { stroke:#333; stroke-width:1.5; marker-end:url(#arrowhead); fill:none; }
+      .label { font-family: Arial, sans-serif; font-size:14px; fill:#111; }
+      .title { font-family: Arial, sans-serif; font-size:16px; font-weight:bold; fill:#111; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text class="title" x="20" y="28">NIC Architecture (High-Level)</text>
+
+  <!-- Boxes -->
+  <rect class="box" x="20"  y="60" width="120" height="60" />
+  <text class="label" x="40" y="95">Operator</text>
+
+  <rect class="box" x="170" y="60" width="140" height="60" />
+  <text class="label" x="195" y="95">UI (Flask)</text>
+
+  <rect class="box" x="340" y="60" width="160" height="60" />
+  <text class="label" x="365" y="95">Agent Router</text>
+
+  <rect class="box" x="530" y="60" width="160" height="60" />
+  <text class="label" x="555" y="85">LLM Engine</text>
+  <text class="label" x="555" y="102">(Ollama)</text>
+
+  <rect class="box" x="720" y="30" width="200" height="60" />
+  <text class="label" x="740" y="65">Vector DB (FAISS)</text>
+
+  <rect class="box" x="720" y="120" width="200" height="60" />
+  <text class="label" x="762" y="155">Documents (Corpus)</text>
+
+  <!-- Arrows main flow -->
+  <line class="arrow" x1="140" y1="90" x2="170" y2="90" />
+  <line class="arrow" x1="310" y1="90" x2="340" y2="90" />
+  <line class="arrow" x1="500" y1="90" x2="530" y2="90" />
+  <line class="arrow" x1="690" y1="90" x2="720" y2="90" />
+
+  <!-- Retrieval branches from Agent Router -->
+  <line class="arrow" x1="420" y1="120" x2="420" y2="180" />
+  <line class="arrow" x1="420" y1="180" x2="720" y2="150" />
+
+  <!-- Arrow from Vector DB to LLM (context to answer) -->
+  <line class="arrow" x1="820" y1="90" x2="820" y2="120" />
+  <line class="arrow" x1="820" y1="120" x2="690" y2="90" />
+
+  <!-- Notes -->
+  <text class="label" x="22" y="140">Advisory only; human-on-the-loop</text>
+  <text class="label" x="720" y="20">RAG: retrieve → ground → answer</text>
+</svg>

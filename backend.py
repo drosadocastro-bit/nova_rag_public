@@ -85,6 +85,9 @@ if FORCE_OFFLINE:
 # - Limit numerical library threads to reduce CPU spikes
 DISABLE_CROSS_ENCODER = os.environ.get("NOVA_DISABLE_CROSS_ENCODER", "0") == "1"
 
+# Enable hybrid search (vector + lexical BM25)
+HYBRID_SEARCH_ENABLED = os.environ.get("NOVA_HYBRID_SEARCH", "1") == "1"
+
 # Embedding batch size (for index build); tune via env if needed
 EMBED_BATCH_SIZE = int(os.environ.get("NOVA_EMBED_BATCH_SIZE", "32"))
 
@@ -718,6 +721,79 @@ if USE_VISION_AWARE_RERANKER and bool(os.environ.get("NOVA_INIT_TFIDF_CACHE", "0
     init_tfidf_vectorizer()
 
 
+# =======================
+# BM25 LEXICAL INDEX (Hybrid)
+# =======================
+from math import log
+
+_BM25_INDEX: dict[str, dict[int, int]] = {}
+_BM25_DOC_LEN: list[int] = []
+_BM25_AVGDL: float = 0.0
+_BM25_READY: bool = False
+_BM25_K1: float = float(os.environ.get("NOVA_BM25_K1", "1.5"))
+_BM25_B: float = float(os.environ.get("NOVA_BM25_B", "0.75"))
+
+def _tokenize(text: str) -> list[str]:
+    return [t for t in re.split(r"\W+", (text or "").lower()) if t]
+
+def _build_bm25_index():
+    global _BM25_INDEX, _BM25_DOC_LEN, _BM25_AVGDL, _BM25_READY
+    try:
+        _BM25_INDEX = {}
+        _BM25_DOC_LEN = []
+        for i, d in enumerate(docs):
+            tokens = _tokenize(d.get("text", ""))
+            _BM25_DOC_LEN.append(len(tokens))
+            tf_local: dict[str, int] = {}
+            for t in tokens:
+                tf_local[t] = tf_local.get(t, 0) + 1
+            for t, tf in tf_local.items():
+                posting = _BM25_INDEX.setdefault(t, {})
+                posting[i] = tf
+        _BM25_AVGDL = (sum(_BM25_DOC_LEN) / max(1, len(_BM25_DOC_LEN))) if _BM25_DOC_LEN else 0.0
+        _BM25_READY = True
+        print(f"[NovaRAG] BM25 index ready: {len(_BM25_INDEX)} terms, avgdl={_BM25_AVGDL:.1f}")
+    except Exception as e:
+        _BM25_READY = False
+        print(f"[NovaRAG] BM25 index build failed: {e}")
+
+def _bm25_idf(term: str) -> float:
+    N = len(_BM25_DOC_LEN)
+    df = len(_BM25_INDEX.get(term, {}))
+    # Robertson-Sparck Jones IDF
+    return log(((N - df + 0.5) / (df + 0.5)) + 1.0) if N and df else 0.0
+
+def bm25_retrieve(query: str, k: int = 12, top_n: int = 6) -> list[dict]:
+    """BM25 lexical retrieval over chunked docs."""
+    if not _BM25_READY:
+        _build_bm25_index()
+    if not _BM25_READY:
+        return []
+    q_terms = _tokenize(query)
+    candidate_docs: dict[int, float] = {}
+    for qt in set(q_terms):
+        posting = _BM25_INDEX.get(qt)
+        if not posting:
+            continue
+        idf = _bm25_idf(qt)
+        for doc_idx, tf in posting.items():
+            dl = _BM25_DOC_LEN[doc_idx]
+            denom = tf + _BM25_K1 * (1.0 - _BM25_B + _BM25_B * (dl / max(1.0, _BM25_AVGDL)))
+            score = idf * ((tf * (_BM25_K1 + 1.0)) / max(1e-12, denom))
+            candidate_docs[doc_idx] = candidate_docs.get(doc_idx, 0.0) + score
+    if not candidate_docs:
+        return []
+    # Top by BM25 score
+    sorted_idxs = sorted(candidate_docs.items(), key=lambda x: x[1], reverse=True)
+    top_idxs = [i for i, _ in sorted_idxs[:max(k, top_n)]]
+    results: list[dict] = []
+    for idx in top_idxs:
+        if 0 <= idx < len(docs):
+            d = dict(docs[idx])
+            d["bm25_score"] = float(candidate_docs.get(idx, 0.0))
+            results.append(d)
+    return results
+
 def lexical_retrieve(query: str, k: int = 12, top_n: int = 6) -> list[dict]:
     """Lightweight lexical fallback when embeddings are unavailable.
     Scores by token overlap and returns top_n docs with pseudo-confidence.
@@ -768,6 +844,9 @@ def retrieve(query: str, k: int = 12, top_n: int = 6, lambda_diversity: float = 
     text_model = get_text_embed_model()
     if text_model is None:
         # Lexical fallback when embedding model is unavailable
+        bm25_docs = bm25_retrieve(query, k=k, top_n=top_n)
+        if bm25_docs:
+            return bm25_docs[:top_n]
         return lexical_retrieve(query, k=k, top_n=top_n)
 
     q_emb = text_model.encode([query], convert_to_numpy=True)
@@ -777,6 +856,19 @@ def retrieve(query: str, k: int = 12, top_n: int = 6, lambda_diversity: float = 
     for idx in indices[0]:
         if 0 <= idx < len(docs):
             candidates.append(docs[idx])
+    # HYBRID: Union with BM25 lexical candidates for broader coverage
+    if HYBRID_SEARCH_ENABLED:
+        try:
+            bm25_candidates = bm25_retrieve(query, k=k, top_n=k)
+            # Deduplicate: prefer embedding candidate ordering
+            seen = set((c.get("id"), c.get("source"), c.get("page")) for c in candidates)
+            for d_bm in bm25_candidates:
+                key = (d_bm.get("id"), d_bm.get("source"), d_bm.get("page"))
+                if key not in seen:
+                    candidates.append(d_bm)
+                    seen.add(key)
+        except Exception as e:
+            print(f"[NovaRAG] Hybrid BM25 union failed: {e}")
     if not candidates:
         return []
 

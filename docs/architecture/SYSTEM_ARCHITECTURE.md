@@ -150,6 +150,8 @@ NIC (Nova Intelligent Copilot) is an offline-first, safety-critical RAG system d
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+Refer to the visual overview in [diagram.svg](diagram.svg).
+
 ---
 
 ## Key Components
@@ -175,6 +177,9 @@ SAFETY_BYPASS_PATTERNS = [
 - Cross-encoder reranking (top-6)
 - Confidence calculation (avg of doc scores)
 - Error code detection (if query mentions "Code XYZ", boost related docs)
+ - Hybrid mode (default): Union FAISS candidates with BM25 lexical candidates, then rerank and select via MMR
+   - Enable/disable: `NOVA_HYBRID_SEARCH=1/0`
+   - Tuning: `NOVA_BM25_K1` (1.5), `NOVA_BM25_B` (0.75)
 
 ### 3. **Agent Router** (`agents/agent_router.py`)
 Routes to appropriate model tier:

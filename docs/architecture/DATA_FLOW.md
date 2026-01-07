@@ -139,6 +139,25 @@ This document describes how data flows through the NIC RAG system from query inp
 
 ---
 
+## Hybrid Retrieval (Vector + BM25)
+
+- Candidate Generation:
+    - Vector: FAISS over `all-MiniLM-L6-v2` embeddings (top-k)
+    - Lexical: BM25 over chunked corpus (top-k)
+- Union + Deduplicate:
+    - Merge candidates by `(id, source, page)`; preserve vector ordering
+- Reranking:
+    - Prefer sklearn or cross-encoder scores when available
+    - Apply MMR for diversity and select `top_n`
+- Confidence Gating:
+    - Use average reranker confidence; if < 0.60, skip LLM and return snippet
+
+Environment flags:
+- `NOVA_HYBRID_SEARCH=1` (default on)
+- `NOVA_BM25_K1` (default 1.5), `NOVA_BM25_B` (default 0.75)
+
+See [SYSTEM_ARCHITECTURE.md](SYSTEM_ARCHITECTURE.md) and the [README](../../README.md#hybrid-retrieval) for usage.
+
 ## Data Stores
 
 | Store | Location | Purpose |

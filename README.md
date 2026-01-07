@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![Validated](https://img.shields.io/badge/Adversarial%20Tests-111%2F111%20passed-brightgreen.svg)](docs/evaluation/EVALUATION_SUMMARY.md)
+[![Hybrid Retrieval](https://img.shields.io/badge/Retrieval-Hybrid%20(Vector+BM25)-purple.svg)](#hybrid-retrieval)
 
 ---
 
@@ -39,6 +40,7 @@ This is not a product—it's a **reference architecture** showing that safety-aw
 | **Human-on-the-Loop** | Advisory only—no direct actuation. Operator retains decision authority. |
 | **Auditable** | Every query logged with question, answer, sources, confidence, and audit status. |
 | **Reproducible** | Locked dependencies, versioned corpus, deterministic retrieval. |
+| **Hybrid Retrieval** | Vector similarity (FAISS) unioned with BM25 lexical search, then reranked and diversified (MMR). Toggle via NOVA_HYBRID_SEARCH. |
 
 ---
 
@@ -82,6 +84,47 @@ ollama pull llama3.2:8b
 python nova_flask_app.py
 # → http://localhost:5000
 ```
+
+---
+
+## How to Run
+
+Minimal offline run steps:
+
+```bash
+pip install -r requirements.txt
+ollama pull llama3.2:8b   # or: ollama run llama3.2:8b to verify
+python nova_flask_app.py
+```
+
+See the [Documentation Index](docs/INDEX.md) for detailed guides.
+
+---
+
+## Hybrid Retrieval
+
+Hybrid search combines vector similarity (FAISS) with lexical BM25 to improve recall for specific terminology, codes, and procedures. It is enabled by default.
+
+- Enable/disable:
+
+```powershell
+# Windows PowerShell
+$env:NOVA_HYBRID_SEARCH="1"   # enable (default)
+python nova_flask_app.py
+
+# Disable
+$env:NOVA_HYBRID_SEARCH="0"
+python nova_flask_app.py
+```
+
+- Tuning (optional):
+
+```powershell
+$env:NOVA_BM25_K1="1.5"   # term saturation (default 1.5)
+$env:NOVA_BM25_B="0.75"   # length normalization (default 0.75)
+```
+
+This feature is suitable to highlight in the README for safety‑critical contexts; it makes retrieval more robust to exact terms and diagnostic codes. For architecture details, see the [Documentation Index](docs/INDEX.md).
 
 ---
 
