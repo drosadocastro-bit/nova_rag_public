@@ -140,6 +140,6 @@ CONFIG = {
 
 ## Related Documents
 
-- [DEVELOPMENT_JOURNAL.md](DEVELOPMENT_JOURNAL.md) - Development history
-- [CLEANUP_SUMMARY.md](CLEANUP_SUMMARY.md) - Cleanup notes
+- [ENGINEERING_LOG.md](ENGINEERING_LOG.md) - Engineering history
+- [MAINTENANCE_LOG.md](MAINTENANCE_LOG.md) - Maintenance notes
 - [BUILD_SUMMARY.md](BUILD_SUMMARY.md) - Build process notes

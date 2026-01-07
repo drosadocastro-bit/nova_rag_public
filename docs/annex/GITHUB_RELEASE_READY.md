@@ -1,4 +1,4 @@
-# GitHub Release Readiness - Polish Pass Complete
+# GitHub Release Readiness (Superseded)
 
 > Note: Earlier iterations relied on LM Studio. The current stack runs on Ollama at http://127.0.0.1:11434 with models `llama3.2:8b` and `qwen2.5-coder:14b`. Keep LM Studio notes for historical context only.
 
@@ -8,7 +8,7 @@
 - ✅ Removed all legacy domain-specific references from code comments
 - ✅ Normalized safety comments to domain-neutral wording
 - ✅ Updated citation_auditor docstring: now refers to strict manual compliance
-- ✅ Cleaned ARCHITECTURE.md and CLEANUP_SUMMARY.md
+- ✅ Cleaned ARCHITECTURE.md and MAINTENANCE_LOG.md
 - ✅ Deleted legacy cleanup documentation with restricted references
 
 ### 2. Code Quality
@@ -28,14 +28,14 @@
   - Superseded by Ollama; retained here for archival notes
 
 ### 3. Documentation
-- ✅ Created `DEVELOPMENT_JOURNAL.md` with:
+- ✅ Created `ENGINEERING_LOG.md` with:
   - Session-by-session progress tracking
   - Configuration recommendations (30k context, 256 batch, etc.)
   - Known issues and solutions
   - Test results history (53.6% → 77.22% RAGAS scores)
   - Next session TODO list
   
-- ✅ Updated `CLEANUP_SUMMARY.md` to minimal, domain-neutral version
+- ✅ Updated `MAINTENANCE_LOG.md` to minimal, domain-neutral version
 - ✅ Added `OPTIMIZATION_GUIDE.md` (previously created)
 - ✅ Added `verify_offline_requirements.py` (previously created)
 

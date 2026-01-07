@@ -3,8 +3,8 @@
 This folder contains internal notes, logs, reviews, and templates kept for reproducibility and auditability. These documents are helpful for engineering traceability but are not required to understand or operate NIC.
 
 ## Contents
-- Development logs (e.g., DEVELOPMENT_JOURNAL.md)
-- Cleanup and maintenance notes (e.g., CLEANUP_SUMMARY.md)
+- Development logs (e.g., ENGINEERING_LOG.md)
+- Cleanup and maintenance notes (e.g., MAINTENANCE_LOG.md)
 - Code review artifacts (e.g., CODE_REVIEW_REPORT.md, CODE_REVIEW_SUMMARY.md)
 - Security tracking (e.g., SECURITY_FIXES_REQUIRED.md, SECURITY_FIXES_IMPLEMENTED.md)
 - Validation and verification templates (e.g., VALIDATION_TEMPLATE.md, VERIFICATION_CHECKLIST.md)

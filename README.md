@@ -42,6 +42,8 @@ This is not a product—it's a **reference architecture** showing that safety-aw
 | **Reproducible** | Locked dependencies, versioned corpus, deterministic retrieval. |
 | **Hybrid Retrieval** | Vector similarity (FAISS) unioned with BM25 lexical search, then reranked and diversified (MMR). Toggle via NOVA_HYBRID_SEARCH. |
 
+Why hybrid: improves recall for exact terms, part names, and diagnostic codes in safety‑critical manuals.
+
 ---
 
 ## Claims → Evidence
