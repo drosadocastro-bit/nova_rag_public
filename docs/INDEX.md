@@ -19,6 +19,7 @@ A curated table of contents for the NIC documentation set. Start here to quickly
 - [System Architecture](architecture/SYSTEM_ARCHITECTURE.md) — Components and responsibilities
 - [Data Flow](architecture/DATA_FLOW.md) — Request routing, retrieval, and audit flow
 - [Threat Model](architecture/THREAT_MODEL.md) — Assumptions, assets, risks, mitigations
+- [BM25 Caching](architecture/BM25_CACHING.md) — Cache lifecycle, invalidation, and troubleshooting
 - Diagram: [Architecture Diagram](architecture/diagram.svg)
 
 ## Safety
@@ -33,6 +34,7 @@ A curated table of contents for the NIC documentation set. Start here to quickly
 - [Stress Tests](evaluation/STRESS_TESTS.md) — Load, edge cases, robustness
 - [RAGAS Results](evaluation/RAGAS_RESULTS.md) — Metric details from recent runs
 - [Performance Benchmarks](evaluation/PERFORMANCE_BENCHMARKS.md) — Latency, throughput, memory metrics
+- [Load Test Results](evaluation/LOAD_TEST_RESULTS.md) — Concurrent user testing and scaling recommendations
 
 ## Deployment
 - [Air-Gapped Deployment](deployment/AIR_GAPPED_DEPLOYMENT.md) — Offline setup and policies
