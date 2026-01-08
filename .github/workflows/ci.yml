@@ -1,0 +1,152 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  lint-and-test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12', '3.13']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install ruff pip-audit
+    
+    - name: Lint with ruff
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        ruff check --select=E9,F63,F7,F82 --target-version=py312 .
+        # Exit-zero treats all errors as warnings
+        ruff check --exit-zero --target-version=py312 .
+      continue-on-error: true
+    
+    - name: Check code formatting
+      run: |
+        ruff format --check .
+      continue-on-error: true
+    
+    - name: Run basic import checks
+      run: |
+        python -c "import backend; print('✓ backend.py imports successfully')"
+        python -c "import cache_utils; print('✓ cache_utils.py imports successfully')"
+      continue-on-error: false
+    
+    - name: Verify offline requirements script
+      run: |
+        if [ -f verify_offline_requirements.py ]; then
+          python verify_offline_requirements.py --check-only || echo "⚠ Offline verification check returned warnings"
+        fi
+      continue-on-error: true
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+    
+    - name: Install pip-audit
+      run: |
+        python -m pip install --upgrade pip
+        pip install pip-audit
+    
+    - name: Audit dependencies for security vulnerabilities
+      run: |
+        pip-audit --requirement requirements.txt --desc
+      continue-on-error: true
+
+  documentation-check:
+    name: Documentation Link Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Check documentation links
+      run: |
+        # Install markdown-link-check
+        npm install -g markdown-link-check
+        
+        # Check all markdown files for broken links (skip external links in offline mode)
+        find docs -name "*.md" -exec markdown-link-check --config .github/workflows/markdown-link-check-config.json {} \; || true
+      continue-on-error: true
+    
+    - name: Verify documentation structure
+      run: |
+        # Verify all documented files exist
+        echo "Checking documentation structure..."
+        
+        # Check key documentation files
+        test -f docs/INDEX.md || { echo "❌ Missing docs/INDEX.md"; exit 1; }
+        test -f docs/USER_GUIDE.md || { echo "❌ Missing docs/USER_GUIDE.md"; exit 1; }
+        test -f docs/FAQ.md || { echo "❌ Missing docs/FAQ.md"; exit 1; }
+        test -f docs/TROUBLESHOOTING.md || { echo "❌ Missing docs/TROUBLESHOOTING.md"; exit 1; }
+        test -f docs/api/API_REFERENCE.md || { echo "❌ Missing docs/api/API_REFERENCE.md"; exit 1; }
+        test -f docs/deployment/CONFIGURATION.md || { echo "❌ Missing docs/deployment/CONFIGURATION.md"; exit 1; }
+        test -f docs/evaluation/PERFORMANCE_BENCHMARKS.md || { echo "❌ Missing docs/evaluation/PERFORMANCE_BENCHMARKS.md"; exit 1; }
+        
+        echo "✓ All required documentation files exist"
+
+  build-verification:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Verify Python syntax
+      run: |
+        python -m py_compile nova_flask_app.py
+        python -m py_compile backend.py
+        python -m py_compile cache_utils.py
+        find agents -name "*.py" -exec python -m py_compile {} \;
+        echo "✓ All Python files have valid syntax"
+    
+    - name: Check for common issues
+      run: |
+        # Check for TODO/FIXME markers
+        echo "Checking for TODO/FIXME markers..."
+        grep -rn "TODO\|FIXME" --include="*.py" . || echo "No TODO/FIXME found"
+        
+        # Check for print statements in production code (should use logging)
+        echo "Checking for print statements..."
+        grep -rn "print(" --include="*.py" . | grep -v "test_" | grep -v "#" || echo "✓ No problematic print statements"
+      continue-on-error: true

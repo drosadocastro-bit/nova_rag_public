@@ -1,4 +1,4 @@
-﻿from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify
 import backend as backend_mod
 from backend import (
     nova_text_handler, check_ollama_connection, export_session_to_text,
