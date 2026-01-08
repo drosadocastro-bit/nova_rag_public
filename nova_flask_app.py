@@ -196,10 +196,11 @@ def api_ask():
         if traced_sources:
             retrieval_score = sum(s["confidence"] for s in traced_sources) / len(traced_sources)
         
-        # Ensure consistent JSON structure: when answer is a dict, keep it as-is for proper JSON serialization
-        # The frontend formatAnswer() function handles both string and dict responses
+        # Build response with consistent structure
+        # Note: answer can be either a string or dict (for structured responses like troubleshooting, procedures, etc.)
+        # Flask's jsonify() automatically handles proper JSON serialization for both types
         response_data = {
-            "answer": answer,  # Can be string or dict - jsonify handles both correctly
+            "answer": answer,
             "confidence": f"{confidence_pct*100:.1f}%",
             "retrieval_score": round(retrieval_score, 4),
             "traced_sources": traced_sources,
