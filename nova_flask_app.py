@@ -243,6 +243,30 @@ def api_retrieve():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/metrics", methods=["GET"])
+@limiter.limit("120 per minute")
+def metrics():
+    """Prometheus-compatible metrics endpoint."""
+    import time
+    
+    # Get cache stats if SQL logging enabled
+    cache_stats = cache_utils.get_query_stats()
+    
+    # Basic metrics
+    metrics_data = {
+        "timestamp": time.time(),
+        "uptime_seconds": time.time() - app.config.get("start_time", time.time()),
+        "queries_total": cache_stats.get("total_queries", 0),
+        "avg_response_time_ms": cache_stats.get("avg_response_time_ms", 0),
+        "avg_retrieval_confidence": cache_stats.get("avg_retrieval_confidence", 0),
+        "audit_status_breakdown": cache_stats.get("audit_status_breakdown", {}),
+        "cache_enabled": os.environ.get("NOVA_ENABLE_RETRIEVAL_CACHE", "0") == "1",
+        "rate_limit_enabled": RATE_LIMIT_ENABLED,
+        "hybrid_search_enabled": os.environ.get("NOVA_HYBRID_SEARCH", "1") == "1",
+    }
+    
+    return jsonify(metrics_data)
+
 def run_startup_validation():
     """
     Comprehensive startup validation checks.
@@ -371,6 +395,11 @@ def run_startup_validation():
     return all_checks_passed
 
 if __name__ == "__main__":
+    import time
+    
+    # Track application start time for uptime metrics
+    app.config["start_time"] = time.time()
+    
     # Run startup validation
     validation_passed = run_startup_validation()
     

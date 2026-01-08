@@ -1,0 +1,25 @@
+{
+  "sample_questions": [
+    "What should I check if my engine won't start?",
+    "How do I test the alternator?",
+    "What's the procedure for checking brake fluid?"
+  ],
+  "sample_documents": [
+    {
+      "text": "To diagnose a no-start condition, first check the battery voltage. It should read 12.6V or higher when the engine is off.",
+      "source": "vehicle_manual.txt",
+      "page": 42,
+      "confidence": 0.95
+    },
+    {
+      "text": "The alternator can be tested with a multimeter. With the engine running, voltage should be between 13.5V and 14.5V.",
+      "source": "vehicle_manual.txt",
+      "page": 87,
+      "confidence": 0.92
+    }
+  ],
+  "expected_responses": {
+    "no_start": "Check battery, starter, fuel pump, ignition system",
+    "alternator_test": "Use multimeter to measure voltage while engine running"
+  }
+}

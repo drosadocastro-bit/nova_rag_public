@@ -1,6 +1,6 @@
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra -q --strict-markers"
+addopts = "-ra -q --strict-markers --cov-report=term-missing"
 testpaths = [
     "tests",
 ]
@@ -9,8 +9,8 @@ python_classes = "Test*"
 python_functions = "test_*"
 
 markers = [
-    "unit: Unit tests",
-    "integration: Integration tests", 
+    "unit: Unit tests (fast, no external dependencies)",
+    "integration: Integration tests (may require services)",
     "slow: Slow tests that might timeout",
 ]
 
@@ -24,9 +24,14 @@ omit = [
     "*/env/*",
     "*/.venv/*",
     "*/models/*",
+    "*/data/*",
+    "*/vector_db/*",
 ]
 
 [tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
@@ -37,3 +42,6 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
+
+[tool.coverage.html]
+directory = "htmlcov"
