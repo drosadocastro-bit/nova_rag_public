@@ -284,6 +284,31 @@ function formatAnswer(answer) {
             return `⚠️ <strong>${escapeHtml(answer.reason || 'Request Declined')}</strong><br><br>${escapeHtml(answer.message || 'Unable to process this request.')}`;
         }
         
+        // Handle simple structured response with "answer" field (type: "structured")
+        if (answer.type === 'structured' && answer.answer) {
+            return escapeHtml(answer.answer);
+        }
+        
+        // Handle structured response with nested analysis.answer
+        if (answer.type === 'structured' && answer.analysis && answer.analysis.answer) {
+            return escapeHtml(answer.analysis.answer);
+        }
+        
+        // Handle response with direct "answer" string field
+        if (typeof answer.answer === 'string') {
+            return escapeHtml(answer.answer);
+        }
+        
+        // Handle response with "message" field
+        if (typeof answer.message === 'string' && !answer.response_type) {
+            return escapeHtml(answer.message);
+        }
+        
+        // Handle response with "response" string field
+        if (typeof answer.response === 'string') {
+            return escapeHtml(answer.response);
+        }
+        
         // Handle full diagnostic response with query/context/response structure
         if (answer.response && answer.response.analysis) {
             const analysis = answer.response.analysis;
