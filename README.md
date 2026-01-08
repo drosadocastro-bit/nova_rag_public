@@ -107,6 +107,8 @@ See the [Documentation Index](docs/INDEX.md) for detailed guides.
 
 Hybrid search combines vector similarity (FAISS) with lexical BM25 to improve recall for specific terminology, codes, and procedures. It is enabled by default.
 
+**BM25 index is cached to disk** and automatically rebuilt when the corpus changes, eliminating startup overhead for large document sets.
+
 - Enable/disable:
 
 ```powershell
@@ -124,6 +126,7 @@ python nova_flask_app.py
 ```powershell
 $env:NOVA_BM25_K1="1.5"   # term saturation (default 1.5)
 $env:NOVA_BM25_B="0.75"   # length normalization (default 0.75)
+$env:NOVA_BM25_CACHE="1"  # enable disk caching (default on)
 ```
 
 This feature is suitable to highlight in the README for safety‑critical contexts; it makes retrieval more robust to exact terms and diagnostic codes. For architecture details, see the [Documentation Index](docs/INDEX.md).

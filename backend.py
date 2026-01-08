@@ -725,6 +725,7 @@ if USE_VISION_AWARE_RERANKER and bool(os.environ.get("NOVA_INIT_TFIDF_CACHE", "0
 # BM25 LEXICAL INDEX (Hybrid)
 # =======================
 from math import log
+import hashlib
 
 _BM25_INDEX: dict[str, dict[int, int]] = {}
 _BM25_DOC_LEN: list[int] = []
@@ -733,11 +734,87 @@ _BM25_READY: bool = False
 _BM25_K1: float = float(os.environ.get("NOVA_BM25_K1", "1.5"))
 _BM25_B: float = float(os.environ.get("NOVA_BM25_B", "0.75"))
 
+# BM25 disk cache (enabled by default; set NOVA_BM25_CACHE=0 to disable)
+BM25_CACHE_ENABLED = os.environ.get("NOVA_BM25_CACHE", "1") == "1"
+BM25_CACHE_PATH = INDEX_DIR / "bm25_index.pkl"
+BM25_CORPUS_HASH_PATH = INDEX_DIR / "bm25_corpus_hash.txt"
+
 def _tokenize(text: str) -> list[str]:
     return [t for t in re.split(r"\W+", (text or "").lower()) if t]
 
+def _compute_corpus_hash() -> str:
+    """Compute a hash of the corpus to detect changes."""
+    hasher = hashlib.sha256()
+    for d in docs:
+        hasher.update(d.get("text", "").encode("utf-8"))
+    return hasher.hexdigest()[:16]
+
+def _save_bm25_index():
+    """Save BM25 index and corpus hash to disk."""
+    if not BM25_CACHE_ENABLED:
+        return
+    try:
+        data = {
+            "index": _BM25_INDEX,
+            "doc_len": _BM25_DOC_LEN,
+            "avgdl": _BM25_AVGDL,
+            "k1": _BM25_K1,
+            "b": _BM25_B,
+        }
+        if SECURE_CACHE_AVAILABLE:
+            from secure_cache import secure_pickle_dump
+            secure_pickle_dump(data, BM25_CACHE_PATH)
+        else:
+            import pickle
+            with BM25_CACHE_PATH.open("wb") as f:
+                pickle.dump(data, f)
+        # Save corpus hash
+        corpus_hash = _compute_corpus_hash()
+        BM25_CORPUS_HASH_PATH.write_text(corpus_hash, encoding="utf-8")
+        print(f"[NovaRAG] BM25 index cached to {BM25_CACHE_PATH}")
+    except Exception as e:
+        print(f"[NovaRAG] Failed to save BM25 cache: {e}")
+
+def _load_bm25_index() -> bool:
+    """Load BM25 index from disk if valid; return True if loaded."""
+    global _BM25_INDEX, _BM25_DOC_LEN, _BM25_AVGDL, _BM25_READY
+    if not BM25_CACHE_ENABLED or not BM25_CACHE_PATH.exists() or not BM25_CORPUS_HASH_PATH.exists():
+        return False
+    try:
+        # Check corpus hash
+        saved_hash = BM25_CORPUS_HASH_PATH.read_text(encoding="utf-8").strip()
+        current_hash = _compute_corpus_hash()
+        if saved_hash != current_hash:
+            print(f"[NovaRAG] BM25 cache invalid (corpus changed); rebuilding...")
+            return False
+        # Load index
+        if SECURE_CACHE_AVAILABLE:
+            from secure_cache import secure_pickle_load
+            data = secure_pickle_load(BM25_CACHE_PATH)
+        else:
+            import pickle
+            with BM25_CACHE_PATH.open("rb") as f:
+                data = pickle.load(f)
+        # Validate parameters match
+        if data.get("k1") != _BM25_K1 or data.get("b") != _BM25_B:
+            print(f"[NovaRAG] BM25 cache params mismatch; rebuilding...")
+            return False
+        _BM25_INDEX = data["index"]
+        _BM25_DOC_LEN = data["doc_len"]
+        _BM25_AVGDL = data["avgdl"]
+        _BM25_READY = True
+        print(f"[NovaRAG] BM25 index loaded from cache: {len(_BM25_INDEX)} terms, avgdl={_BM25_AVGDL:.1f}")
+        return True
+    except Exception as e:
+        print(f"[NovaRAG] Failed to load BM25 cache: {e}; rebuilding...")
+        return False
+
 def _build_bm25_index():
     global _BM25_INDEX, _BM25_DOC_LEN, _BM25_AVGDL, _BM25_READY
+    # Try loading from cache first
+    if _load_bm25_index():
+        return
+    # Build from scratch
     try:
         _BM25_INDEX = {}
         _BM25_DOC_LEN = []
@@ -752,7 +829,8 @@ def _build_bm25_index():
                 posting[i] = tf
         _BM25_AVGDL = (sum(_BM25_DOC_LEN) / max(1, len(_BM25_DOC_LEN))) if _BM25_DOC_LEN else 0.0
         _BM25_READY = True
-        print(f"[NovaRAG] BM25 index ready: {len(_BM25_INDEX)} terms, avgdl={_BM25_AVGDL:.1f}")
+        print(f"[NovaRAG] BM25 index built: {len(_BM25_INDEX)} terms, avgdl={_BM25_AVGDL:.1f}")
+        _save_bm25_index()
     except Exception as e:
         _BM25_READY = False
         print(f"[NovaRAG] BM25 index build failed: {e}")
