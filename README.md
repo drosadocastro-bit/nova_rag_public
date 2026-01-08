@@ -6,6 +6,7 @@
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![Validated](https://img.shields.io/badge/Adversarial%20Tests-111%2F111%20passed-brightgreen.svg)](docs/evaluation/EVALUATION_SUMMARY.md)
 [![Hybrid Retrieval](https://img.shields.io/badge/Retrieval-Hybrid%20(Vector+BM25)-purple.svg)](#hybrid-retrieval)
+[![Load Tested](https://img.shields.io/badge/Load%20Tested-20%20users-blue)](docs/evaluation/LOAD_TEST_RESULTS.md)
 
 ---
 
@@ -65,7 +66,9 @@ Why hybrid: improves recall for exact terms, part names, and diagnostic codes in
 | [**Safety Model**](docs/safety/SAFETY_MODEL.md) | Hallucination defenses, validation methodology |
 | [**Safety-Critical Context**](docs/safety/SAFETY_CRITICAL_CONTEXT.md) | Use context, human-on-the-loop model, failure philosophy |
 | [**Evaluation Summary**](docs/evaluation/EVALUATION_SUMMARY.md) | Test coverage, adversarial results, RAGAS scores |
+| [**Load Test Results**](docs/evaluation/LOAD_TEST_RESULTS.md) | Performance benchmarks, scaling recommendations |
 | [**Deployment Guide**](docs/deployment/AIR_GAPPED_DEPLOYMENT.md) | Offline setup, air-gap deployment |
+| [**BM25 Caching**](docs/architecture/BM25_CACHING.md) | Cache lifecycle, invalidation, troubleshooting |
 
 Additional technical documentation available in [`docs/`](docs/).
 
@@ -224,7 +227,7 @@ make ci-local           # Simulate CI pipeline
 
 Hybrid search combines vector similarity (FAISS) with lexical BM25 to improve recall for specific terminology, codes, and procedures. It is enabled by default.
 
-**BM25 index is cached to disk** and automatically rebuilt when the corpus changes, eliminating startup overhead for large document sets.
+**BM25 index is cached to disk** and automatically rebuilt when the corpus changes, eliminating startup overhead for large document sets. See [BM25 Caching Architecture](docs/architecture/BM25_CACHING.md) for details on cache lifecycle and invalidation.
 
 - Enable/disable:
 
