@@ -1,4 +1,4 @@
-﻿from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify
 import backend as backend_mod
 from backend import (
     nova_text_handler, check_ollama_connection, export_session_to_text,
@@ -204,5 +204,143 @@ def api_retrieve():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+def run_startup_validation():
+    """
+    Comprehensive startup validation checks.
+    Verifies system readiness before accepting requests.
+    Returns True if all checks pass, False otherwise.
+    """
+    print("\n" + "=" * 70)
+    print("STARTUP VALIDATION")
+    print("=" * 70)
+    
+    all_checks_passed = True
+    warnings = []
+    
+    # 1. Check required environment variables (optional but recommended)
+    print("\n[1/5] Checking environment configuration...")
+    optional_vars = {
+        "NOVA_CITATION_AUDIT": "Citation audit (recommended for production)",
+        "NOVA_CITATION_STRICT": "Strict citation mode",
+        "NOVA_HYBRID_SEARCH": "Hybrid retrieval (vector + BM25)",
+    }
+    
+    for var, description in optional_vars.items():
+        value = os.environ.get(var, "not set")
+        status = "✓" if value != "not set" else "○"
+        print(f"  {status} {var}: {value} ({description})")
+        if value == "not set":
+            warnings.append(f"{var} not set (using default)")
+    
+    # 2. Check Ollama connectivity
+    print("\n[2/5] Checking Ollama connectivity...")
+    try:
+        ollama_ok, ollama_detail = check_ollama_connection()
+        if ollama_ok:
+            print(f"  ✓ Ollama connection successful")
+            print(f"    {ollama_detail.strip()}")
+        else:
+            print(f"  ✗ Ollama connection failed: {ollama_detail}")
+            print(f"    → Start Ollama: 'ollama serve'")
+            print(f"    → Verify model: 'ollama pull llama3.2:8b'")
+            all_checks_passed = False
+    except Exception as e:
+        print(f"  ✗ Ollama check error: {e}")
+        all_checks_passed = False
+    
+    # 3. Check FAISS index existence and integrity
+    print("\n[3/5] Checking FAISS index...")
+    try:
+        from pathlib import Path
+        index_path = BASE_DIR / "vector_db" / "vehicle_index.faiss"
+        docs_path = BASE_DIR / "vector_db" / "vehicle_docs.jsonl"
+        
+        if index_path.exists():
+            print(f"  ✓ Index file found: {index_path}")
+            # Quick integrity check
+            import faiss
+            index = faiss.read_index(str(index_path))
+            print(f"  ✓ Index loaded successfully ({index.ntotal} vectors)")
+            
+            if docs_path.exists():
+                print(f"  ✓ Documents metadata found: {docs_path}")
+            else:
+                print(f"  ⚠ Documents metadata missing: {docs_path}")
+                warnings.append("Documents metadata missing (may affect retrieval)")
+        else:
+            print(f"  ✗ Index file not found: {index_path}")
+            print(f"    → Build index: 'python ingest_vehicle_manual.py'")
+            all_checks_passed = False
+    except Exception as e:
+        print(f"  ✗ Index check error: {e}")
+        all_checks_passed = False
+    
+    # 4. Check cache directory permissions
+    print("\n[4/5] Checking cache directory permissions...")
+    try:
+        cache_dir = BASE_DIR / "vector_db"
+        if cache_dir.exists():
+            # Test write permissions
+            test_file = cache_dir / ".write_test"
+            try:
+                test_file.touch()
+                test_file.unlink()
+                print(f"  ✓ Cache directory writable: {cache_dir}")
+            except PermissionError:
+                print(f"  ✗ Cache directory not writable: {cache_dir}")
+                print(f"    → Fix permissions: 'chmod 755 {cache_dir}'")
+                warnings.append("Cache directory not writable (caching disabled)")
+        else:
+            print(f"  ⚠ Cache directory does not exist: {cache_dir}")
+            warnings.append("Cache directory missing (will be created on first use)")
+    except Exception as e:
+        print(f"  ⚠ Cache check error: {e}")
+        warnings.append(f"Cache check failed: {e}")
+    
+    # 5. Check Python dependencies
+    print("\n[5/5] Checking Python dependencies...")
+    required_modules = [
+        ("faiss", "FAISS vector search"),
+        ("torch", "PyTorch"),
+        ("sentence_transformers", "Sentence embeddings"),
+        ("flask", "Web framework"),
+    ]
+    
+    for module, description in required_modules:
+        try:
+            __import__(module)
+            print(f"  ✓ {module} ({description})")
+        except ImportError:
+            print(f"  ✗ {module} not found ({description})")
+            print(f"    → Install: 'pip install -r requirements.txt'")
+            all_checks_passed = False
+    
+    # Summary
+    print("\n" + "=" * 70)
+    if all_checks_passed:
+        print("STARTUP VALIDATION: ✓ ALL CHECKS PASSED")
+        if warnings:
+            print(f"\nWarnings ({len(warnings)}):")
+            for warning in warnings:
+                print(f"  ⚠ {warning}")
+    else:
+        print("STARTUP VALIDATION: ✗ FAILED")
+        print("\nCritical issues detected. Please resolve them before starting.")
+        print("See documentation: docs/TROUBLESHOOTING.md")
+    print("=" * 70 + "\n")
+    
+    return all_checks_passed
+
 if __name__ == "__main__":
+    # Run startup validation
+    validation_passed = run_startup_validation()
+    
+    if not validation_passed:
+        print("\n❌ Startup validation failed. Exiting.")
+        print("💡 See docs/TROUBLESHOOTING.md for help resolving issues.\n")
+        import sys
+        sys.exit(1)
+    
+    # Start Flask application
+    print("🚀 Starting Flask application...")
     app.run(host="127.0.0.1", port=5000, debug=False)

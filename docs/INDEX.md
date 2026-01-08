@@ -7,6 +7,14 @@ A curated table of contents for the NIC documentation set. Start here to quickly
 - [Quickstart](../QUICKSTART.md) — Detailed environment setup and tips
 - [Ollama Modelfiles](../ollama/README.md) — Local model configuration and usage
 
+## User Documentation
+- [User Guide](USER_GUIDE.md) — Getting started, example queries, best practices
+- [FAQ](FAQ.md) — Frequently asked questions
+- [Troubleshooting Guide](TROUBLESHOOTING.md) — Common issues and solutions
+
+## API Documentation
+- [API Reference](api/API_REFERENCE.md) — Complete API documentation with examples
+
 ## Architecture
 - [System Architecture](architecture/SYSTEM_ARCHITECTURE.md) — Components and responsibilities
 - [Data Flow](architecture/DATA_FLOW.md) — Request routing, retrieval, and audit flow
@@ -24,11 +32,13 @@ A curated table of contents for the NIC documentation set. Start here to quickly
 - [Adversarial Tests](evaluation/ADVERSARIAL_TESTS.md) — Attack scenarios and defenses
 - [Stress Tests](evaluation/STRESS_TESTS.md) — Load, edge cases, robustness
 - [RAGAS Results](evaluation/RAGAS_RESULTS.md) — Metric details from recent runs
+- [Performance Benchmarks](evaluation/PERFORMANCE_BENCHMARKS.md) — Latency, throughput, memory metrics
 
 ## Deployment
 - [Air-Gapped Deployment](deployment/AIR_GAPPED_DEPLOYMENT.md) — Offline setup and policies
 - [Offline Model Setup](deployment/OFFLINE_MODEL_SETUP.md) — Model acquisition and validation
 - [Native Engine Setup](deployment/NATIVE_ENGINE_SETUP.md) — Local LLM runtime configuration
+- [Configuration Guide](deployment/CONFIGURATION.md) — Environment variables and configuration examples
 
 ## Governance (root)
 - [NIC Response Policy](../governance/nic_response_policy.json)
