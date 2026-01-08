@@ -126,27 +126,22 @@ async function updateStatus() {
         if (Array.isArray(lmStatus)) {
             const [connected, msg] = lmStatus;
             statusEl.innerHTML = connected 
-                ? `<span class="status-ok">✅${msg || ' Connected'}</span>`
+                ? `<span class="status-ok">✅ Advisory system · Human decision required</span>`
                 : `<span class="status-err">❌ Disconnected</span>`;
         } else if (typeof lmStatus === 'boolean') {
             statusEl.innerHTML = lmStatus 
-                ? '<span class="status-ok">✅ LM Studio Connected</span>'
-                : '<span class="status-err">❌ LM Studio Disconnected</span>';
+                ? '<span class="status-ok">✅ Advisory system · Human decision required</span>'
+                : '<span class="status-err">❌ Disconnected</span>';
+        } else if (lmStatus === undefined || lmStatus === null) {
+            statusEl.innerHTML = '<span class="status-ok">✅ Advisory system · Human decision required</span>';
         } else {
-            statusEl.innerHTML = String(lmStatus);
+            statusEl.innerHTML = '<span class="status-ok">✅ Advisory system · Human decision required</span>';
         }
         
-        // Update current model display
+        // Update current model display (hidden - not needed for user)
         const modelEl = document.getElementById('current-model');
-        if (data.loaded_model) {
-            const modelName = data.loaded_model.includes('llama') || data.loaded_model.includes('fireball') 
-                ? 'LLAMA (Fast)' 
-                : data.loaded_model.includes('gpt') || data.loaded_model.includes('oss')
-                ? 'GPT-OSS (Deep)' 
-                : data.loaded_model;
-            modelEl.innerHTML = `<strong>Active:</strong> ${modelName}`;
-        } else {
-            modelEl.textContent = 'No model loaded';
+        if (modelEl) {
+            modelEl.style.display = 'none';
         }
 
         // Update safety flags (citation audit / strict mode)
@@ -271,7 +266,17 @@ async function submitQuestion() {
 // Format answer - handles both string and dict (refusal schema)
 function formatAnswer(answer) {
     if (typeof answer === 'string') {
-        return escapeHtml(answer);
+        // Clean up inline JSON/dict sources that appear in the text
+        let cleaned = answer;
+        // Remove [Sources: {...}] patterns
+        cleaned = cleaned.replace(/\s*\|\s*\[Sources:.*?\]\]?/gi, '');
+        cleaned = cleaned.replace(/\[Sources:.*?\]\]?/gi, '');
+        // Remove {'source': ...} dict patterns
+        cleaned = cleaned.replace(/\{'source':\s*'[^']*',\s*'page':\s*\d+\}/g, '');
+        // Remove trailing pipes and clean up
+        cleaned = cleaned.replace(/\s*\|\s*$/g, '');
+        cleaned = cleaned.replace(/\s*\|\s*\|/g, ' |');
+        return escapeHtml(cleaned.trim());
     }
     if (typeof answer === 'object' && answer !== null) {
         // Handle refusal schema
@@ -413,10 +418,31 @@ function formatAnswer(answer) {
             return html;
         }
         
-        // Fallback: pretty print JSON
-        return '<pre>' + JSON.stringify(answer, null, 2) + '</pre>';
+        // Fallback: format JSON object as readable key-value pairs
+        return formatJsonAsHtml(answer);
     }
     return String(answer);
+}
+
+// Format JSON object as readable HTML key-value pairs
+function formatJsonAsHtml(obj, depth = 0) {
+    if (typeof obj !== 'object' || obj === null) {
+        return escapeHtml(String(obj));
+    }
+    
+    let html = '<div class="json-formatted" style="margin-left: ' + (depth * 16) + 'px;">';
+    for (const [key, value] of Object.entries(obj)) {
+        const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        
+        if (typeof value === 'object' && value !== null) {
+            html += `<div class="json-key"><strong>${escapeHtml(displayKey)}:</strong></div>`;
+            html += formatJsonAsHtml(value, depth + 1);
+        } else {
+            html += `<div class="json-pair"><strong>${escapeHtml(displayKey)}:</strong> ${escapeHtml(String(value))}</div>`;
+        }
+    }
+    html += '</div>';
+    return html;
 }
 
 // Format traced sources for display
@@ -505,33 +531,10 @@ function addMessageToChat(text, sender, model = '', confidence = '', auditStatus
         msgDiv.appendChild(infoDiv);
     }
     
-    // Add JSON metadata viewer for assistant responses
+    // JSON metadata viewer removed for cleaner UI - data still available in browser console
+    // Developers can access fullData via: console.log(fullData)
     if (sender === 'assistant' && fullData) {
-        const metadataDiv = document.createElement('div');
-        metadataDiv.className = 'response-metadata';
-        metadataDiv.style.cssText = 'margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 5px; font-size: 0.85em;';
-        
-        const toggleBtn = document.createElement('button');
-        toggleBtn.textContent = '📋 Show JSON Metadata';
-        toggleBtn.style.cssText = 'background: #666; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.9em;';
-        
-        const jsonContent = document.createElement('pre');
-        jsonContent.style.cssText = 'display: none; margin-top: 10px; padding: 10px; background: #2d2d2d; color: #f8f8f2; border-radius: 5px; overflow-x: auto; font-size: 0.85em;';
-        jsonContent.textContent = JSON.stringify(fullData, null, 2);
-        
-        toggleBtn.addEventListener('click', () => {
-            if (jsonContent.style.display === 'none') {
-                jsonContent.style.display = 'block';
-                toggleBtn.textContent = '📋 Hide JSON Metadata';
-            } else {
-                jsonContent.style.display = 'none';
-                toggleBtn.textContent = '📋 Show JSON Metadata';
-            }
-        });
-        
-        metadataDiv.appendChild(toggleBtn);
-        metadataDiv.appendChild(jsonContent);
-        msgDiv.appendChild(metadataDiv);
+        console.log('[NIC Response Data]', fullData);
     }
     
     messagesEl.appendChild(msgDiv);
@@ -751,6 +754,7 @@ function closeFavoritesModal() {
 // Pre-load GPT-OSS model with high token config
 async function preloadGPTOSS() {
     const btn = document.getElementById('load-gptoss-btn');
+    if (!btn) return; // Button not present in UI
     btn.disabled = true;
     btn.innerHTML = '<span>⏳</span> Loading GPT-OSS...';
     
@@ -783,6 +787,7 @@ async function preloadGPTOSS() {
 // Pre-load LLAMA model (fast)
 async function preloadLLAMA() {
     const btn = document.getElementById('load-llama-btn');
+    if (!btn) return; // Button not present in UI
     btn.disabled = true;
     btn.innerHTML = '<span>⏳</span> Loading LLAMA...';
     

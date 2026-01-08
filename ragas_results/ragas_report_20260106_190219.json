@@ -1,0 +1,48 @@
+{
+  "timestamp": "20260106_190219",
+  "config": {
+    "nic_api": "http://127.0.0.1:5000/api",
+    "eval_model": "qwen2.5-coder-14b",
+    "total_samples": 1
+  },
+  "results": [
+    {
+      "question": "Engine cranks but won't start. What should I check?",
+      "answer": "{\"notes\": \"LLM unavailable/hung; provided retrieval-only summary with citations.\", \"sources\": [{\"page\": 18, \"source\": \"vehicle_manual.txt\"}, {\"page\": 26, \"source\": \"vehicle_manual.txt\"}, {\"page\": 22, \"source\": \"vehicle_manual.txt\"}], \"summary\": [\"From vehicle_manual.txt p18: PSI Fuel Pressure (WOT) 35 PSI minimum Pump Flow Rate 30 GPH minimum Filter Replacement 15,000 miles --- PAGE 18 --- Component Specification Injector Resistance 12-16 ohms Tank Capacity 16 gallons SECTION 6: DIAGNOSTIC TROUBLE CODES Para 6-1: OBD-II Code Overview On-Board Diagnos\", \"From vehicle_manual.txt p26: ts body. [Safety Notice 7-B] Step 3: Test battery Measure resting voltage: should be 12.4V or higher --- PAGE 26 --- Perform load test per Para 1-3.2 If voltage below 12.0V or fails load test, replace [Citation: Para 7-5.3] APPENDIX A: SAFETY NOTICES Safety Notice 1-A: Fuel Syste\", \"From vehicle_manual.txt p22: itions Include: Frequent short trips (under 5 miles) Extreme temperatures (below 0\\u00b0F or above 100\\u00b0F) --- PAGE 22 --- Dusty or off-road driving Trailer towing Commercial use (taxi, delivery, etc.) Para 7-2: Oil and Filter Change Service Interval: Normal: 5,000 miles or 6 months Se\"]}",
+      "contexts": [
+        "[vehicle_manual.txt p.2] ing)\nIgnition switch assembly\nBattery cables (4 AWG minimum)\n[Figure 1-1: Starting System Schematic] --- PAGE 2 ---\nPara 1-2: Engine Cranks But Won't ",
+        "[vehicle_manual.txt p.11] nt Specification\nBrake Fluid Type DOT 3\nFluid Capacity 0.5 quarts\nPad Minimum Thickness 3mm (0.118\") --- PAGE 11 ---\nComponent Specification\nRotor Min",
+        "[vehicle_manual.txt p.19] eration\nMonitor O2 sensor voltages with scan tool\nUpstream sensor: should fluctuate 0.1-0.9V rapidly --- PAGE 19 ---\nDownstream sensor: should be stea",
+        "[vehicle_manual.txt p.3] plug from cylinder 1\nReconnect spark plug wire\nGround plug body to engine block using insulated tool --- PAGE 3 ---\nHave assistant crank engine\nObserv",
+        "[vehicle_manual.txt p.1] --- PAGE 1 ---\nTM 9-2350 Vehicle Maintenance Manual\nDemonstration Dataset for NIC RAG System\nNOTICE: This is synthetic technical documentation created",
+        "[vehicle_manual.txt p.26] ts body. [Safety Notice 7-B]\nStep 3: Test battery\nMeasure resting voltage: should be 12.4V or higher --- PAGE 26 ---\nPerform load test per Para 1-3.2\n"
+      ],
+      "ground_truth": "When engine cranks but won't start, check these in order of likelihood: (1) Fuel system - verify fuel level and pump operation, test fuel pressure at 40-50 PSI [Citation: Para 1-2.1, Table 1-1]. (2) Ignition system - test for spark at plugs [Citation: Para 1-2.3]. (3) Air intake - inspect for severe restrictions [Citation: Para 1-2]. WARNING: Fuel system under pressure, wear eye protection [Safety Notice 1-A].",
+      "id": "PC001",
+      "category": "positive_case"
+    }
+  ],
+  "aggregate_scores": {
+    "faithfulness": null,
+    "answer_relevancy": null,
+    "context_precision": null,
+    "context_recall": null
+  },
+  "per_sample_scores": [
+    {
+      "user_input": "Engine cranks but won't start. What should I check?",
+      "retrieved_contexts": [
+        "[vehicle_manual.txt p.2] ing)\nIgnition switch assembly\nBattery cables (4 AWG minimum)\n[Figure 1-1: Starting System Schematic] --- PAGE 2 ---\nPara 1-2: Engine Cranks But Won't ",
+        "[vehicle_manual.txt p.11] nt Specification\nBrake Fluid Type DOT 3\nFluid Capacity 0.5 quarts\nPad Minimum Thickness 3mm (0.118\") --- PAGE 11 ---\nComponent Specification\nRotor Min",
+        "[vehicle_manual.txt p.19] eration\nMonitor O2 sensor voltages with scan tool\nUpstream sensor: should fluctuate 0.1-0.9V rapidly --- PAGE 19 ---\nDownstream sensor: should be stea",
+        "[vehicle_manual.txt p.3] plug from cylinder 1\nReconnect spark plug wire\nGround plug body to engine block using insulated tool --- PAGE 3 ---\nHave assistant crank engine\nObserv",
+        "[vehicle_manual.txt p.1] --- PAGE 1 ---\nTM 9-2350 Vehicle Maintenance Manual\nDemonstration Dataset for NIC RAG System\nNOTICE: This is synthetic technical documentation created",
+        "[vehicle_manual.txt p.26] ts body. [Safety Notice 7-B]\nStep 3: Test battery\nMeasure resting voltage: should be 12.4V or higher --- PAGE 26 ---\nPerform load test per Para 1-3.2\n"
+      ],
+      "response": "{\"notes\": \"LLM unavailable/hung; provided retrieval-only summary with citations.\", \"sources\": [{\"page\": 18, \"source\": \"vehicle_manual.txt\"}, {\"page\": 26, \"source\": \"vehicle_manual.txt\"}, {\"page\": 22, \"source\": \"vehicle_manual.txt\"}], \"summary\": [\"From vehicle_manual.txt p18: PSI Fuel Pressure (WOT) 35 PSI minimum Pump Flow Rate 30 GPH minimum Filter Replacement 15,000 miles --- PAGE 18 --- Component Specification Injector Resistance 12-16 ohms Tank Capacity 16 gallons SECTION 6: DIAGNOSTIC TROUBLE CODES Para 6-1: OBD-II Code Overview On-Board Diagnos\", \"From vehicle_manual.txt p26: ts body. [Safety Notice 7-B] Step 3: Test battery Measure resting voltage: should be 12.4V or higher --- PAGE 26 --- Perform load test per Para 1-3.2 If voltage below 12.0V or fails load test, replace [Citation: Para 7-5.3] APPENDIX A: SAFETY NOTICES Safety Notice 1-A: Fuel Syste\", \"From vehicle_manual.txt p22: itions Include: Frequent short trips (under 5 miles) Extreme temperatures (below 0\\u00b0F or above 100\\u00b0F) --- PAGE 22 --- Dusty or off-road driving Trailer towing Commercial use (taxi, delivery, etc.) Para 7-2: Oil and Filter Change Service Interval: Normal: 5,000 miles or 6 months Se\"]}",
+      "reference": "When engine cranks but won't start, check these in order of likelihood: (1) Fuel system - verify fuel level and pump operation, test fuel pressure at 40-50 PSI [Citation: Para 1-2.1, Table 1-1]. (2) Ignition system - test for spark at plugs [Citation: Para 1-2.3]. (3) Air intake - inspect for severe restrictions [Citation: Para 1-2]. WARNING: Fuel system under pressure, wear eye protection [Safety Notice 1-A].",
+      "faithfulness": NaN,
+      "answer_relevancy": NaN
+    }
+  ]
+}

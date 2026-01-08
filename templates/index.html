@@ -3,87 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Nova Intelligent Copilot - AI-powered vehicle maintenance and troubleshooting assistant">
+    <meta name="theme-color" content="#1e1e1e">
     <title>Nova Intelligent Copilot (NIC) – Vehicle Maintenance AI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
+    <div class="container" role="application">
         <!-- Header -->
-        <header class="header">
+        <header class="header" role="banner">
             <div class="header-content">
                 <div class="logo">
-                    <span class="logo-icon">🌌</span>
+                    <span class="logo-icon" aria-hidden="true">🌌</span>
                     <h1>Nova Copilot</h1>
                 </div>
                 <p class="tagline">Intelligent Vehicle Maintenance Assistant</p>
             </div>
             <div class="status-bar">
-                <div id="connection-status" class="status-indicator">
-                    <span class="spinner"></span> Checking connection...
+                <div id="connection-status" class="status-indicator" role="status" aria-live="polite">
+                    <span class="spinner" aria-hidden="true"></span> Checking connection...
                 </div>
             </div>
         </header>
 
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="main-content" role="main">
             <!-- Left Sidebar -->
-            <aside class="sidebar">
+            <aside class="sidebar" role="complementary" aria-label="Settings and controls">
                 <section class="sidebar-section">
-                    <h3>🤖 Model Control</h3>
-                    <div id="current-model" class="status-text" style="margin-bottom: 8px; font-size: 0.85rem; color: var(--text-secondary);">
-                        Loading...
+                    <h3 id="model-control-heading">🛡️ Safety Controls</h3>
+                    <div id="current-model" class="status-text" style="display: none;" role="status" aria-live="polite">
                     </div>
-                    <div id="safety-flags" class="status-text" style="margin-bottom: 12px; font-size: 0.8rem; color: var(--text-secondary);">
+                    <div id="safety-flags" class="status-text" style="margin-bottom: 12px; font-size: 0.8rem; color: var(--text-secondary);" role="status" aria-live="polite">
                         Safety: --
                     </div>
 
-                    <div class="safety-toggles" style="margin-bottom: 12px;">
+                    <div class="safety-toggles" style="margin-bottom: 12px;" role="group" aria-labelledby="model-control-heading">
                         <div class="toggle-row">
                             <label for="toggle-audit" class="toggle-label">Citation audit</label>
-                            <input id="toggle-audit" type="checkbox" checked />
+                            <input id="toggle-audit" type="checkbox" checked aria-describedby="audit-description" />
+                            <span id="audit-description" class="sr-only">Enable citation auditing for response validation</span>
                         </div>
                         <div class="toggle-row">
                             <label for="toggle-strict" class="toggle-label">Strict mode</label>
-                            <input id="toggle-strict" type="checkbox" checked />
+                            <input id="toggle-strict" type="checkbox" checked aria-describedby="strict-description" />
+                            <span id="strict-description" class="sr-only">Enable strict safety mode for conservative responses</span>
                         </div>
                         <div class="toggle-row">
                             <label for="toggle-metadata" class="toggle-label">Show sources</label>
-                            <input id="toggle-metadata" type="checkbox" checked />
+                            <input id="toggle-metadata" type="checkbox" checked aria-describedby="metadata-description" />
+                            <span id="metadata-description" class="sr-only">Display source citations in responses</span>
                         </div>
                     </div>
                 </section>
 
                 <section class="sidebar-section">
                     <h3>⚡ Quick Actions</h3>
-                    <button id="rebuild-btn" class="action-btn">
-                        <span>🔄</span> Rebuild Index
+                    <button id="rebuild-btn" class="action-btn" aria-label="Rebuild vector database index">
+                        <span aria-hidden="true">🔄</span> Rebuild Index
                     </button>
-                    <button id="export-btn" class="action-btn">
-                        <span>📥</span> Export Session
+                    <button id="export-btn" class="action-btn" aria-label="Export current session data">
+                        <span aria-hidden="true">📥</span> Export Session
                     </button>
-                    <button id="metrics-btn" class="action-btn">
-                        <span>📊</span> Show Metrics
+                    <button id="metrics-btn" class="action-btn" aria-label="Show system performance metrics">
+                        <span aria-hidden="true">📊</span> Show Metrics
                     </button>
                 </section>
 
                 <section class="sidebar-section">
                     <h3>📚 Recent Sessions</h3>
-                    <div id="recent-sessions" class="list">
+                    <div id="recent-sessions" class="list" role="list">
                         <p class="empty">No sessions yet</p>
                     </div>
                 </section>
 
                 <section class="sidebar-section">
                     <h3>📜 Recent Searches</h3>
-                    <div id="recent-searches" class="list">
+                    <div id="recent-searches" class="list" role="list">
                         <p class="empty">No searches yet</p>
                     </div>
                 </section>
 
                 <section class="sidebar-section">
                     <h3>⭐ Favorites</h3>
-                    <button id="view-favorites-btn" class="action-btn">View All</button>
-                    <div id="favorites-preview" class="list">
+                    <button id="view-favorites-btn" class="action-btn" aria-label="View all saved favorites">View All</button>
+                    <div id="favorites-preview" class="list" role="list">
                         <p class="empty">No favorites yet</p>
                     </div>
                 </section>
@@ -92,7 +96,7 @@
             <!-- Main Chat Area -->
             <section class="chat-area">
                 <!-- Session Info -->
-                <div id="session-info" class="session-info" style="display: none;">
+                <div id="session-info" class="session-info" style="display: none;" role="status" aria-live="polite">
                     <div class="session-badge">
                         <span>📋 Session Active</span>
                         <span id="session-topic"></span>
@@ -101,23 +105,23 @@
                 </div>
 
                 <!-- Chat Messages -->
-                <div id="chat-messages" class="chat-messages">
+                <div id="chat-messages" class="chat-messages" role="log" aria-live="polite" aria-label="Chat conversation">
                     <div class="welcome-message">
                         <h2>Welcome to Nova Intelligent Copilot</h2>
                         <p>Ask me anything about vehicle maintenance and troubleshooting.</p>
                         <div class="example-queries">
-                            <p>Try asking:</p>
-                            <button class="example-btn" onclick="setQuery('Engine cranks but won\'t start. What should I check?')">
-                                Engine won't start
+                            <p><strong>Try asking:</strong></p>
+                            <button class="example-btn" onclick="setQuery('Engine cranks but won\'t start. What should I check?')" aria-label="Example query: Engine won't start">
+                                🔧 Engine won't start
                             </button>
-                            <button class="example-btn" onclick="setQuery('What\'s the torque specification for lug nuts?')">
-                                Torque specs
+                            <button class="example-btn" onclick="setQuery('What\'s the torque specification for lug nuts?')" aria-label="Example query: Torque specs">
+                                🔩 Torque specs
                             </button>
-                            <button class="example-btn" onclick="setQuery('How do I test if my alternator is charging?')">
-                                Test alternator
+                            <button class="example-btn" onclick="setQuery('How do I test if my alternator is charging?')" aria-label="Example query: Test alternator">
+                                ⚡ Test alternator
                             </button>
                         </div>
-                        <div class="ai-disclaimer">
+                        <div class="ai-disclaimer" role="alert" aria-label="AI transparency notice">
                             <strong>⚠️ AI Transparency Notice:</strong><br>
                             This system is powered by AI and can make mistakes. <strong>Always verify critical information against official vehicle service manuals</strong> before performing repairs. This system is designed to assist, not replace, professional mechanical judgment.
                         </div>
@@ -126,74 +130,82 @@
 
                 <!-- Input Area -->
                 <div class="input-area">
-                    <div class="input-group">
-                        <select id="mode-select" class="mode-select">
-                            <option value="Auto">🤖 Auto (Smart Selection)</option>
-                            <option value="LLAMA (Fast)">⚡ Llama 8B (Fast)</option>
-                            <option value="Qwen 14B (Deep)">🧠 Qwen 14B (Deep Reasoning)</option>
-                        </select>
-                        <textarea 
-                            id="question-input" 
-                            placeholder="Ask about vehicle systems, diagnostics, maintenance procedures..."
-                            rows="3"
-                            onkeypress="if(event.key === 'Enter' && event.ctrlKey) submitQuestion()"
-                        ></textarea>
-                        <button id="submit-btn" class="submit-btn" onclick="submitQuestion()">
-                            <span>Send</span>
-                            <span class="shortcut">Ctrl+Enter</span>
-                        </button>
-                    </div>
+                    <form id="query-form" onsubmit="submitQuestion(); return false;">
+                        <div class="input-group">
+                            <label for="mode-select" class="sr-only">Select AI model</label>
+                            <select id="mode-select" class="mode-select" aria-label="AI model selection">
+                                <option value="Auto">🤖 Auto (Smart Selection)</option>
+                                <option value="LLAMA (Fast)">⚡ Llama 8B (Fast)</option>
+                                <option value="Qwen 14B (Deep)">🧠 Qwen 14B (Deep Reasoning)</option>
+                            </select>
+                            <label for="question-input" class="sr-only">Ask your question</label>
+                            <textarea 
+                                id="question-input" 
+                                placeholder="Ask about vehicle systems, diagnostics, maintenance procedures..."
+                                rows="3"
+                                onkeypress="if(event.key === 'Enter' && event.ctrlKey) submitQuestion()"
+                                aria-describedby="input-hint"
+                            ></textarea>
+                            <button id="submit-btn" type="submit" class="submit-btn" aria-label="Send question">
+                                <span>Send</span>
+                                <span class="shortcut" aria-hidden="true">Ctrl+Enter</span>
+                            </button>
+                        </div>
+                        <span id="input-hint" class="sr-only">Press Ctrl+Enter to submit your question</span>
+                    </form>
 
                     <!-- Confidence & Actions -->
                     <div class="input-footer">
-                        <div id="confidence-display" style="display: none;" class="confidence">
+                        <div id="confidence-display" style="display: none;" class="confidence" role="status" aria-live="polite">
                             Confidence: <span id="confidence-value">--</span>
                         </div>
-                        <div class="action-buttons">
-                            <button id="favorite-btn" class="icon-btn" title="Save to favorites" onclick="saveFavorite()" style="display: none;">
+                        <div class="action-buttons" role="toolbar" aria-label="Response actions">
+                            <button id="favorite-btn" class="icon-btn" title="Save to favorites" onclick="saveFavorite()" style="display: none;" aria-label="Save current response to favorites">
                                 ⭐ Save
                             </button>
-                            <button id="feedback-btn" class="icon-btn" title="Add feedback" onclick="toggleFeedback()">
+                            <button id="feedback-btn" class="icon-btn" title="Add feedback" onclick="toggleFeedback()" aria-label="Provide feedback on response">
                                 💬 Feedback
                             </button>
-                            <button id="reset-session-btn" class="icon-btn" title="End current session" onclick="resetSession()" style="display: none;">
+                            <button id="reset-session-btn" class="icon-btn" title="End current session" onclick="resetSession()" style="display: none;" aria-label="Reset current conversation session">
                                 🔄 Reset Session
                             </button>
                         </div>
                     </div>
 
                     <!-- Quick Feedback Buttons (shows after answer) -->
-                    <div id="quick-feedback-bar" class="quick-feedback" style="display: none;">
+                    <div id="quick-feedback-bar" class="quick-feedback" style="display: none;" role="group" aria-label="Quick feedback options">
                         <p>Was this answer helpful?</p>
-                        <button class="feedback-btn helpful-btn" onclick="submitQuickFeedback(true, true)">✅ Yes, Resolved</button>
-                        <button class="feedback-btn helpful-btn" onclick="submitQuickFeedback(true, false)">👍 Helpful But Not Resolved</button>
-                        <button class="feedback-btn unhelpful-btn" onclick="submitQuickFeedback(false, null)">👎 Not Helpful</button>
+                        <button class="feedback-btn helpful-btn" onclick="submitQuickFeedback(true, true)" aria-label="Yes, issue resolved">✅ Yes, Resolved</button>
+                        <button class="feedback-btn helpful-btn" onclick="submitQuickFeedback(true, false)" aria-label="Helpful but not resolved">👍 Helpful But Not Resolved</button>
+                        <button class="feedback-btn unhelpful-btn" onclick="submitQuickFeedback(false, null)" aria-label="Not helpful">👎 Not Helpful</button>
                     </div>
 
                     <!-- Detailed Feedback Form -->
-                    <div id="feedback-form" class="feedback-form" style="display: none;">
+                    <div id="feedback-form" class="feedback-form" style="display: none;" role="form" aria-label="Detailed feedback form">
                         <h4>📝 Share Your Feedback</h4>
                         <label>
-                            <input type="checkbox" id="feedback-helpful" /> Was this answer helpful?
+                            <input type="checkbox" id="feedback-helpful" aria-label="Mark answer as helpful" /> Was this answer helpful?
                         </label>
                         <label>
-                            <input type="checkbox" id="feedback-resolved" /> Did it resolve your issue?
+                            <input type="checkbox" id="feedback-resolved" aria-label="Mark issue as resolved" /> Did it resolve your issue?
                         </label>
-                        <textarea id="feedback-input" placeholder="Additional notes or suggestions..." rows="2"></textarea>
+                        <label for="feedback-input" class="sr-only">Additional feedback notes</label>
+                        <textarea id="feedback-input" placeholder="Additional notes or suggestions..." rows="2" aria-describedby="feedback-hint"></textarea>
+                        <span id="feedback-hint" class="sr-only">Provide additional comments or suggestions to improve responses</span>
                         <div style="display: flex; gap: 8px; margin-top: 8px;">
-                            <button onclick="submitDetailedFeedback()" class="btn-small">💾 Submit Feedback</button>
-                            <button onclick="toggleFeedback()" class="btn-small" style="background: #999;">Cancel</button>
+                            <button onclick="submitDetailedFeedback()" class="btn-small" aria-label="Submit feedback">💾 Submit Feedback</button>
+                            <button onclick="toggleFeedback()" class="btn-small" style="background: var(--text-muted);" aria-label="Cancel feedback">Cancel</button>
                         </div>
                     </div>
                 </div>
             </section>
 
             <!-- Right Sidebar - Favorites Modal -->
-            <div id="favorites-modal" class="modal" style="display: none;">
+            <div id="favorites-modal" class="modal" style="display: none;" role="dialog" aria-labelledby="favorites-modal-title" aria-modal="true">
                 <div class="modal-content">
-                    <button class="close-btn" onclick="closeFavoritesModal()">×</button>
-                    <h2>⭐ Saved Favorites</h2>
-                    <div id="favorites-list"></div>
+                    <button class="close-btn" onclick="closeFavoritesModal()" aria-label="Close favorites modal">×</button>
+                    <h2 id="favorites-modal-title">⭐ Saved Favorites</h2>
+                    <div id="favorites-list" role="list"></div>
                 </div>
             </div>
         </main>
