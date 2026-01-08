@@ -155,35 +155,68 @@ See the [Documentation Index](docs/INDEX.md) for detailed guides.
 
 ## Production Deployment
 
-### Week 1 Enhancements Implemented ✅
+### Production Readiness: Week 1 & 2 Complete ✅
 
-1. **Docker Support** - Production-ready containerization
-   - Multi-stage Dockerfile
-   - Docker Compose with Ollama
+**Week 1 Enhancements:**
+1. ✅ **Docker Support** - Production containerization
+   - Multi-stage Dockerfile, docker-compose with Ollama
    - Air-gap deployment ready
+   - [Docker Deployment Guide](docs/deployment/DOCKER_DEPLOYMENT.md)
    
-2. **Resource Requirements** - Complete hardware/software specs
-   - See [RESOURCE_REQUIREMENTS.md](docs/deployment/RESOURCE_REQUIREMENTS.md)
+2. ✅ **Resource Requirements** - Complete hardware/software specs
+   - Min/Recommended/High-performance configs
+   - [RESOURCE_REQUIREMENTS.md](docs/deployment/RESOURCE_REQUIREMENTS.md)
 
-3. **Unit Tests** - 45+ tests, ~75% coverage
-   - Pytest framework
-   - See [tests/README.md](tests/README.md)
+3. ✅ **Unit Tests** - 45+ tests, 75%+ coverage
+   - Pytest framework with organized structure
+   - Run: `make test` or `pytest --cov`
+   - [tests/README.md](tests/README.md)
 
-4. **Rate Limiting** - DoS protection
-   - Configurable limits
-   - 20 requests/minute on API endpoints
+4. ✅ **Rate Limiting** - DoS protection
+   - Configurable limits (20/min API, 60/min status)
+   - Flask-Limiter integration
 
-5. **Security Audit** - Automated scanning
-   - Bandit code analysis
-   - pip-audit dependency checks
-   - See [SECURITY_AUDIT.md](docs/annex/SECURITY_AUDIT.md)
+5. ✅ **Security Audit** - Automated scanning
+   - Bandit, pip-audit, Safety in CI/CD
+   - [SECURITY_AUDIT.md](docs/annex/SECURITY_AUDIT.md)
+
+**Week 2 Enhancements:**
+6. ✅ **Test Organization** - Unit/integration/fixtures structure
+7. ✅ **Code Coverage** - Enhanced reporting with detailed metrics
+8. ✅ **Performance Documentation** - Complete benchmarking guide
+   - [PERFORMANCE_GUIDE.md](docs/evaluation/PERFORMANCE_GUIDE.md)
+9. ✅ **Monitoring** - Metrics endpoint (`/metrics`), uptime tracking
+10. ✅ **Developer Tools** - CONTRIBUTING.md, Makefile, organized workflow
+
+### Quick Commands
+
+```bash
+# Development
+make dev-setup          # Complete dev environment setup
+make test               # Run unit tests
+make coverage           # Test with coverage report
+make lint               # Lint code
+make format             # Format code
+make security           # Run security scans
+
+# Docker
+make docker-build       # Build images
+make docker-up          # Start services
+make docker-logs        # View logs
+
+# Validation
+make validate           # Quick validation
+make ci-local           # Simulate CI pipeline
+```
 
 ### Deployment Guides
 
-- [Docker Deployment](docs/deployment/DOCKER_DEPLOYMENT.md)
-- [Resource Requirements](docs/deployment/RESOURCE_REQUIREMENTS.md)
-- [Air-Gapped Deployment](docs/deployment/AIR_GAPPED_DEPLOYMENT.md)
-- [Configuration Guide](docs/deployment/CONFIGURATION.md)
+- [Docker Deployment](docs/deployment/DOCKER_DEPLOYMENT.md) - Container setup
+- [Resource Requirements](docs/deployment/RESOURCE_REQUIREMENTS.md) - Hardware sizing
+- [Performance Guide](docs/evaluation/PERFORMANCE_GUIDE.md) - Benchmarks & tuning
+- [Air-Gapped Deployment](docs/deployment/AIR_GAPPED_DEPLOYMENT.md) - Offline setup
+- [Configuration Guide](docs/deployment/CONFIGURATION.md) - Environment variables
+- [Contributing Guide](CONTRIBUTING.md) - Development workflow
 
 ---
 
