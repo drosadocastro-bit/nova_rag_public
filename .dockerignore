@@ -1,0 +1,58 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Documentation (not needed in runtime)
+docs/annex
+*.md
+!README.md
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.venv
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test outputs
+*_results.json
+*_output.txt
+adversarial_output.txt
+server_log.txt
+
+# Large model files (should be mounted as volumes)
+models/
+vector_db/*.pkl
+vector_db/*.faiss
+ragas_results/
+
+# Temporary files
+*.log
+.DS_Store
+Thumbs.db
+
+# Environment files (use docker-compose environment instead)
+.env
+.env.*
+!.env.example
+
+# CI/CD
+.github/
+
+# Development scripts
+link_lmstudio_to_ollama.ps1
+register_*.ps1

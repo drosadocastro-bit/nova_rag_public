@@ -28,7 +28,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install ruff pip-audit
+        pip install ruff pip-audit bandit[toml]
+    
+    - name: Run unit tests
+      run: |
+        pytest tests/ -v --tb=short
+      continue-on-error: false
     
     - name: Lint with ruff
       run: |
@@ -70,15 +75,36 @@ jobs:
         python-version: '3.12'
         cache: 'pip'
     
-    - name: Install pip-audit
+    - name: Install security tools
       run: |
         python -m pip install --upgrade pip
-        pip install pip-audit
+        pip install pip-audit bandit[toml] safety
+    
+    - name: Scan code with Bandit
+      run: |
+        bandit -r . -f json -o bandit-report.json || true
+        bandit -r . -ll  # Show high/medium severity issues
+      continue-on-error: true
     
     - name: Audit dependencies for security vulnerabilities
       run: |
         pip-audit --requirement requirements.txt --desc
       continue-on-error: true
+    
+    - name: Check dependencies with Safety
+      run: |
+        pip install -r requirements.txt
+        safety check --json || echo "⚠ Safety check found issues"
+      continue-on-error: true
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+        retention-days: 30
 
   documentation-check:
     name: Documentation Link Validation

@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import backend as backend_mod
 from backend import (
     nova_text_handler, check_ollama_connection, export_session_to_text,
@@ -30,9 +32,43 @@ BASE_DIR = Path(__file__).parent.resolve()
 app = Flask(__name__, template_folder=str(BASE_DIR / "templates"), static_folder=str(BASE_DIR / "static"))
 app.config["PROPAGATE_EXCEPTIONS"] = True
 
+# Rate limiting configuration
+# Defaults: 100 requests per hour globally, 20 per minute for API endpoints
+# Can be overridden via environment variables
+RATE_LIMIT_ENABLED = os.environ.get("NOVA_RATE_LIMIT_ENABLED", "1") == "1"
+RATE_LIMIT_PER_HOUR = os.environ.get("NOVA_RATE_LIMIT_PER_HOUR", "100")
+RATE_LIMIT_PER_MINUTE = os.environ.get("NOVA_RATE_LIMIT_PER_MINUTE", "20")
+
+if RATE_LIMIT_ENABLED:
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        default_limits=[f"{RATE_LIMIT_PER_HOUR} per hour"],
+        storage_uri="memory://",
+        strategy="fixed-window",
+    )
+    print(f"[RateLimit] Enabled: {RATE_LIMIT_PER_HOUR}/hour, {RATE_LIMIT_PER_MINUTE}/minute for API")
+else:
+    # Create a no-op limiter when disabled
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        enabled=False,
+    )
+    print("[RateLimit] Disabled")
+
 @app.route("/", methods=["GET"])
 def home():
     return render_template("index.html")
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    """Handle rate limit exceeded errors."""
+    return jsonify({
+        "error": "Rate limit exceeded",
+        "message": "Too many requests. Please try again later.",
+        "retry_after": e.description
+    }), 429
 
 @app.after_request
 def set_security_headers(response):
@@ -73,6 +109,7 @@ def _check_auth():
     return hmac.compare_digest(token, API_TOKEN)
 
 @app.route("/api/ask", methods=["POST"])
+@limiter.limit(f"{RATE_LIMIT_PER_MINUTE} per minute")
 def api_ask():
     if not _check_auth():
         return jsonify({"error": "Unauthorized"}), 403
@@ -178,6 +215,7 @@ def api_ask():
         return jsonify({"error": msg}), 500
 
 @app.route("/api/status", methods=["GET"])
+@limiter.limit("60 per minute")
 def api_status():
     try:
         ok, detail = check_ollama_connection()
@@ -186,6 +224,7 @@ def api_status():
         return jsonify({"ollama": False, "ollama_status": "error", "index_loaded": False})
 
 @app.route("/api/retrieve", methods=["POST"])
+@limiter.limit(f"{RATE_LIMIT_PER_MINUTE} per minute")
 def api_retrieve():
     data = request.get_json() or {}
     query = data.get("query", "").strip()
@@ -203,6 +242,30 @@ def api_retrieve():
         } for d in docs])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/metrics", methods=["GET"])
+@limiter.limit("120 per minute")
+def metrics():
+    """Prometheus-compatible metrics endpoint."""
+    import time
+    
+    # Get cache stats if SQL logging enabled
+    cache_stats = cache_utils.get_query_stats()
+    
+    # Basic metrics
+    metrics_data = {
+        "timestamp": time.time(),
+        "uptime_seconds": time.time() - app.config.get("start_time", time.time()),
+        "queries_total": cache_stats.get("total_queries", 0),
+        "avg_response_time_ms": cache_stats.get("avg_response_time_ms", 0),
+        "avg_retrieval_confidence": cache_stats.get("avg_retrieval_confidence", 0),
+        "audit_status_breakdown": cache_stats.get("audit_status_breakdown", {}),
+        "cache_enabled": os.environ.get("NOVA_ENABLE_RETRIEVAL_CACHE", "0") == "1",
+        "rate_limit_enabled": RATE_LIMIT_ENABLED,
+        "hybrid_search_enabled": os.environ.get("NOVA_HYBRID_SEARCH", "1") == "1",
+    }
+    
+    return jsonify(metrics_data)
 
 def run_startup_validation():
     """
@@ -332,6 +395,11 @@ def run_startup_validation():
     return all_checks_passed
 
 if __name__ == "__main__":
+    import time
+    
+    # Track application start time for uptime metrics
+    app.config["start_time"] = time.time()
+    
     # Run startup validation
     validation_passed = run_startup_validation()
     

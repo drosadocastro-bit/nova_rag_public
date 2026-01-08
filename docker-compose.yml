@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # Ollama service for local LLM inference
+  ollama:
+    image: ollama/ollama:latest
+    container_name: nic-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - nic-network
+
+  # NIC RAG application
+  nic:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nic-app
+    ports:
+      - "5000:5000"
+    environment:
+      # Ollama configuration
+      - OLLAMA_BASE_URL=http://ollama:11434/v1
+      - NOVA_LLM_LLAMA=llama3.2:3b
+      - NOVA_LLM_OSS=qwen2.5-coder:7b
+      
+      # Feature flags
+      - NOVA_HYBRID_SEARCH=1
+      - NOVA_USE_NATIVE_LLM=0
+      - NOVA_GAR_ENABLED=1
+      - NOVA_ENABLE_RETRIEVAL_CACHE=1
+      - NOVA_ENABLE_SQL_LOG=1
+      
+      # BM25 configuration
+      - NOVA_BM25_CACHE=1
+      - NOVA_BM25_K1=1.5
+      - NOVA_BM25_B=0.75
+      
+      # Security (generate your own key)
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production-use-openssl-rand-hex-32}
+      
+      # Optional: OpenAI fallback (not needed for offline)
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      # Persistent data volumes
+      - ./data:/app/data:ro              # Read-only corpus data
+      - ./vector_db:/app/vector_db       # Vector indexes and cache
+      - ./models:/app/models             # Embedding models
+      - nic-sessions:/app/sessions       # Session data
+      
+      # Optional: Mount governance policies
+      - ./governance:/app/governance:ro
+      
+      # Optional: Custom configuration
+      # - ./.env:/app/.env:ro
+    depends_on:
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - nic-network
+
+volumes:
+  ollama-models:
+    driver: local
+  nic-sessions:
+    driver: local
+
+networks:
+  nic-network:
+    driver: bridge
