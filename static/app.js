@@ -383,6 +383,21 @@ function formatAnswer(answer) {
             return html;
         }
         
+        // Handle structured response with nested analysis (type: "structured")
+        if (answer.type === 'structured' && answer.analysis) {
+            // Extract the actual answer from the nested structure
+            if (typeof answer.analysis.answer === 'string') {
+                // Simple string answer nested in analysis
+                return escapeHtml(answer.analysis.answer);
+            } else if (typeof answer.analysis.answer === 'object') {
+                // Complex object nested in analysis - recursively format it
+                return formatAnswer(answer.analysis.answer);
+            } else if (answer.analysis) {
+                // Fallback: format the entire analysis object
+                return formatJsonAsHtml(answer.analysis);
+            }
+        }
+        
         // Handle structured analysis response (type: "analysis")
         if (answer.type === 'analysis' && answer.steps) {
             let html = '<div class="analysis-response">';
