@@ -196,8 +196,10 @@ def api_ask():
         if traced_sources:
             retrieval_score = sum(s["confidence"] for s in traced_sources) / len(traced_sources)
         
-        return jsonify({
-            "answer": answer,
+        # Ensure consistent JSON structure: when answer is a dict, keep it as-is for proper JSON serialization
+        # The frontend formatAnswer() function handles both string and dict responses
+        response_data = {
+            "answer": answer,  # Can be string or dict - jsonify handles both correctly
             "confidence": f"{confidence_pct*100:.1f}%",
             "retrieval_score": round(retrieval_score, 4),
             "traced_sources": traced_sources,
@@ -206,7 +208,9 @@ def api_ask():
             "session_active": session_state.get("active", False),
             "audit_status": "enabled" if "audit" in model_info.lower() else "disabled",
             "effective_safety": "strict" if "strict" in model_info.lower() else "standard"
-        })
+        }
+        
+        return jsonify(response_data)
     except Exception as e:
         # Avoid returning 500 on encoding issues (e.g., emojis); respond gracefully
         msg = str(e)
