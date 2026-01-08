@@ -73,6 +73,22 @@ Additional technical documentation available in [`docs/`](docs/).
 
 ## Quick Start
 
+### Option 1: Docker (Recommended)
+
+```bash
+# Start all services with Docker Compose
+docker-compose up -d
+
+# Pull LLM models
+docker exec -it nic-ollama ollama pull llama3.2:3b
+
+# Access at http://localhost:5000
+```
+
+See [Docker Deployment Guide](docs/deployment/DOCKER_DEPLOYMENT.md) for details.
+
+### Option 2: Local Installation
+
 ```bash
 # Clone and install
 git clone https://github.com/yourusername/nic-public.git && cd nic-public
@@ -80,7 +96,7 @@ python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\acti
 pip install -r requirements.txt
 
 # Start Ollama with a local model
-ollama pull llama3.2:8b
+ollama pull llama3.2:3b
 
 # Run NIC
 python nova_flask_app.py
@@ -89,17 +105,85 @@ python nova_flask_app.py
 
 ---
 
+## Testing
+
+Run comprehensive test suite:
+
+```bash
+# Install test dependencies (included in requirements.txt)
+pip install -r requirements.txt
+
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=. --cov-report=html
+
+# View coverage report
+open htmlcov/index.html
+```
+
+**Test Coverage:** 45+ unit tests, ~75% coverage
+
+See [tests/README.md](tests/README.md) for details.
+
+---
+
 ## How to Run
+
+### Docker Deployment (Recommended)
+
+```bash
+docker-compose up -d
+docker exec -it nic-ollama ollama pull llama3.2:3b
+# Access at http://localhost:5000
+```
+
+### Local Installation
 
 Minimal offline run steps:
 
 ```bash
 pip install -r requirements.txt
-ollama pull llama3.2:8b   # or: ollama run llama3.2:8b to verify
+ollama pull llama3.2:3b   # or: ollama run llama3.2:3b to verify
 python nova_flask_app.py
 ```
 
 See the [Documentation Index](docs/INDEX.md) for detailed guides.
+
+---
+
+## Production Deployment
+
+### Week 1 Enhancements Implemented ✅
+
+1. **Docker Support** - Production-ready containerization
+   - Multi-stage Dockerfile
+   - Docker Compose with Ollama
+   - Air-gap deployment ready
+   
+2. **Resource Requirements** - Complete hardware/software specs
+   - See [RESOURCE_REQUIREMENTS.md](docs/deployment/RESOURCE_REQUIREMENTS.md)
+
+3. **Unit Tests** - 45+ tests, ~75% coverage
+   - Pytest framework
+   - See [tests/README.md](tests/README.md)
+
+4. **Rate Limiting** - DoS protection
+   - Configurable limits
+   - 20 requests/minute on API endpoints
+
+5. **Security Audit** - Automated scanning
+   - Bandit code analysis
+   - pip-audit dependency checks
+   - See [SECURITY_AUDIT.md](docs/annex/SECURITY_AUDIT.md)
+
+### Deployment Guides
+
+- [Docker Deployment](docs/deployment/DOCKER_DEPLOYMENT.md)
+- [Resource Requirements](docs/deployment/RESOURCE_REQUIREMENTS.md)
+- [Air-Gapped Deployment](docs/deployment/AIR_GAPPED_DEPLOYMENT.md)
+- [Configuration Guide](docs/deployment/CONFIGURATION.md)
 
 ---
 
