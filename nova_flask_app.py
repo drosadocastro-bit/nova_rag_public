@@ -196,7 +196,10 @@ def api_ask():
         if traced_sources:
             retrieval_score = sum(s["confidence"] for s in traced_sources) / len(traced_sources)
         
-        return jsonify({
+        # Build response with consistent structure
+        # Note: answer can be either a string or dict (for structured responses like troubleshooting, procedures, etc.)
+        # Flask's jsonify() automatically handles proper JSON serialization for both types
+        response_data = {
             "answer": answer,
             "confidence": f"{confidence_pct*100:.1f}%",
             "retrieval_score": round(retrieval_score, 4),
@@ -206,7 +209,9 @@ def api_ask():
             "session_active": session_state.get("active", False),
             "audit_status": "enabled" if "audit" in model_info.lower() else "disabled",
             "effective_safety": "strict" if "strict" in model_info.lower() else "standard"
-        })
+        }
+        
+        return jsonify(response_data)
     except Exception as e:
         # Avoid returning 500 on encoding issues (e.g., emojis); respond gracefully
         msg = str(e)
