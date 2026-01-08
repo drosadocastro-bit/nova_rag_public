@@ -42,6 +42,7 @@ This is not a product—it's a **reference architecture** showing that safety-aw
 | **Auditable** | Every query logged with question, answer, sources, confidence, and audit status. |
 | **Reproducible** | Locked dependencies, versioned corpus, deterministic retrieval. |
 | **Hybrid Retrieval** | Vector similarity (FAISS) unioned with BM25 lexical search, then reranked and diversified (MMR). Toggle via NOVA_HYBRID_SEARCH. |
+| **Request Analytics** | Built-in request logging tracks queries, response times, model usage, and confidence scores. SQLite backend for trend analysis. |
 
 Why hybrid: improves recall for exact terms, part names, and diagnostic codes in safety‑critical manuals.
 
@@ -250,6 +251,48 @@ $env:NOVA_BM25_CACHE="1"  # enable disk caching (default on)
 ```
 
 This feature is suitable to highlight in the README for safety‑critical contexts; it makes retrieval more robust to exact terms and diagnostic codes. For architecture details, see the [Documentation Index](docs/INDEX.md).
+
+---
+
+## Analytics & Monitoring
+
+NIC includes built-in request analytics for understanding usage patterns and system performance:
+
+```bash
+# View analytics summary (last 7 days)
+curl http://localhost:5000/api/analytics
+
+# Recent requests
+curl http://localhost:5000/api/analytics/recent?limit=50
+
+# Performance trends
+curl http://localhost:5000/api/analytics/trends?days=30
+```
+
+**Tracked metrics:**
+- Query patterns and popular searches
+- Response times (avg, p95, p99)
+- Model usage breakdown
+- Confidence score distributions
+- Error rates
+
+Analytics data is stored locally in `vector_db/analytics.db` (SQLite). All data stays on your infrastructure—no external telemetry.
+
+### Synthetic Test Diagrams
+
+For testing vision-aware retrieval, generate synthetic vehicle diagrams:
+
+```bash
+python generate_synthetic_diagrams.py
+```
+
+Generates 4 test diagrams in `data/diagrams/`:
+- Engine diagnostic flowchart
+- Brake system components
+- Cooling system flow
+- Electrical system wiring
+
+These diagrams exercise the vision reranker without requiring real manual scans.
 
 ---
 
