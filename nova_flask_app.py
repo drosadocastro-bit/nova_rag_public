@@ -9,9 +9,11 @@ from backend import (
     vision_model, vision_embeddings, vision_paths
 )
 import cache_utils
+import analytics
 import re
 import hmac
 from pathlib import Path
+import time
 
 retrieve = cache_utils.cache_retrieval(_retrieve_uncached)
 
@@ -114,10 +116,13 @@ def api_ask():
     if not _check_auth():
         return jsonify({"error": "Unauthorized"}), 403
     
+    start_time = time.time()
     data = request.get_json() or {}
     question = data.get("question", "").strip()
     mode = data.get("mode", "Auto")
     fallback = data.get("fallback")  # e.g., "retrieval-only"
+    
+    user_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
 
     def _refuse_input(reason: str, message: str, http_status: int = 200):
         # Keep response JSON shape consistent: answer is a structured object.
@@ -211,6 +216,23 @@ def api_ask():
             "effective_safety": "strict" if "strict" in model_info.lower() else "standard"
         }
         
+        # Log request analytics
+        response_time_ms = int((time.time() - start_time) * 1000)
+        answer_text = answer if isinstance(answer, str) else str(answer.get("message", ""))
+        analytics.log_request(
+            question=question,
+            mode=mode,
+            model_used=response_data["model_used"],
+            confidence=confidence_pct,
+            response_time_ms=response_time_ms,
+            retrieval_score=retrieval_score,
+            num_sources=len(traced_sources),
+            answer_length=len(answer_text),
+            session_id=session_state.get("session_id"),
+            user_ip=user_ip,
+            response_type="answer"
+        )
+        
         return jsonify(response_data)
     except Exception as e:
         # Avoid returning 500 on encoding issues (e.g., emojis); respond gracefully
@@ -271,6 +293,39 @@ def metrics():
     }
     
     return jsonify(metrics_data)
+
+@app.route("/api/analytics", methods=["GET"])
+@limiter.limit("30 per minute")
+def api_analytics():
+    """Analytics endpoint - returns request logs and usage statistics."""
+    try:
+        days = int(request.args.get("days", 7))
+        summary = analytics.get_analytics_summary(days=days)
+        return jsonify(summary)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/analytics/recent", methods=["GET"])
+@limiter.limit("30 per minute")
+def api_analytics_recent():
+    """Get recent requests for debugging."""
+    try:
+        limit = int(request.args.get("limit", 50))
+        requests_data = analytics.get_recent_requests(limit=limit)
+        return jsonify({"requests": requests_data})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/analytics/trends", methods=["GET"])
+@limiter.limit("30 per minute")
+def api_analytics_trends():
+    """Get performance trends over time."""
+    try:
+        days = int(request.args.get("days", 30))
+        trends = analytics.get_performance_trends(days=days)
+        return jsonify({"trends": trends})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 def run_startup_validation():
     """
