@@ -1503,8 +1503,9 @@ def choose_model(query_lower: str, mode: str) -> tuple[str, str]:
     """Returns (model_name, decision_reason)"""
     if mode == "LLAMA (Fast)":
         return LLM_LLAMA, "Manual: LLAMA (Fast)"
-    if mode == "GPT-OSS (Deep)":
-        return LLM_OSS, "Manual: GPT-OSS (Deep)"
+    # Back-compat: UI label/value changed over time (GPT-OSS -> Qwen).
+    if mode in {"GPT-OSS (Deep)", "Qwen 14B (Deep)", "Qwen 14B (Deep Reasoning)"}:
+        return LLM_OSS, f"Manual: {mode}"
 
     if any(k in query_lower for k in DEEP_KEYWORDS):
         return LLM_OSS, "Auto: deep keywords detected  GPT-OSS"
