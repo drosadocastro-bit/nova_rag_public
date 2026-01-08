@@ -924,8 +924,17 @@ def retrieve(query: str, k: int = 12, top_n: int = 6, lambda_diversity: float = 
         # Lexical fallback when embedding model is unavailable
         bm25_docs = bm25_retrieve(query, k=k, top_n=top_n)
         if bm25_docs:
+            # Normalize BM25 scores to confidence (0.0-1.0 range)
+            max_score = max((d.get("bm25_score", 0) for d in bm25_docs), default=1.0)
+            if max_score > 0:
+                for d in bm25_docs:
+                    # Map BM25 score to confidence (min 0.5, max 0.95)
+                    norm_score = d.get("bm25_score", 0) / max_score
+                    d["confidence"] = 0.5 + (norm_score * 0.45)
             return bm25_docs[:top_n]
-        return lexical_retrieve(query, k=k, top_n=top_n)
+        # Final fallback to lexical retrieval
+        lexical_docs = lexical_retrieve(query, k=k, top_n=top_n)
+        return lexical_docs
 
     q_emb = text_model.encode([query], convert_to_numpy=True)
     distances, indices = index.search(q_emb, k)  # type: ignore[call-arg]
