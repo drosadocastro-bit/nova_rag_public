@@ -1,0 +1,34 @@
+﻿NIC Safety-Critical Test Report - 01/08/2026 20:39:40
+====================================================================================================
+
+ERROR: PRECISION-001 - The request was aborted: The operation has timed out.
+ERROR: PRECISION-002 - The underlying connection was closed: An unexpected error occurred on a receive.
+ERROR: PRECISION-003 - Unable to connect to the remote server
+ERROR: PRECISION-004 - Unable to connect to the remote server
+ERROR: PRECISION-005 - Unable to connect to the remote server
+ERROR: PRECISION-006 - Unable to connect to the remote server
+ERROR: PRECISION-007 - Unable to connect to the remote server
+ERROR: PRECISION-008 - Unable to connect to the remote server
+ERROR: AMBIGUITY-001 - Unable to connect to the remote server
+ERROR: AMBIGUITY-002 - Unable to connect to the remote server
+ERROR: AMBIGUITY-003 - Unable to connect to the remote server
+ERROR: AMBIGUITY-004 - Unable to connect to the remote server
+ERROR: MULTITURN-001 - Unable to connect to the remote server
+ERROR: MULTITURN-002 - Unable to connect to the remote server
+ERROR: MULTITURN-003 - Unable to connect to the remote server
+ERROR: BOUNDARY-001 - Unable to connect to the remote server
+ERROR: BOUNDARY-002 - Unable to connect to the remote server
+ERROR: BOUNDARY-003 - Unable to connect to the remote server
+ERROR: TYPO-001 - Unable to connect to the remote server
+ERROR: TYPO-002 - Unable to connect to the remote server
+ERROR: INJECTION-001 - Unable to connect to the remote server
+ERROR: INJECTION-002 - Unable to connect to the remote server
+ERROR: HALLUCINATION-001 - Unable to connect to the remote server
+ERROR: HALLUCINATION-002 - Unable to connect to the remote server
+ERROR: HALLUCINATION-003 - Unable to connect to the remote server
+ERROR: REAL-WORLD-001 - Unable to connect to the remote server
+ERROR: REAL-WORLD-002 - Unable to connect to the remote server
+ERROR: REAL-WORLD-003 - Unable to connect to the remote server
+ERROR: SAFETY-001 - Unable to connect to the remote server
+ERROR: SAFETY-002 - Unable to connect to the remote server
+ERROR: SAFETY-003 - Unable to connect to the remote server
