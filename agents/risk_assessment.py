@@ -6,7 +6,7 @@ to ensure appropriate prioritization of user safety.
 """
 
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from enum import Enum
 
 
@@ -166,7 +166,7 @@ I'm designed to prioritize your safety above all else."""
         return "".join(response_parts)
 
     @classmethod
-    def split_multi_query(cls, question: str) -> Dict[str, any]:
+    def split_multi_query(cls, question: str) -> Dict[str, Any]:
         """
         Detect and split multi-query questions
         
@@ -243,7 +243,7 @@ I'm designed to prioritize your safety above all else."""
         }
 
     @classmethod
-    def assess_multi_query(cls, question: str) -> Dict[str, any]:
+    def assess_multi_query(cls, question: str) -> Dict[str, Any]:
         """
         Assess multi-query questions with intelligent handling
         
@@ -316,7 +316,7 @@ I'm designed to prioritize your safety above all else."""
         }
 
     @classmethod
-    def detect_injection_syntax(cls, question: str) -> Dict[str, any]:
+    def detect_injection_syntax(cls, question: str) -> Dict[str, Any]:
         """
         Detect injection attack patterns and extract core question
         
@@ -382,7 +382,7 @@ I'm designed to prioritize your safety above all else."""
         }
 
     @classmethod
-    def assess_query(cls, question: str) -> Dict[str, any]:
+    def assess_query(cls, question: str) -> Dict[str, Any]:
         """
         Assess risk level of a user query
         
