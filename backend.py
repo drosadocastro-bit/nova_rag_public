@@ -1684,7 +1684,6 @@ def nova_text_handler(question: str, mode: str, npc_name: str | None = None, res
                 multi_query_warning = override_msg
     else:
         multi_query_warning = None
-    else:
         # Single query - use normal risk assessment
         risk_assessment = multi_assessment["sub_assessments"][0]["assessment"]
         
@@ -1711,10 +1710,18 @@ def nova_text_handler(question: str, mode: str, npc_name: str | None = None, res
                 decision_tag = f"risk_override | {risk_assessment['risk_level'].value}"
             
             print(f"[SAFETY] Override activated: {decision_tag}")
-                return full_response, decision_tag
+            return full_response, decision_tag
 
-            # After any stripping/rewriting, recompute lowercase form for downstream checks
-            q_lower = q_raw.lower()
+    # For multi-query cases with only benign parts, strip injection syntax to avoid false refusals
+    if multi_assessment.get("is_multi_query") and not multi_assessment.get("has_dangerous_parts"):
+        injection_meta = RiskAssessment.detect_injection_syntax(q_raw)
+        if injection_meta.get("has_injection"):
+            core_question = (injection_meta.get("core_question") or q_raw).strip()
+            print(f"[INJECTION] Multi-query benign injection detected - using core question: {core_question[:60]}...")
+            q_raw = core_question
+
+    # After any stripping/rewriting, recompute lowercase form for downstream checks
+    q_lower = q_raw.lower()
 
     # Safety fast-path: refuse out-of-scope and unsafe-intent queries BEFORE retrieval.
     # This avoids expensive embedding/model warmup for queries we should not answer anyway.
