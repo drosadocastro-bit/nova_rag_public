@@ -431,9 +431,17 @@ def run_startup_validation():
     
     for module, description in required_modules:
         try:
-            __import__(module)
+            if module == "sentence_transformers":
+                # Avoid heavy import during validation; check install via metadata
+                try:
+                    import importlib.metadata as importlib_metadata
+                except ImportError:
+                    import importlib_metadata  # type: ignore
+                importlib_metadata.version("sentence-transformers")
+            else:
+                __import__(module)
             print(f"  [OK] {module} ({description})")
-        except ImportError:
+        except Exception:
             print(f"  [FAIL] {module} not found ({description})")
             print("    -> Install: 'pip install -r requirements.txt'")
             all_checks_passed = False
