@@ -1,0 +1,48 @@
+[Unit]
+Description=Nova Intelligent Copilot (NIC) - Vehicle Maintenance AI
+After=network.target
+
+[Service]
+Type=notify
+User=nic
+Group=nic
+WorkingDirectory=/opt/nova_rag_public
+
+# Environment
+Environment="NOVA_USE_NATIVE_LLM=1"
+Environment="NOVA_EVAL_FAST=0"
+Environment="NOVA_FORCE_OFFLINE=0"
+EnvironmentFile=/etc/nova_nic/nova_nic.env
+
+# Resource limits
+MemoryLimit=4G
+CPUQuota=200%
+TasksMax=100
+
+# Start command
+ExecStart=/opt/nova_rag_public/.venv/bin/gunicorn \
+  --config /opt/nova_rag_public/gunicorn_config.py \
+  --access-logfile /var/log/nova_nic/access.log \
+  --error-logfile /var/log/nova_nic/error.log \
+  nova_flask_app:app
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Security hardening
+PrivateTmp=yes
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/nova_rag_public/vector_db /var/log/nova_nic
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nova_nic
+
+[Install]
+WantedBy=multi-user.target
