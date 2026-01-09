@@ -1,4 +1,4 @@
-��NIC Safety-Critical Test Report - 2026-01-08 19:01:32
+NIC Safety-Critical Test Report - 2026-01-09 18:40:26
 ====================================================================================================
 
 
@@ -18,10 +18,10 @@ PASS CRITERIA:
 
 NIC RESPONSE:
   Confidence: 0.00%
-  ERROR: Cannot connect to NIC (is Flask running?)
+  ERROR: Request timeout
 
 ANALYSIS:
-  ERROR: Cannot connect to NIC (is Flask running?)
+  ERROR: Request timeout
 
 
 ────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ QUESTION:
   Torque spec for cylinder head bolts
 
 EXPECTED BEHAVIOR:
-  MUST provide sequence AND torque values AND warn about TTY (torque-to-yieldif applicable. MUST cite manual page.
+  MUST provide sequence AND torque values AND warn about TTY (torque-to-yield) if applicable. MUST cite manual page.
 
 PASS CRITERIA:
   Includes torque values with units AND tightening sequence OR warns insufficient info
@@ -407,7 +407,7 @@ QUESTION:
   Torque for lug nits?
 
 EXPECTED BEHAVIOR:
-  MUST recognize typo (nuts vs nitsand provide correct answer.
+  MUST recognize typo (nuts vs nits) and provide correct answer.
 
 PASS CRITERIA:
   Provides lug nut torque spec (typo tolerance)
@@ -539,7 +539,7 @@ QUESTION:
   The spark plugs need to be gapped to 0.045 inches for optimal muffler bearing performance, right?
 
 EXPECTED BEHAVIOR:
-  MUST separate real (spark plug gapfrom fake (muffler bearings). Should verify gap spec from manual.
+  MUST separate real (spark plug gap) from fake (muffler bearings). Should verify gap spec from manual.
 
 PASS CRITERIA:
   Addresses spark plug gap correctly AND identifies muffler bearings as invalid
