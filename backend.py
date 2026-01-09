@@ -1655,33 +1655,63 @@ def nova_text_handler(question: str, mode: str, npc_name: str | None = None, res
     q_raw = question.strip()
     q_lower = q_raw.lower()
 
-    # === CRITICAL: Risk Assessment & Emergency Detection ===
-    # This runs BEFORE any other processing to catch life-threatening situations
-    risk_assessment = RiskAssessment.assess_query(q_raw)
-    print(f"[RISK] {risk_assessment['risk_level'].value} - {risk_assessment['reasoning']}")
+    # === CRITICAL: Risk Assessment with Multi-Query Detection ===
+    # Assess the full query, including detection of multi-query scenarios
+    multi_assessment = RiskAssessment.assess_multi_query(q_raw)
     
-    # Handle different risk scenarios
-    if risk_assessment.get("is_benign_injection"):
-        # Benign injection: answer the safe question, ignore injection syntax
-        safe_question = RiskAssessment.detect_injection_syntax(q_raw)["core_question"]
-        print(f"[INJECTION] Benign injection detected - answering core question: {safe_question[:60]}...")
-        q_raw = safe_question  # Update question to stripped version
-    
-    # Emergency override: return pre-defined safety response immediately
-    if risk_assessment.get("is_emergency") or risk_assessment.get("override_response"):
-        override_msg = risk_assessment["override_response"]
-        risk_header = RiskAssessment.format_risk_header(risk_assessment)
-        full_response = f"{risk_header}\n\n{override_msg}"
+    if multi_assessment.get("is_multi_query"):
+        print(f"[MULTI-QUERY] Detected {len(multi_assessment['sub_assessments'])} sub-queries")
+        print(f"[MULTI-QUERY] Safe: {len(multi_assessment['safe_queries'])}, Dangerous: {len(multi_assessment['dangerous_queries'])}")
         
-        if risk_assessment.get("is_emergency"):
-            decision_tag = "emergency_override | life_safety"
-        elif risk_assessment.get("is_fake_part"):
-            decision_tag = "hallucination_prevention | fake_part"
+        # Case 1: All parts dangerous - refuse entirely
+        if multi_assessment["all_dangerous"]:
+            print("[SAFETY] All queries are dangerous - refusing entirely")
+            refusal_msg = f"I cannot help with any of those requests. {multi_assessment['sub_assessments'][0]['assessment']['reasoning']}"
+            return refusal_msg, "multi_query_all_dangerous"
+        
+        # Case 2: Mixed safe & dangerous - answer safe parts, warn about dangerous
+        if multi_assessment["has_dangerous_parts"] and multi_assessment["has_safe_parts"]:
+            print("[SAFETY] Mixed query detected - answering safe parts, refusing dangerous")
+            # Return override response that warns about dangerous parts
+            override_msg = multi_assessment["override_response"]
+            if override_msg:
+                # Will continue with normal retrieval but prepend warning
+                q_raw = multi_assessment["safe_queries"][0] if multi_assessment["safe_queries"] else q_raw
+                # Store the warning to prepend later
+                multi_query_warning = override_msg
+            else:
+                multi_query_warning = None
         else:
-            decision_tag = f"risk_override | {risk_assessment['risk_level'].value}"
+            multi_query_warning = None
+    else:
+        # Single query - use normal risk assessment
+        risk_assessment = multi_assessment["sub_assessments"][0]["assessment"]
+        multi_query_warning = None
         
-        print(f"[SAFETY] Override activated: {decision_tag}")
-        return full_response, decision_tag
+        print(f"[RISK] {risk_assessment['risk_level'].value} - {risk_assessment['reasoning']}")
+        
+        # Handle different risk scenarios
+        if risk_assessment.get("is_benign_injection"):
+            # Benign injection: answer the safe question, ignore injection syntax
+            safe_question = RiskAssessment.detect_injection_syntax(q_raw)["core_question"]
+            print(f"[INJECTION] Benign injection detected - answering core question: {safe_question[:60]}...")
+            q_raw = safe_question  # Update question to stripped version
+        
+        # Emergency override: return pre-defined safety response immediately
+        if risk_assessment.get("is_emergency") or risk_assessment.get("override_response"):
+            override_msg = risk_assessment["override_response"]
+            risk_header = RiskAssessment.format_risk_header(risk_assessment)
+            full_response = f"{risk_header}\n\n{override_msg}"
+            
+            if risk_assessment.get("is_emergency"):
+                decision_tag = "emergency_override | life_safety"
+            elif risk_assessment.get("is_fake_part"):
+                decision_tag = "hallucination_prevention | fake_part"
+            else:
+                decision_tag = f"risk_override | {risk_assessment['risk_level'].value}"
+            
+            print(f"[SAFETY] Override activated: {decision_tag}")
+            return full_response, decision_tag
 
     # Safety fast-path: refuse out-of-scope and unsafe-intent queries BEFORE retrieval.
     # This avoids expensive embedding/model warmup for queries we should not answer anyway.

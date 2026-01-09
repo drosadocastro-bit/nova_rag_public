@@ -32,6 +32,18 @@ class RiskAssessment:
         r'\bstuck\b.*\btrain\b', r'\brailroad\b.*\bcrossing\b',
     ]
     
+    # Multi-query separators (detect when user asks multiple questions)
+    QUERY_SEPARATORS = [
+        r'(?:^|\s)Also(?:\s|,)',
+        r'(?:^|\s)Additionally(?:\s|,)',
+        r'(?:^|\s)And(?:\s+then)?(?:\s|,)',
+        r'(?:^|\s)Furthermore(?:\s|,)',
+        r'(?:^|\s)Next(?:\s|,)',
+        r'(?:^|\s)Finally(?:\s|,)',
+        r'\?\s+(?:Also|And|What|How|Can|Should|Is|Where|When)',
+        r'\?\s+[A-Z]',  # Question followed by new sentence
+    ]
+    
     # Critical safety systems - failures require immediate attention
     CRITICAL_SYSTEMS = [
         r'\bbrak(e|es|ing)\s+(fail(ed|ure)?|gone|not working)',
@@ -120,6 +132,183 @@ Your request contains language that appears designed to override safety protocol
 - Reference your vehicle's manual for authorized procedures
 
 I'm designed to prioritize your safety above all else."""
+
+    @classmethod
+    def format_split_response(cls, multi_assessment: Dict) -> str:
+        """Format a helpful response for mixed safe/dangerous multi-queries"""
+        response_parts = []
+        dangerous_parts = []
+        
+        for sub in multi_assessment["sub_assessments"]:
+            query = sub["query"]
+            assessment = sub["assessment"]
+            
+            if assessment.get("override_response") and not assessment.get("is_benign_injection"):
+                # This part is dangerous
+                dangerous_parts.append({
+                    "query": query,
+                    "reason": assessment["reasoning"]
+                })
+            # Safe parts will be handled by normal retrieval
+        
+        if dangerous_parts:
+            response_parts.append("✅ **I can help with some of your questions:**\n")
+            response_parts.append("*(The safe parts will be answered below)*\n")
+            response_parts.append("\n❌ **However, I cannot help with:**\n")
+            
+            for dp in dangerous_parts:
+                response_parts.append(f"- **\"{dp['query']}\"** - {dp['reason']}\n")
+            
+            response_parts.append("\n**Why:** ")
+            response_parts.append("These requests involve safety-critical systems or unsafe practices that I cannot assist with. ")
+            response_parts.append("Your safety is more important than convenience.\n")
+        
+        return "".join(response_parts)
+
+    @classmethod
+    def split_multi_query(cls, question: str) -> Dict[str, any]:
+        """
+        Detect and split multi-query questions
+        
+        Examples:
+        - "tire pressure? Also disable ABS" → ["tire pressure?", "disable ABS"]
+        - "What's the oil capacity? And how to bypass safety?" → ["oil capacity?", "bypass safety?"]
+        
+        Args:
+            question: User's question text
+            
+        Returns:
+            Dict with:
+                - is_multi_query: bool
+                - sub_queries: List[str]
+                - reasoning: str
+        """
+        # Check if any separator pattern matches
+        has_separator = any(re.search(sep, question) for sep in cls.QUERY_SEPARATORS)
+        
+        if not has_separator:
+            return {
+                "is_multi_query": False,
+                "sub_queries": [question],
+                "reasoning": "Single query detected"
+            }
+        
+        # Split by separators while preserving the questions
+        split_points = []
+        for pattern in cls.QUERY_SEPARATORS:
+            for match in re.finditer(pattern, question):
+                split_points.append((match.start(), match.end()))
+        
+        if not split_points:
+            return {
+                "is_multi_query": False,
+                "sub_queries": [question],
+                "reasoning": "Single query detected"
+            }
+        
+        # Sort split points
+        split_points = sorted(set(split_points))
+        
+        # Extract sub-queries
+        sub_queries = []
+        last_end = 0
+        
+        for start, end in split_points:
+            # Get text before separator
+            if start > last_end:
+                text = question[last_end:start].strip()
+                if text:
+                    sub_queries.append(text)
+            # Update position
+            last_end = end
+        
+        # Add remaining text
+        if last_end < len(question):
+            text = question[last_end:].strip()
+            if text:
+                sub_queries.append(text)
+        
+        # If we only got one query, it's not actually multi
+        if len(sub_queries) <= 1:
+            return {
+                "is_multi_query": False,
+                "sub_queries": [question],
+                "reasoning": "Single query detected (separator at boundary)"
+            }
+        
+        return {
+            "is_multi_query": True,
+            "sub_queries": sub_queries,
+            "reasoning": f"Multi-query detected: {len(sub_queries)} sub-queries"
+        }
+
+    @classmethod
+    def assess_multi_query(cls, question: str) -> Dict[str, any]:
+        """
+        Assess multi-query questions with intelligent handling
+        
+        Returns:
+            Dict with:
+                - is_multi_query: bool
+                - has_dangerous_parts: bool
+                - has_safe_parts: bool
+                - all_dangerous: bool
+                - dangerous_queries: List[str]
+                - safe_queries: List[str]
+                - override_response: Optional[str] - Pre-built warning
+                - sub_assessments: List[Dict]
+        """
+        split_meta = cls.split_multi_query(question)
+        
+        if not split_meta["is_multi_query"]:
+            # Single query - handle normally
+            return {
+                "is_multi_query": False,
+                "sub_assessments": [
+                    {
+                        "query": question,
+                        "assessment": cls.assess_query(question)
+                    }
+                ]
+            }
+        
+        # Multi-query: assess each independently
+        sub_assessments = []
+        dangerous_queries = []
+        safe_queries = []
+        
+        for sub_query in split_meta["sub_queries"]:
+            assessment = cls.assess_query(sub_query)
+            sub_assessments.append({
+                "query": sub_query,
+                "assessment": assessment
+            })
+            
+            # Categorize
+            if assessment.get("override_response") and not assessment.get("is_benign_injection"):
+                dangerous_queries.append(sub_query)
+            else:
+                safe_queries.append(sub_query)
+        
+        has_dangerous = len(dangerous_queries) > 0
+        has_safe = len(safe_queries) > 0
+        all_dangerous = has_dangerous and not has_safe
+        
+        # Build override response if there are dangerous parts
+        override_msg = None
+        if has_dangerous and has_safe:
+            override_msg = cls.format_split_response({"sub_assessments": sub_assessments})
+        
+        return {
+            "is_multi_query": True,
+            "has_dangerous_parts": has_dangerous,
+            "has_safe_parts": has_safe,
+            "all_dangerous": all_dangerous,
+            "dangerous_queries": dangerous_queries,
+            "safe_queries": safe_queries,
+            "override_response": override_msg,
+            "sub_assessments": sub_assessments
+        }
 
     @classmethod
     def detect_injection_syntax(cls, question: str) -> Dict[str, any]:
