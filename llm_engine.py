@@ -39,31 +39,31 @@ MODEL_DIR = Path(os.environ.get("NOVA_MODEL_DIR", rf"C:\Users\{username}\.lmstud
 MODEL_CONFIGS = {
     "llama-8b": {
         "name": "Fireball-Meta-Llama-3.2-8B",  # Matches QuantFactory model
-        "n_ctx": 30000,              # 30k context (up from 10k)
-        "n_batch": 256,              # Batch size for prompt processing
-        "n_threads": 8,              # CPU threads (adjust for your system)
+        "n_ctx": 8192,               # 8k context (tuned for stable loading, reduced from 30k)
+        "n_batch": 128,              # Batch size for prompt processing (reduced from 256)
+        "n_threads": 4,              # CPU threads (reduced from 8 for stability)
         "n_gpu_layers": -1,          # Use GPU if available (-1 = all layers)
         "temperature": 0.15,         # Low temp for consistency
         "top_p": 0.9,
         "top_k": 40,
         "repeat_penalty": 1.1,
         "max_tokens": 1024,          # Output limit
-        "use_mlock": True,           # Keep model in RAM
+        "use_mlock": False,          # Don't lock in RAM (release memory pressure)
         "use_mmap": True,            # Memory-map model file
         "verbose": False,
     },
     "qwen-14b": {
         "name": "Qwen2.5-Coder-14B",  # Matches lmstudio-community model
-        "n_ctx": 30000,
-        "n_batch": 256,
-        "n_threads": 8,
+        "n_ctx": 8192,               # Reduced from 30k for stability
+        "n_batch": 128,              # Reduced from 256
+        "n_threads": 4,              # Reduced from 8
         "n_gpu_layers": -1,
         "temperature": 0.15,
         "top_p": 0.9,
         "top_k": 40,
         "repeat_penalty": 1.1,
         "max_tokens": 512,           # Qwen: lower output for speed
-        "use_mlock": True,
+        "use_mlock": False,
         "use_mmap": True,
         "verbose": False,
     },
