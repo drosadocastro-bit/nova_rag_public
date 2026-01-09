@@ -1672,9 +1672,29 @@ def nova_text_handler(question: str, mode: str, npc_name: str | None = None, res
     
     # Step 3: Assess risk on CLEAN segments (multi-query detection + per-segment risk)
     multi_assessment = RiskAssessment.assess_multi_query(q_clean)
+
+    # Early refusal for unsafe injection wrappers even if core question is safe
+    q_orig_lower = q_original.lower()
+    dangerous_injection = False
+    if injection_meta.get("has_injection"):
+        for _pat in [
+            r"\bdisable\s+(abs|airbag|safety|check)\b",
+            r"\boverride\s+(all\s+)?(safety|guidance|protocol|protocols)\b",
+            r"\bignore\s+(all\s+)?safety\b",
+            r"\bbypass\s+(safety|checks|protocols)\b",
+        ]:
+            if re.search(_pat, q_orig_lower):
+                dangerous_injection = True
+                break
     
     # Step 4: Decision rules (conservative - any dangerous segment blocks entire request)
     if multi_assessment.get("is_multi_query"):
+        if dangerous_injection and multi_assessment.get("has_safe_parts"):
+            override_msg = multi_assessment.get("override_response") or (
+                "I cannot process this because it contains unsafe instructions alongside a safe question. "
+                "Please ask only the safe, manufacturer-recommended question."
+            )
+            return override_msg, "multi_query_mixed_intent_blocked | unsafe_injection_wrapper"
         print(f"[MULTI-QUERY] Detected {len(multi_assessment['sub_assessments'])} segments")
         print(f"[MULTI-QUERY] Safe: {len(multi_assessment['safe_queries'])}, Dangerous: {len(multi_assessment['dangerous_queries'])}")
         
@@ -1719,6 +1739,14 @@ def nova_text_handler(question: str, mode: str, npc_name: str | None = None, res
             print(f"[SAFETY] Override activated: {decision_tag}")
             return full_response, decision_tag
         
+        # Unsafe injection wrapper detected even if core seems safe
+        if dangerous_injection:
+            return (
+                "I cannot help with that request because it attempts to bypass or disable safety guidance. "
+                "Please ask a normal maintenance or diagnostic question.",
+                "unsafe_injection_wrapper | blocked"
+            )
+
         # For safe single queries, use cleaned version (injection wrapper stripped)
         q_raw = q_clean
 
