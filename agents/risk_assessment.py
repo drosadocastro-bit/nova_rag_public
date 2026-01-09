@@ -272,23 +272,27 @@ I'm designed to prioritize your safety above all else."""
                 ]
             }
         
-        # Multi-query: assess each independently
-        sub_assessments = []
-        dangerous_queries = []
-        safe_queries = []
+        # Multi-query: segment-by-segment evaluation
+        sub_assessments = [
+            {
+                "query": segment,
+                "assessment": cls.assess_query(segment)
+            }
+            for segment in split_meta["sub_queries"]
+        ]
         
-        for sub_query in split_meta["sub_queries"]:
-            assessment = cls.assess_query(sub_query)
-            sub_assessments.append({
-                "query": sub_query,
-                "assessment": assessment
-            })
-            
-            # Categorize
-            if assessment.get("override_response") and not assessment.get("is_benign_injection"):
-                dangerous_queries.append(sub_query)
-            else:
-                safe_queries.append(sub_query)
+        # Categorize segments into safe vs dangerous
+        dangerous_queries = [
+            sub["query"] 
+            for sub in sub_assessments 
+            if sub["assessment"].get("override_response") and not sub["assessment"].get("is_benign_injection")
+        ]
+        
+        safe_queries = [
+            sub["query"]
+            for sub in sub_assessments
+            if not (sub["assessment"].get("override_response") and not sub["assessment"].get("is_benign_injection"))
+        ]
         
         has_dangerous = len(dangerous_queries) > 0
         has_safe = len(safe_queries) > 0
@@ -307,7 +311,8 @@ I'm designed to prioritize your safety above all else."""
             "dangerous_queries": dangerous_queries,
             "safe_queries": safe_queries,
             "override_response": override_msg,
-            "sub_assessments": sub_assessments
+            "sub_assessments": sub_assessments,
+            "segment_count": len(sub_assessments)
         }
 
     @classmethod
