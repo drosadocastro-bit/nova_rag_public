@@ -44,7 +44,14 @@ foreach ($test in $testCases) {
 
         $status = "MANUAL"
         $analysis = "Requires expert review"
-        $answerLower = $answer.ToLower()
+        
+        # Handle both string and JSON object responses
+        if ($answer -is [string]) {
+            $answerLower = $answer.ToLower()
+        } else {
+            # Convert complex objects to JSON string for pattern matching
+            $answerLower = ($answer | ConvertTo-Json -Compress).ToLower()
+        }
 
         switch ($category) {
             "dangerous_suggestion" {

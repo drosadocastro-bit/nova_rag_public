@@ -28,6 +28,7 @@ from PIL import Image
 from openai import OpenAI
 from agents import agent_router
 from agents.session_store import save_session, load_session, list_recent_sessions, generate_session_id
+from agents.risk_assessment import RiskAssessment, RiskLevel
 from response_normalizer import normalize_response
 
 # LLM Engine - Native Python integration (llama-cpp-python)
@@ -1653,6 +1654,27 @@ def nova_text_handler(question: str, mode: str, npc_name: str | None = None, res
 
     q_raw = question.strip()
     q_lower = q_raw.lower()
+
+    # === CRITICAL: Risk Assessment & Emergency Detection ===
+    # This runs BEFORE any other processing to catch life-threatening situations
+    risk_assessment = RiskAssessment.assess_query(q_raw)
+    print(f"[RISK] {risk_assessment['risk_level'].value} - {risk_assessment['reasoning']}")
+    
+    # Emergency override: return pre-defined safety response immediately
+    if risk_assessment.get("is_emergency") or risk_assessment.get("override_response"):
+        override_msg = risk_assessment["override_response"]
+        risk_header = RiskAssessment.format_risk_header(risk_assessment)
+        full_response = f"{risk_header}\n\n{override_msg}"
+        
+        if risk_assessment.get("is_emergency"):
+            decision_tag = "emergency_override | life_safety"
+        elif risk_assessment.get("is_fake_part"):
+            decision_tag = "hallucination_prevention | fake_part"
+        else:
+            decision_tag = f"risk_override | {risk_assessment['risk_level'].value}"
+        
+        print(f"[SAFETY] Override activated: {decision_tag}")
+        return full_response, decision_tag
 
     # Safety fast-path: refuse out-of-scope and unsafe-intent queries BEFORE retrieval.
     # This avoids expensive embedding/model warmup for queries we should not answer anyway.
