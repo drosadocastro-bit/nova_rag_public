@@ -1655,6 +1655,9 @@ def nova_text_handler(question: str, mode: str, npc_name: str | None = None, res
     q_raw = question.strip()
     q_lower = q_raw.lower()
 
+    # Default warning holder for multi-query mixed cases
+    multi_query_warning: str | None = None
+
     # === CRITICAL: Risk Assessment with Multi-Query Detection ===
     # Assess the full query, including detection of multi-query scenarios
     multi_assessment = RiskAssessment.assess_multi_query(q_raw)
@@ -1679,14 +1682,11 @@ def nova_text_handler(question: str, mode: str, npc_name: str | None = None, res
                 q_raw = multi_assessment["safe_queries"][0] if multi_assessment["safe_queries"] else q_raw
                 # Store the warning to prepend later
                 multi_query_warning = override_msg
-            else:
-                multi_query_warning = None
-        else:
-            multi_query_warning = None
+    else:
+        multi_query_warning = None
     else:
         # Single query - use normal risk assessment
         risk_assessment = multi_assessment["sub_assessments"][0]["assessment"]
-        multi_query_warning = None
         
         print(f"[RISK] {risk_assessment['risk_level'].value} - {risk_assessment['reasoning']}")
         
@@ -1711,7 +1711,10 @@ def nova_text_handler(question: str, mode: str, npc_name: str | None = None, res
                 decision_tag = f"risk_override | {risk_assessment['risk_level'].value}"
             
             print(f"[SAFETY] Override activated: {decision_tag}")
-            return full_response, decision_tag
+                return full_response, decision_tag
+
+            # After any stripping/rewriting, recompute lowercase form for downstream checks
+            q_lower = q_raw.lower()
 
     # Safety fast-path: refuse out-of-scope and unsafe-intent queries BEFORE retrieval.
     # This avoids expensive embedding/model warmup for queries we should not answer anyway.
