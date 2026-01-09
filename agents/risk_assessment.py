@@ -63,6 +63,17 @@ class RiskAssessment:
         r'\bturbo\s+encabulator\b',
     ]
     
+    # Prompt injection patterns - attempts to override safety/behavior
+    INJECTION_PATTERNS = [
+        r'\b(SYSTEM|ADMIN|ROOT):\s*(override|disable|ignore)',
+        r'\btranslate\s+to\s+\w+:.*?(override|disable|bypass|unsafe)',
+        r'\bignore\s+(all\s+)?safety',
+        r'\bdisable\s+(abs|airbag|safety|check)',
+        r'\boverride\s+(all\s+)?(safety|guidance|protocol)',
+        r'\bskip\s+(verification|safety)',
+        r'\b(now|from now on).*?forget',
+    ]
+    
     EMERGENCY_RESPONSE = """🚨 **EMERGENCY - IMMEDIATE ACTION REQUIRED**
 
 This is a life-safety emergency. Your immediate priority is personal safety, not the vehicle.
@@ -94,6 +105,22 @@ The part or component you're asking about does not exist in automotive systems. 
 
 I cannot provide procedures for non-existent parts as this could lead to unnecessary work or expense."""
 
+    INJECTION_RESPONSE = """⛔ **Invalid Request - Injection Attempt Detected**
+
+Your request contains language that appears designed to override safety protocols or change my behavior. I cannot process such requests.
+
+**Why I'm refusing:**
+- Safety checks are non-negotiable and cannot be disabled
+- My responses are based on official manufacturer guidance
+- Attempts to bypass safety protocols pose a risk to you
+
+**What to do instead:**
+- Ask straightforward maintenance or diagnostic questions
+- If you need to disable a system, consult an official mechanic
+- Reference your vehicle's manual for authorized procedures
+
+I'm designed to prioritize your safety above all else."""
+
     @classmethod
     def assess_query(cls, question: str) -> Dict[str, any]:
         """
@@ -112,7 +139,19 @@ I cannot provide procedures for non-existent parts as this could lead to unneces
         """
         question_lower = question.lower()
         
-        # Check for fake parts first (hallucination prevention)
+        # Check for prompt injection attempts first
+        for pattern in cls.INJECTION_PATTERNS:
+            if re.search(pattern, question_lower):
+                return {
+                    "risk_level": RiskLevel.HIGH,
+                    "is_emergency": False,
+                    "is_fake_part": False,
+                    "override_response": cls.INJECTION_RESPONSE,
+                    "reasoning": f"Prompt injection attempt detected: {pattern}",
+                    "recommended_action": "refuse_injection"
+                }
+        
+        # Check for fake parts next (hallucination prevention)
         for pattern in cls.FAKE_PARTS:
             if re.search(pattern, question_lower):
                 return {
