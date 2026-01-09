@@ -122,9 +122,81 @@ Your request contains language that appears designed to override safety protocol
 I'm designed to prioritize your safety above all else."""
 
     @classmethod
+    def detect_injection_syntax(cls, question: str) -> Dict[str, any]:
+        """
+        Detect injection attack patterns and extract core question
+        
+        Args:
+            question: User's question text
+            
+        Returns:
+            Dict with:
+                - has_injection: bool
+                - core_question: str - Question with injection syntax removed
+                - injection_markers: List[str] - What injection patterns were found
+        """
+        # Injection keywords/markers to watch for
+        injection_patterns = [
+            r'SYSTEM\s*:',
+            r'(?:^|\s)IGNORE(?:\s|:)',
+            r'(?:^|\s)BYPASS(?:\s|:)',
+            r'(?:^|\s)OVERRIDE(?:\s|:)',
+            r'Translate\s+to\s+\w+\s*:',
+            r'(?:^|\s)IGNORE\s+ALL',
+            r'(?:^|\s)DISREGARD',
+            r'(?:^|\s)FORGET\s+(?:all|everything)',
+            r'(?:^|\s)ACT\s+AS(?:\s|:)',
+            r'(?:^|\s)PRETEND(?:\s|:)',
+            r'jailbreak',
+            r'prompt\s+injection',
+        ]
+        
+        question_lower = question.lower()
+        found_markers = []
+        has_injection = False
+        
+        for pattern in injection_patterns:
+            if re.search(pattern, question_lower, re.IGNORECASE):
+                has_injection = True
+                found_markers.append(pattern)
+        
+        # Extract core question by removing common injection wrappers
+        core_question = question
+        
+        # Remove "SYSTEM: ..." prefix
+        core_question = re.sub(r'SYSTEM\s*:[^.]*\.?\s*', '', core_question, flags=re.IGNORECASE)
+        
+        # Remove "Translate to X: ..." wrapper
+        core_question = re.sub(r'Translate\s+to\s+\w+\s*:\s*', '', core_question, flags=re.IGNORECASE)
+        
+        # Remove "IGNORE/BYPASS/OVERRIDE ... and ..." patterns
+        core_question = re.sub(
+            r'(?:IGNORE|BYPASS|OVERRIDE|DISREGARD)\s+(?:all\s+)?(?:safety|checks|protocols|guidance|rules)[^.]*\s+(?:and|to)\s+',
+            '',
+            core_question,
+            flags=re.IGNORECASE
+        )
+        
+        # Clean up any remaining noise
+        core_question = core_question.strip()
+        
+        return {
+            "has_injection": has_injection,
+            "core_question": core_question if core_question else question,
+            "injection_markers": found_markers,
+            "original_question": question
+        }
+
+    @classmethod
     def assess_query(cls, question: str) -> Dict[str, any]:
         """
         Assess risk level of a user query
+        
+        Handles prompt injection by:
+        1. Detecting injection syntax
+        2. Extracting core question
+        3. Assessing ONLY the core question's safety
+        4. Deciding: benign injection (answer stripped) vs safety-bypass (refuse)
         
         Args:
             question: User's question text
@@ -136,28 +208,27 @@ I'm designed to prioritize your safety above all else."""
                 - is_fake_part: bool
                 - override_response: Optional[str] - Pre-defined response for emergencies/fake parts
                 - reasoning: str - Why this risk level was assigned
+                - has_injection: bool - Whether injection syntax was detected
+                - is_benign_injection: bool - Injection present but core question is safe
         """
-        question_lower = question.lower()
+        # First: Check for injection syntax
+        injection_meta = cls.detect_injection_syntax(question)
+        has_injection = injection_meta["has_injection"]
+        core_question = injection_meta["core_question"]
         
-        # Check for prompt injection attempts first
-        for pattern in cls.INJECTION_PATTERNS:
-            if re.search(pattern, question_lower):
-                return {
-                    "risk_level": RiskLevel.HIGH,
-                    "is_emergency": False,
-                    "is_fake_part": False,
-                    "override_response": cls.INJECTION_RESPONSE,
-                    "reasoning": f"Prompt injection attempt detected: {pattern}",
-                    "recommended_action": "refuse_injection"
-                }
+        # Second: Use core question for all safety assessments
+        assessment_question = core_question if has_injection else question
+        question_lower = assessment_question.lower()
         
-        # Check for fake parts next (hallucination prevention)
+        # Check for fake parts first (hallucination prevention)
         for pattern in cls.FAKE_PARTS:
             if re.search(pattern, question_lower):
                 return {
                     "risk_level": RiskLevel.LOW,
                     "is_emergency": False,
                     "is_fake_part": True,
+                    "has_injection": has_injection,
+                    "is_benign_injection": False,
                     "override_response": cls.FAKE_PART_RESPONSE,
                     "reasoning": f"Query mentions non-existent automotive part: {pattern}",
                     "recommended_action": "refuse_hallucination"
@@ -170,6 +241,8 @@ I'm designed to prioritize your safety above all else."""
                     "risk_level": RiskLevel.CRITICAL,
                     "is_emergency": True,
                     "is_fake_part": False,
+                    "has_injection": has_injection,
+                    "is_benign_injection": False,
                     "override_response": cls.EMERGENCY_RESPONSE,
                     "reasoning": f"Life-threatening emergency detected: {pattern}",
                     "recommended_action": "prioritize_life_safety"
@@ -182,6 +255,8 @@ I'm designed to prioritize your safety above all else."""
                     "risk_level": RiskLevel.CRITICAL,
                     "is_emergency": False,
                     "is_fake_part": False,
+                    "has_injection": has_injection,
+                    "is_benign_injection": False,
                     "override_response": None,
                     "reasoning": f"Critical safety system failure: {pattern}",
                     "recommended_action": "stop_driving_immediately"
@@ -194,6 +269,8 @@ I'm designed to prioritize your safety above all else."""
                     "risk_level": RiskLevel.HIGH,
                     "is_emergency": False,
                     "is_fake_part": False,
+                    "has_injection": has_injection,
+                    "is_benign_injection": False,
                     "override_response": None,
                     "reasoning": f"High urgency safety concern: {pattern}",
                     "recommended_action": "service_soon"
@@ -207,10 +284,15 @@ I'm designed to prioritize your safety above all else."""
             risk_level = RiskLevel.LOW
             reasoning = "General informational query"
         
+        # KEY: If injection was detected but core question is safe, mark as benign injection
+        is_benign_injection = has_injection and risk_level in [RiskLevel.LOW, RiskLevel.MEDIUM]
+        
         return {
             "risk_level": risk_level,
             "is_emergency": False,
             "is_fake_part": False,
+            "has_injection": has_injection,
+            "is_benign_injection": is_benign_injection,
             "override_response": None,
             "reasoning": reasoning,
             "recommended_action": "provide_normal_response"

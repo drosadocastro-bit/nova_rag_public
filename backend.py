@@ -1660,6 +1660,13 @@ def nova_text_handler(question: str, mode: str, npc_name: str | None = None, res
     risk_assessment = RiskAssessment.assess_query(q_raw)
     print(f"[RISK] {risk_assessment['risk_level'].value} - {risk_assessment['reasoning']}")
     
+    # Handle different risk scenarios
+    if risk_assessment.get("is_benign_injection"):
+        # Benign injection: answer the safe question, ignore injection syntax
+        safe_question = RiskAssessment.detect_injection_syntax(q_raw)["core_question"]
+        print(f"[INJECTION] Benign injection detected - answering core question: {safe_question[:60]}...")
+        q_raw = safe_question  # Update question to stripped version
+    
     # Emergency override: return pre-defined safety response immediately
     if risk_assessment.get("is_emergency") or risk_assessment.get("override_response"):
         override_msg = risk_assessment["override_response"]
