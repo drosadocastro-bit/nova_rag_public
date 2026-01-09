@@ -296,6 +296,19 @@ These diagrams exercise the vision reranker without requiring real manual scans.
 
 ---
 
+## 🗄️ Cache System
+
+Nova uses **versioned indices** that automatically rebuild when: 
+- ✅ Embedding model changes
+- ✅ Document corpus updates
+- ✅ BM25 parameters modified
+- ✅ Chunking strategy changes
+
+Version metadata is tracked in git (`cache/*_version.json`).  
+Binary indices build automatically on first run.
+
+See [docs/CACHE_ARCHITECTURE.md](docs/CACHE_ARCHITECTURE.md) for details.
+
 ## Repository Structure
 
 ```

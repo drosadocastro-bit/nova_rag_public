@@ -191,3 +191,16 @@ ragas_results/            # Evaluation output (regenerate via nic_ragas_eval.py)
 # PowerShell scripts (local tooling)
 link_lmstudio_to_ollama.ps1
 register_*.ps1
+
+# Cache directory (binary files only)
+cache/**/*.pkl
+cache/**/*.db
+
+# Keep version metadata and directory structure
+! cache/**/. gitkeep
+!cache/**/*_version.json
+
+# Old pickle files in root (will be migrated to cache/)
+bm25_index.pkl
+retrieval_cache.pkl
+search_history.pkl
