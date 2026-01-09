@@ -1,12 +1,26 @@
 """
 Caching utilities for NIC retrieval and audit operations.
 
+⚠️ DEPRECATION NOTICE:
+This module is deprecated and will be removed in v2.0.
+Please use core.caching.cache_manager instead for new code.
+
+Legacy code (backend.py) still uses this module during migration.
+
 Feature-flagged via environment variables:
 - NOVA_ENABLE_RETRIEVAL_CACHE=1
 - NOVA_ENABLE_SQL_LOG=1
 
 Security: Uses HMAC-verified pickle to prevent code execution from tampered cache files.
 """
+
+import warnings
+warnings.warn(
+    "cache_utils is deprecated. Use core.caching.cache_manager for new code.  "
+    "This module will be removed in v2.0.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 import os
 import hashlib

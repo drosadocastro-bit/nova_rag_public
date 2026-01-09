@@ -62,9 +62,9 @@ When any parameter changes, the index automatically rebuilds.
 
 ```python
 
-from backend.caching. cache\_manager import VersionedCacheManager
+from core.caching.cache_manager import VersionedCacheManager
 
-from backend.caching.index\_version import IndexVersion
+from core.caching.index_version import IndexVersion
 
 import hashlib
 
