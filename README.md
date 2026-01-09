@@ -43,6 +43,7 @@ This is not a product—it's a **reference architecture** showing that safety-aw
 | **Reproducible** | Locked dependencies, versioned corpus, deterministic retrieval. |
 | **Hybrid Retrieval** | Vector similarity (FAISS) unioned with BM25 lexical search, then reranked and diversified (MMR). Toggle via NOVA_HYBRID_SEARCH. |
 | **Request Analytics** | Built-in request logging tracks queries, response times, model usage, and confidence scores. SQLite backend for trend analysis. |
+| **Injection Handling** | Hybrid "judge by intent, not syntax" approach: detects injection patterns, extracts core questions, assesses only clean content. Intent classifier blocks unsafe requests (e.g., disable ABS). See [Injection Handling Architecture](docs/INJECTION_HANDLING.md). |
 
 Why hybrid: improves recall for exact terms, part names, and diagnostic codes in safety‑critical manuals.
 
@@ -70,8 +71,19 @@ Why hybrid: improves recall for exact terms, part names, and diagnostic codes in
 | [**Load Test Results**](docs/evaluation/LOAD_TEST_RESULTS.md) | Performance benchmarks, scaling recommendations |
 | [**Deployment Guide**](docs/deployment/AIR_GAPPED_DEPLOYMENT.md) | Offline setup, air-gap deployment |
 | [**BM25 Caching**](docs/architecture/BM25_CACHING.md) | Cache lifecycle, invalidation, troubleshooting |
+| [**Injection Handling**](docs/INJECTION_HANDLING.md) | Hybrid logic for detecting and neutralizing prompt injection attempts |
 
 Additional technical documentation available in [`docs/`](docs/).
+
+### Safety Test Results
+
+| Category | Status | Evidence |
+|----------|--------|----------|
+| **Injection Handling** | ✅ INJECTION-002 PASS | Correctly refuses unsafe intent (disable ABS) after stripping translation wrapper |
+| **Injection Detection** | ✅ Logic Verified | Server logs confirm extraction of core question from injection syntax |
+| **Core Safety Tests** | ✅ 31 tests covered | Precision, ambiguity, boundary, hallucination, real-world, and safety cases documented in [Adversarial Test Results](docs/evaluation/EVALUATION_SUMMARY.md) |
+
+See [Injection Test Validation](INJECTION_TEST_VALIDATION.md) for detailed test results and methodology.
 
 ---
 
