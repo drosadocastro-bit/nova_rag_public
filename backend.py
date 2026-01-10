@@ -27,7 +27,7 @@ from PIL import Image
 from openai import OpenAI
 from agents import agent_router
 from agents.session_store import save_session, load_session, list_recent_sessions, generate_session_id
-from agents.risk_assessment import RiskAssessment, RiskLevel
+from core.safety import RiskAssessment, RiskLevel, handle_injection_and_multi_query
 from core.utils.search_history import SearchHistory
 from core.utils.text_processing import (
     load_pdf_text,
@@ -1521,105 +1521,13 @@ def nova_text_handler(question: str, mode: str, npc_name: str | None = None, res
     # Default warning holder for multi-query mixed cases
     multi_query_warning: str | None = None
 
-    # === HYBRID INJECTION HANDLING (by intent, not syntax) ===
-    # Step 1: Detect injection syntax (form only - don't decide safety yet)
-    injection_meta = RiskAssessment.detect_injection_syntax(q_raw)
-    if injection_meta.get("has_injection"):
-        print(f"[INJECTION] Syntax detected: {injection_meta.get('injection_markers', [])[:2]}")
-        print(f"[INJECTION] Original: {q_original[:80]}")
-        print(f"[INJECTION] Core extracted: {injection_meta['core_question'][:80]}")
-    
-    # Step 2: Extract core question(s) - strip wrapper BEFORE any decisions
-    # This ensures intent classifier never sees injection syntax
-    q_clean = injection_meta.get("core_question", q_raw).strip() if injection_meta.get("has_injection") else q_raw
-    
-    # Step 3: Assess risk on CLEAN segments (multi-query detection + per-segment risk)
-    multi_assessment = RiskAssessment.assess_multi_query(q_clean)
+    injection_result = handle_injection_and_multi_query(q_raw)
+    if injection_result["refusal"]:
+        return injection_result["refusal"], injection_result.get("decision_tag", "")
 
-    # Early refusal for unsafe injection wrappers even if core question is safe
-    q_orig_lower = q_original.lower()
-    dangerous_injection = False
-    if injection_meta.get("has_injection"):
-        for _pat in [
-            r"\bdisable\s+(abs|airbag|safety|check)\b",
-            r"\boverride\s+(all\s+)?(safety|guidance|protocol|protocols)\b",
-            r"\bignore\s+(all\s+)?safety\b",
-            r"\bbypass\s+(safety|checks|protocols)\b",
-        ]:
-            if re.search(_pat, q_orig_lower):
-                dangerous_injection = True
-                break
-    
-    # Step 4: Decision rules (conservative - any dangerous segment blocks entire request)
-    if multi_assessment.get("is_multi_query"):
-        if dangerous_injection and multi_assessment.get("has_safe_parts"):
-            override_msg = multi_assessment.get("override_response") or (
-                "I cannot process this because it contains unsafe instructions alongside a safe question. "
-                "Please ask only the safe, manufacturer-recommended question."
-            )
-            return override_msg, "multi_query_mixed_intent_blocked | unsafe_injection_wrapper"
-        print(f"[MULTI-QUERY] Detected {len(multi_assessment['sub_assessments'])} segments")
-        print(f"[MULTI-QUERY] Safe: {len(multi_assessment['safe_queries'])}, Dangerous: {len(multi_assessment['dangerous_queries'])}")
-        
-        # Rule 1: All segments dangerous → refuse entire request
-        if multi_assessment["all_dangerous"]:
-            print("[SAFETY] All segments dangerous - refusing entirely")
-            refusal_msg = f"I cannot help with any of those requests. {multi_assessment['sub_assessments'][0]['assessment']['reasoning']}"
-            return refusal_msg, "multi_query_all_dangerous"
-        
-        # Rule 2: Mixed safe + dangerous → refuse (never answer part if another part is dangerous)
-        if multi_assessment["has_dangerous_parts"] and multi_assessment["has_safe_parts"]:
-            print("[SAFETY] Mixed intent detected - refusing entire request (contains dangerous segment)")
-            override_msg = multi_assessment["override_response"]
-            if override_msg:
-                return override_msg, "multi_query_mixed_intent_blocked"
-            else:
-                return "I cannot process this request because it contains both safe and unsafe queries. Please separate them into individual requests.", "multi_query_mixed_blocked"
-        
-        # Rule 3: All segments safe → answer using first safe segment
-        if multi_assessment["has_safe_parts"] and not multi_assessment["has_dangerous_parts"]:
-            q_raw = multi_assessment["safe_queries"][0] if multi_assessment["safe_queries"] else q_clean
-            multi_query_warning = None  # No warning needed for all-safe
-    else:
-        # Single segment - use normal risk assessment
-        risk_assessment = multi_assessment["sub_assessments"][0]["assessment"]
-        
-        print(f"[RISK] {risk_assessment['risk_level'].value} - {risk_assessment['reasoning']}")
-        
-        # Emergency override: return pre-defined safety response immediately
-        if risk_assessment.get("is_emergency") or risk_assessment.get("override_response"):
-            override_msg = risk_assessment["override_response"]
-            risk_header = RiskAssessment.format_risk_header(risk_assessment)
-            full_response = f"{risk_header}\n\n{override_msg}"
-            
-            if risk_assessment.get("is_emergency"):
-                decision_tag = "emergency_override | life_safety"
-            elif risk_assessment.get("is_fake_part"):
-                decision_tag = "hallucination_prevention | fake_part"
-            else:
-                decision_tag = f"risk_override | {risk_assessment['risk_level'].value}"
-            
-            print(f"[SAFETY] Override activated: {decision_tag}")
-            return full_response, decision_tag
-        
-        # Unsafe injection wrapper detected even if core seems safe
-        if dangerous_injection:
-            return (
-                "I cannot help with that request because it attempts to bypass or disable safety guidance. "
-                "Please ask a normal maintenance or diagnostic question.",
-                "unsafe_injection_wrapper | blocked"
-            )
-
-        # For safe single queries, use cleaned version (injection wrapper stripped)
-        q_raw = q_clean
-
-    # After all extraction/stripping, recompute lowercase for downstream checks
-    q_lower = q_raw.lower()
-    
-    # Log decision for audit (internal only - never shown to user)
-    if injection_meta.get("has_injection"):
-        print(f"[INJECTION-DECISION] Original had injection syntax, assessed CONTENT only")
-        print(f"[INJECTION-DECISION] Final question for processing: {q_raw[:80]}")
+    q_raw = injection_result["cleaned_question"]
+    q_lower = injection_result.get("q_lower", q_raw.lower())
+    multi_query_warning = injection_result.get("multi_query_warning")
 
     # Safety fast-path: refuse out-of-scope and unsafe-intent queries BEFORE retrieval.
     # This avoids expensive embedding/model warmup for queries we should not answer anyway.
