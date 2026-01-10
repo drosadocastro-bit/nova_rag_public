@@ -28,6 +28,7 @@ from openai import OpenAI
 from agents import agent_router
 from agents.session_store import save_session, load_session, list_recent_sessions, generate_session_id
 from agents.risk_assessment import RiskAssessment, RiskLevel
+from core.utils.search_history import SearchHistory
 from core.utils.text_processing import (
     load_pdf_text,
     load_pdf_text_with_pages,
@@ -357,76 +358,11 @@ session_state = {
 # SEARCH HISTORY & FAVORITES
 # =======================
 
-class SearchHistory:
-    def __init__(self, max_size: int = 50):
-        self.history = deque(maxlen=max_size)
-        self.favorites = []
-        self.load()
-    
-    def add(self, query: str):
-        if query in self.history:
-            self.history.remove(query)
-        self.history.appendleft(query)
-        self.save()
-    
-    def add_favorite(self, query: str, answer: str):
-        fav = {"query": query, "answer": answer, "timestamp": datetime.now().isoformat()}
-        self.favorites.append(fav)
-        self.save_favorites()
-    
-    def remove_favorite(self, index: int):
-        if 0 <= index < len(self.favorites):
-            self.favorites.pop(index)
-            self.save_favorites()
-    
-    def get_recent(self, n: int = 10) -> list[str]:
-        return list(self.history)[:n]
-    
-    def save(self):
-        """Save search history with HMAC verification for security."""
-        try:
-            if SECURE_CACHE_AVAILABLE:
-                from secure_cache import secure_pickle_dump
-                secure_pickle_dump(list(self.history), SEARCH_HISTORY_PATH)
-            else:
-                import pickle
-                with SEARCH_HISTORY_PATH.open("wb") as f:
-                    pickle.dump(list(self.history), f)
-        except Exception as e:
-            print(f"[!] Failed to save search history: {e}")
-    
-    def save_favorites(self):
-        try:
-            with FAVORITES_PATH.open("w", encoding="utf-8") as f:
-                json.dump(self.favorites, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            print(f"[!] Failed to save favorites: {e}")
-    
-    def load(self):
-        """Load search history with HMAC verification for security."""
-        try:
-            if SEARCH_HISTORY_PATH.exists():
-                if SECURE_CACHE_AVAILABLE:
-                    from secure_cache import secure_pickle_load
-                    self.history = deque(secure_pickle_load(SEARCH_HISTORY_PATH), maxlen=50)
-                else:
-                    import pickle
-                    with SEARCH_HISTORY_PATH.open("rb") as f:
-                        self.history = deque(pickle.load(f), maxlen=50)
-            if FAVORITES_PATH.exists():
-                with FAVORITES_PATH.open("r", encoding="utf-8") as f:
-                    self.favorites = json.load(f)
-        except Exception as e:
-            print(f"[!] Failed to load search history: {e}")
-            # Clear corrupted cache
-            self.history = deque(maxlen=50)
-            if SEARCH_HISTORY_PATH.exists():
-                try:
-                    SEARCH_HISTORY_PATH.unlink()
-                except Exception:
-                    pass
-
-search_history = SearchHistory()
+search_history = SearchHistory(
+    max_size=50,
+    history_path=SEARCH_HISTORY_PATH,
+    favorites_path=FAVORITES_PATH,
+)
 
 
 # =======================
