@@ -14,15 +14,16 @@ Feature-flagged via environment variables:
 Security: Uses HMAC-verified pickle to prevent code execution from tampered cache files.
 """
 
-import warnings
-warnings.warn(
-    "cache_utils is deprecated. Use core.caching.cache_manager for new code.  "
-    "This module will be removed in v2.0.",
-    DeprecationWarning,
-    stacklevel=2
-)
-
 import os
+import warnings
+
+if os.environ.get("NOVA_SUPPRESS_CACHE_UTILS_DEPRECATION", "0") != "1":
+    warnings.warn(
+        "cache_utils is deprecated. Use core.caching.cache_manager for new code.  "
+        "This module will be removed in v2.0.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 import hashlib
 import json
 from pathlib import Path
