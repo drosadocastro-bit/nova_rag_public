@@ -66,6 +66,7 @@ Why hybrid: improves recall for exact terms, part names, and diagnostic codes in
 | Document | Description |
 |----------|-------------|
 | [**System Architecture**](docs/architecture/SYSTEM_ARCHITECTURE.md) | Core design, data flow, component interactions |
+| [**Architecture Overview**](docs/ARCHITECTURE.md) | High-level map of modules, safety layers, retrieval cache, and key config flags |
 | [**Safety Model**](docs/safety/SAFETY_MODEL.md) | Hallucination defenses, validation methodology |
 | [**Safety-Critical Context**](docs/safety/SAFETY_CRITICAL_CONTEXT.md) | Use context, human-on-the-loop model, failure philosophy |
 | [**Evaluation Summary**](docs/evaluation/EVALUATION_SUMMARY.md) | Test coverage, adversarial results, RAGAS scores |
