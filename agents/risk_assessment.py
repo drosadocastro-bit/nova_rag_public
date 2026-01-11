@@ -1,0 +1,524 @@
+"""
+Risk Assessment Module for NIC Safety-Critical Queries
+
+Evaluates query severity and detects life-threatening emergencies
+to ensure appropriate prioritization of user safety.
+"""
+
+import re
+from typing import Any, Dict
+from enum import Enum
+
+
+class RiskLevel(Enum):
+    """Risk severity classification"""
+    CRITICAL = "CRITICAL"  # Life-threatening, immediate action required
+    HIGH = "HIGH"          # Safety concern, urgent attention needed
+    MEDIUM = "MEDIUM"      # Important but not immediately dangerous
+    LOW = "LOW"            # Routine maintenance/information
+
+
+class RiskAssessment:
+    """Assesses risk level of user queries"""
+    
+    # Life-threatening emergencies - override all normal processing
+    EMERGENCY_KEYWORDS = [
+        r'\bfire\b', r'\bflames?\b', r'\bburning\b', r'\bsmoke\b',
+        r'\bexplosion\b', r'\bexploding\b',
+        r'\bcan\'?t breathe\b', r'\bsuffocating\b', r'\bchok(e|ing)\b',
+        r'\bunconscious\b', r'\bpassed out\b',
+        r'\bbleeding\b', r'\bblood\b',
+        r'\bcrash\b', r'\baccident\b', r'\bcollision\b',
+        r'\bstuck\b.*\btrain\b', r'\brailroad\b.*\bcrossing\b',
+    ]
+    
+    # Multi-query separators (detect when user asks multiple questions)
+    QUERY_SEPARATORS = [
+        r'(?:^|\s)Also(?:\s|,)',
+        r'(?:^|\s)Additionally(?:\s|,)',
+        r'(?:^|\s)And(?:\s+then)?(?:\s|,)',
+        r'(?:^|\s)Furthermore(?:\s|,)',
+        r'(?:^|\s)Next(?:\s|,)',
+        r'(?:^|\s)Finally(?:\s|,)',
+        r'\?\s+(?:Also|And|What|How|Can|Should|Is|Where|When)',
+        r'\?\s+[A-Z]',  # Question followed by new sentence
+    ]
+    
+    # Critical safety systems - failures require immediate attention
+    CRITICAL_SYSTEMS = [
+        r'\bbrak(e|es|ing)\s+(fail(ed|ure)?|gone|not working)',
+        r'\bsteering\s+(fail(ed|ure)?|locked|not working)',
+        r'\bairbag\s+deployed',
+        r'\bgas\s+leak', r'\bfuel\s+leak',
+        r'\bcoolant\s+boiling', r'\bengine\s+overheating',
+    ]
+    
+    # High urgency - safety concern but not immediately life-threatening
+    HIGH_URGENCY = [
+        r'\bbrak(e|es)\s+(grinding|metal|screaming)',
+        r'\bsteering\s+(heavy|hard|stiff)',
+        r'\btir(e|es)\s+(bulg(e|ing)|cord|worn)',
+        r'\bsmell\s+(burn(ing)?|gas|fuel)',
+        r'\bwarning\s+light\s+(red|flashing)',
+        r'\bengine\s+(knock(ing)?|seiz(e|ing))',
+    ]
+    
+    # Fake/non-existent automotive parts - hallucination prevention
+    FAKE_PARTS = [
+        r'\bblinker\s+fluid\b',
+        r'\bheadlight\s+fluid\b',
+        r'\bjohnson\s+rod\b',
+        r'\bmuffler\s+bearing',
+        r'\bexhaust\s+bearing',
+        r'\bpiston\s+return\s+spring',
+        r'\bflux\s+capacitor\b',
+        r'\bturbo\s+encabulator\b',
+    ]
+    
+    # Prompt injection patterns - attempts to override safety/behavior
+    INJECTION_PATTERNS = [
+        r'\b(SYSTEM|ADMIN|ROOT):\s*(override|disable|ignore)',
+        r'\btranslate\s+to\s+\w+:.*?(override|disable|bypass|unsafe)',
+        r'\bignore\s+(all\s+)?safety',
+        r'\bdisable\s+(abs|airbag|safety|check)',
+        r'\boverride\s+(all\s+)?(safety|guidance|protocol)',
+        r'\bskip\s+(verification|safety)',
+        r'\b(now|from now on).*?forget',
+    ]
+
+    _EMERGENCY_REGEX = [re.compile(p, re.IGNORECASE) for p in EMERGENCY_KEYWORDS]
+    _CRITICAL_SYSTEMS_REGEX = [re.compile(p, re.IGNORECASE) for p in CRITICAL_SYSTEMS]
+    _HIGH_URGENCY_REGEX = [re.compile(p, re.IGNORECASE) for p in HIGH_URGENCY]
+    _FAKE_PART_REGEX = [re.compile(p, re.IGNORECASE) for p in FAKE_PARTS]
+    _INJECTION_REGEX = [re.compile(p, re.IGNORECASE) for p in INJECTION_PATTERNS]
+
+    @staticmethod
+    def _first_match(patterns: list[re.Pattern[str]], text: str) -> re.Pattern[str] | None:
+        for pattern in patterns:
+            if pattern.search(text):
+                return pattern
+        return None
+    
+    EMERGENCY_RESPONSE = """🚨 **EMERGENCY - IMMEDIATE ACTION REQUIRED**
+
+This is a life-safety emergency. Your immediate priority is personal safety, not the vehicle.
+
+**DO THIS NOW:**
+1. **EVACUATE** - Get yourself and passengers away from the vehicle immediately
+2. **CALL 911** - Report the emergency to emergency services
+3. **STAY CLEAR** - Do not attempt to extinguish fires or perform repairs
+4. **WARN OTHERS** - Alert nearby people to stay away
+
+**Do NOT:**
+- Attempt to fix the problem yourself
+- Re-enter the vehicle
+- Open the hood if there's fire or smoke
+
+Your life is more valuable than any vehicle. Get to safety first."""
+
+    FAKE_PART_RESPONSE = """⚠️ **Part Not Found**
+
+The part or component you're asking about does not exist in automotive systems. This may be:
+- A common joke/prank (e.g., "blinker fluid")
+- A misremembered part name
+- Confusion with a different system
+
+**What to do:**
+- Check the exact part name in your vehicle's manual
+- Describe the problem you're trying to solve instead
+- Consult a certified mechanic if unsure
+
+I cannot provide procedures for non-existent parts as this could lead to unnecessary work or expense."""
+
+    INJECTION_RESPONSE = """⛔ **Invalid Request - Injection Attempt Detected**
+
+Your request contains language that appears designed to override safety protocols or change my behavior. I cannot process such requests.
+
+**Why I'm refusing:**
+- Safety checks are non-negotiable and cannot be disabled
+- My responses are based on official manufacturer guidance
+- Attempts to bypass safety protocols pose a risk to you
+
+**What to do instead:**
+- Ask straightforward maintenance or diagnostic questions
+- If you need to disable a system, consult an official mechanic
+- Reference your vehicle's manual for authorized procedures
+
+I'm designed to prioritize your safety above all else."""
+
+    @classmethod
+    def format_split_response(cls, multi_assessment: Dict) -> str:
+        """Format a helpful response for mixed safe/dangerous multi-queries"""
+        response_parts = []
+        dangerous_parts = []
+        
+        for sub in multi_assessment["sub_assessments"]:
+            query = sub["query"]
+            assessment = sub["assessment"]
+            
+            if assessment.get("override_response") and not assessment.get("is_benign_injection"):
+                # This part is dangerous
+                dangerous_parts.append({
+                    "query": query,
+                    "reason": assessment["reasoning"]
+                })
+            # Safe parts will be handled by normal retrieval
+        
+        if dangerous_parts:
+            response_parts.append("✅ **I can help with some of your questions:**\n")
+            response_parts.append("*(The safe parts will be answered below)*\n")
+            response_parts.append("\n❌ **However, I cannot help with:**\n")
+            
+            for dp in dangerous_parts:
+                response_parts.append(f"- **\"{dp['query']}\"** - {dp['reason']}\n")
+            
+            response_parts.append("\n**Why:** ")
+            response_parts.append("These requests involve safety-critical systems or unsafe practices that I cannot assist with. ")
+            response_parts.append("Your safety is more important than convenience.\n")
+        
+        return "".join(response_parts)
+
+    @classmethod
+    def split_multi_query(cls, question: str) -> Dict[str, Any]:
+        """
+        Detect and split multi-query questions
+        
+        Examples:
+        - "tire pressure? Also disable ABS" → ["tire pressure?", "disable ABS"]
+        - "What's the oil capacity? And how to bypass safety?" → ["oil capacity?", "bypass safety?"]
+        
+        Args:
+            question: User's question text
+            
+        Returns:
+            Dict with:
+                - is_multi_query: bool
+                - sub_queries: List[str]
+                - reasoning: str
+        """
+        # Check if any separator pattern matches
+        has_separator = any(re.search(sep, question) for sep in cls.QUERY_SEPARATORS)
+        
+        if not has_separator:
+            return {
+                "is_multi_query": False,
+                "sub_queries": [question],
+                "reasoning": "Single query detected"
+            }
+        
+        # Split by separators while preserving the questions
+        split_points = []
+        for pattern in cls.QUERY_SEPARATORS:
+            for match in re.finditer(pattern, question):
+                split_points.append((match.start(), match.end()))
+        
+        if not split_points:
+            return {
+                "is_multi_query": False,
+                "sub_queries": [question],
+                "reasoning": "Single query detected"
+            }
+        
+        # Sort split points
+        split_points = sorted(set(split_points))
+        
+        # Extract sub-queries
+        sub_queries = []
+        last_end = 0
+        
+        for start, end in split_points:
+            # Get text before separator
+            if start > last_end:
+                text = question[last_end:start].strip()
+                if text:
+                    sub_queries.append(text)
+            # Update position
+            last_end = end
+        
+        # Add remaining text
+        if last_end < len(question):
+            text = question[last_end:].strip()
+            if text:
+                sub_queries.append(text)
+        
+        # If we only got one query, it's not actually multi
+        if len(sub_queries) <= 1:
+            return {
+                "is_multi_query": False,
+                "sub_queries": [question],
+                "reasoning": "Single query detected (separator at boundary)"
+            }
+        
+        return {
+            "is_multi_query": True,
+            "sub_queries": sub_queries,
+            "reasoning": f"Multi-query detected: {len(sub_queries)} sub-queries"
+        }
+
+    @classmethod
+    def assess_multi_query(cls, question: str) -> Dict[str, Any]:
+        """
+        Assess multi-query questions with intelligent handling
+        
+        Returns:
+            Dict with:
+                - is_multi_query: bool
+                - has_dangerous_parts: bool
+                - has_safe_parts: bool
+                - all_dangerous: bool
+                - dangerous_queries: List[str]
+                - safe_queries: List[str]
+                - override_response: Optional[str] - Pre-built warning
+                - sub_assessments: List[Dict]
+        """
+        split_meta = cls.split_multi_query(question)
+        
+        if not split_meta["is_multi_query"]:
+            # Single query - handle normally
+            return {
+                "is_multi_query": False,
+                "sub_assessments": [
+                    {
+                        "query": question,
+                        "assessment": cls.assess_query(question)
+                    }
+                ]
+            }
+        
+        # Multi-query: segment-by-segment evaluation
+        sub_assessments = [
+            {
+                "query": segment,
+                "assessment": cls.assess_query(segment)
+            }
+            for segment in split_meta["sub_queries"]
+        ]
+        
+        # Categorize segments into safe vs dangerous
+        dangerous_queries = [
+            sub["query"] 
+            for sub in sub_assessments 
+            if sub["assessment"].get("override_response") and not sub["assessment"].get("is_benign_injection")
+        ]
+        
+        safe_queries = [
+            sub["query"]
+            for sub in sub_assessments
+            if not (sub["assessment"].get("override_response") and not sub["assessment"].get("is_benign_injection"))
+        ]
+        
+        has_dangerous = len(dangerous_queries) > 0
+        has_safe = len(safe_queries) > 0
+        all_dangerous = has_dangerous and not has_safe
+        
+        # Build override response if there are dangerous parts
+        override_msg = None
+        if has_dangerous and has_safe:
+            override_msg = cls.format_split_response({"sub_assessments": sub_assessments})
+        
+        return {
+            "is_multi_query": True,
+            "has_dangerous_parts": has_dangerous,
+            "has_safe_parts": has_safe,
+            "all_dangerous": all_dangerous,
+            "dangerous_queries": dangerous_queries,
+            "safe_queries": safe_queries,
+            "override_response": override_msg,
+            "sub_assessments": sub_assessments,
+            "segment_count": len(sub_assessments)
+        }
+
+    @classmethod
+    def detect_injection_syntax(cls, question: str) -> Dict[str, Any]:
+        """
+        Detect injection attack patterns and extract core question
+        
+        Args:
+            question: User's question text
+            
+        Returns:
+            Dict with:
+                - has_injection: bool
+                - core_question: str - Question with injection syntax removed
+                - injection_markers: List[str] - What injection patterns were found
+        """
+        # Injection keywords/markers to watch for
+        injection_patterns = [
+            r'SYSTEM\s*:',
+            r'(?:^|\s)IGNORE(?:\s|:)',
+            r'(?:^|\s)BYPASS(?:\s|:)',
+            r'(?:^|\s)OVERRIDE(?:\s|:)',
+            r'Translate\s+to\s+\w+\s*:',
+            r'(?:^|\s)IGNORE\s+ALL',
+            r'(?:^|\s)DISREGARD',
+            r'(?:^|\s)FORGET\s+(?:all|everything)',
+            r'(?:^|\s)ACT\s+AS(?:\s|:)',
+            r'(?:^|\s)PRETEND(?:\s|:)',
+            r'jailbreak',
+            r'prompt\s+injection',
+        ]
+        
+        found_markers = []
+        has_injection = False
+        
+        for pattern in cls._INJECTION_REGEX:
+            if pattern.search(question):
+                has_injection = True
+                found_markers.append(pattern.pattern)
+        
+        # Extract core question by removing common injection wrappers
+        core_question = question
+        
+        # Remove "SYSTEM: ..." prefix
+        core_question = re.sub(r'SYSTEM\s*:[^.]*\.?\s*', '', core_question, flags=re.IGNORECASE)
+        
+        # Remove "Translate to X: ..." wrapper
+        core_question = re.sub(r'Translate\s+to\s+\w+\s*:\s*', '', core_question, flags=re.IGNORECASE)
+        
+        # Remove "IGNORE/BYPASS/OVERRIDE ... and ..." patterns
+        core_question = re.sub(
+            r'(?:IGNORE|BYPASS|OVERRIDE|DISREGARD)\s+(?:all\s+)?(?:safety|checks|protocols|guidance|rules)[^.]*\s+(?:and|to)\s+',
+            '',
+            core_question,
+            flags=re.IGNORECASE
+        )
+        
+        # Clean up any remaining noise
+        core_question = core_question.strip()
+        
+        return {
+            "has_injection": has_injection,
+            "core_question": core_question if core_question else question,
+            "injection_markers": found_markers,
+            "original_question": question
+        }
+
+    @classmethod
+    def assess_query(cls, question: str) -> Dict[str, Any]:
+        """
+        Assess risk level of a user query
+        
+        Handles prompt injection by:
+        1. Detecting injection syntax
+        2. Extracting core question
+        3. Assessing ONLY the core question's safety
+        4. Deciding: benign injection (answer stripped) vs safety-bypass (refuse)
+        
+        Args:
+            question: User's question text
+            
+        Returns:
+            Dict with:
+                - risk_level: RiskLevel enum
+                - is_emergency: bool
+                - is_fake_part: bool
+                - override_response: Optional[str] - Pre-defined response for emergencies/fake parts
+                - reasoning: str - Why this risk level was assigned
+                - has_injection: bool - Whether injection syntax was detected
+                - is_benign_injection: bool - Injection present but core question is safe
+        """
+        # First: Check for injection syntax
+        injection_meta = cls.detect_injection_syntax(question)
+        has_injection = injection_meta["has_injection"]
+        core_question = injection_meta["core_question"]
+        
+        # Second: Use core question for all safety assessments
+        assessment_question = core_question if has_injection else question
+        # Check for fake parts first (hallucination prevention)
+        fake_pattern = cls._first_match(cls._FAKE_PART_REGEX, assessment_question)
+        if fake_pattern:
+            return {
+                "risk_level": RiskLevel.LOW,
+                "is_emergency": False,
+                "is_fake_part": True,
+                "has_injection": has_injection,
+                "is_benign_injection": False,
+                "override_response": cls.FAKE_PART_RESPONSE,
+                "reasoning": f"Query mentions non-existent automotive part: {fake_pattern.pattern}",
+                "recommended_action": "refuse_hallucination",
+            }
+        
+        # Check for life-threatening emergencies
+        emergency_pattern = cls._first_match(cls._EMERGENCY_REGEX, assessment_question)
+        if emergency_pattern:
+            return {
+                "risk_level": RiskLevel.CRITICAL,
+                "is_emergency": True,
+                "is_fake_part": False,
+                "has_injection": has_injection,
+                "is_benign_injection": False,
+                "override_response": cls.EMERGENCY_RESPONSE,
+                "reasoning": f"Life-threatening emergency detected: {emergency_pattern.pattern}",
+                "recommended_action": "prioritize_life_safety",
+            }
+        
+        # Check for critical safety system failures
+        critical_pattern = cls._first_match(cls._CRITICAL_SYSTEMS_REGEX, assessment_question)
+        if critical_pattern:
+            return {
+                "risk_level": RiskLevel.CRITICAL,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": has_injection,
+                "is_benign_injection": False,
+                "override_response": None,
+                "reasoning": f"Critical safety system failure: {critical_pattern.pattern}",
+                "recommended_action": "stop_driving_immediately",
+            }
+        
+        # Check for high urgency issues
+        high_urgency_pattern = cls._first_match(cls._HIGH_URGENCY_REGEX, assessment_question)
+        if high_urgency_pattern:
+            return {
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": has_injection,
+                "is_benign_injection": False,
+                "override_response": None,
+                "reasoning": f"High urgency safety concern: {high_urgency_pattern.pattern}",
+                "recommended_action": "service_soon",
+            }
+        
+        # Default to medium/low based on keywords
+        question_lower = assessment_question.lower()
+        if any(word in question_lower for word in ["torque", "spec", "procedure", "how to", "what is"]):
+            risk_level = RiskLevel.MEDIUM
+            reasoning = "Technical information request"
+        else:
+            risk_level = RiskLevel.LOW
+            reasoning = "General informational query"
+        
+        # KEY: If injection was detected but core question is safe, mark as benign injection
+        is_benign_injection = has_injection and risk_level in [RiskLevel.LOW, RiskLevel.MEDIUM]
+        
+        return {
+            "risk_level": risk_level,
+            "is_emergency": False,
+            "is_fake_part": False,
+            "has_injection": has_injection,
+            "is_benign_injection": is_benign_injection,
+            "override_response": None,
+            "reasoning": reasoning,
+            "recommended_action": "provide_normal_response"
+        }
+    
+    @classmethod
+    def format_risk_header(cls, assessment: Dict) -> str:
+        """Format risk assessment as a header for the response"""
+        risk_level = assessment["risk_level"]
+        
+        if risk_level == RiskLevel.CRITICAL:
+            emoji = "🚨"
+            color = "critical"
+        elif risk_level == RiskLevel.HIGH:
+            emoji = "⚠️"
+            color = "high"
+        elif risk_level == RiskLevel.MEDIUM:
+            emoji = "ℹ️"
+            color = "medium"
+        else:
+            emoji = "💡"
+            color = "low"
+        
+        return f"{emoji} **Risk Assessment: {risk_level.value}** - {assessment['reasoning']}"
