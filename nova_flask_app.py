@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import os
 import backend as backend_mod
 from backend import (
     nova_text_handler, check_ollama_connection, export_session_to_text,
@@ -8,14 +9,41 @@ from backend import (
     reset_session, start_new_session, retrieve as _retrieve_uncached, build_index,
     vision_model, vision_embeddings, vision_paths
 )
-import cache_utils
 import analytics
 import re
 import hmac
 from pathlib import Path
 import time
+from collections import OrderedDict
 
-retrieve = cache_utils.cache_retrieval(_retrieve_uncached)
+# Lightweight in-process retrieval cache to replace legacy cache_utils
+_RETRIEVAL_CACHE_ENABLED = os.environ.get("NOVA_ENABLE_RETRIEVAL_CACHE", "0") == "1"
+_RETRIEVAL_CACHE_SIZE = int(os.environ.get("NOVA_RETRIEVAL_CACHE_SIZE", "128"))
+_retrieval_cache_store: OrderedDict = OrderedDict()
+
+
+def _cached_retrieve(query: str, k: int = 12, top_n: int = 6, **kwargs):
+    if not _RETRIEVAL_CACHE_ENABLED:
+        return _retrieve_uncached(query, k=k, top_n=top_n, **kwargs)
+
+    # Build a hashable cache key; if kwargs contain unhashable values, bypass cache.
+    try:
+        key = (query, k, top_n, tuple(sorted(kwargs.items())))
+    except TypeError:
+        return _retrieve_uncached(query, k=k, top_n=top_n, **kwargs)
+
+    if key in _retrieval_cache_store:
+        _retrieval_cache_store.move_to_end(key)
+        return _retrieval_cache_store[key]
+
+    result = _retrieve_uncached(query, k=k, top_n=top_n, **kwargs)
+    _retrieval_cache_store[key] = result
+    if len(_retrieval_cache_store) > max(1, _RETRIEVAL_CACHE_SIZE):
+        _retrieval_cache_store.popitem(last=False)
+    return result
+
+
+retrieve = _cached_retrieve
 
 import os
 

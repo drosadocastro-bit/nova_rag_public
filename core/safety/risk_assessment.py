@@ -6,7 +6,7 @@ to ensure appropriate prioritization of user safety.
 """
 
 import re
-from typing import Any, Dict
+from typing import Dict, List, Optional, Any
 from enum import Enum
 
 
@@ -85,19 +85,6 @@ class RiskAssessment:
         r'\bskip\s+(verification|safety)',
         r'\b(now|from now on).*?forget',
     ]
-
-    _EMERGENCY_REGEX = [re.compile(p, re.IGNORECASE) for p in EMERGENCY_KEYWORDS]
-    _CRITICAL_SYSTEMS_REGEX = [re.compile(p, re.IGNORECASE) for p in CRITICAL_SYSTEMS]
-    _HIGH_URGENCY_REGEX = [re.compile(p, re.IGNORECASE) for p in HIGH_URGENCY]
-    _FAKE_PART_REGEX = [re.compile(p, re.IGNORECASE) for p in FAKE_PARTS]
-    _INJECTION_REGEX = [re.compile(p, re.IGNORECASE) for p in INJECTION_PATTERNS]
-
-    @staticmethod
-    def _first_match(patterns: list[re.Pattern[str]], text: str) -> re.Pattern[str] | None:
-        for pattern in patterns:
-            if pattern.search(text):
-                return pattern
-        return None
     
     EMERGENCY_RESPONSE = """🚨 **EMERGENCY - IMMEDIATE ACTION REQUIRED**
 
@@ -358,13 +345,14 @@ I'm designed to prioritize your safety above all else."""
             r'prompt\s+injection',
         ]
         
+        question_lower = question.lower()
         found_markers = []
         has_injection = False
         
-        for pattern in cls._INJECTION_REGEX:
-            if pattern.search(question):
+        for pattern in injection_patterns:
+            if re.search(pattern, question_lower, re.IGNORECASE):
                 has_injection = True
-                found_markers.append(pattern.pattern)
+                found_markers.append(pattern)
         
         # Extract core question by removing common injection wrappers
         core_question = question
@@ -424,64 +412,65 @@ I'm designed to prioritize your safety above all else."""
         
         # Second: Use core question for all safety assessments
         assessment_question = core_question if has_injection else question
+        question_lower = assessment_question.lower()
+        
         # Check for fake parts first (hallucination prevention)
-        fake_pattern = cls._first_match(cls._FAKE_PART_REGEX, assessment_question)
-        if fake_pattern:
-            return {
-                "risk_level": RiskLevel.LOW,
-                "is_emergency": False,
-                "is_fake_part": True,
-                "has_injection": has_injection,
-                "is_benign_injection": False,
-                "override_response": cls.FAKE_PART_RESPONSE,
-                "reasoning": f"Query mentions non-existent automotive part: {fake_pattern.pattern}",
-                "recommended_action": "refuse_hallucination",
-            }
+        for pattern in cls.FAKE_PARTS:
+            if re.search(pattern, question_lower):
+                return {
+                    "risk_level": RiskLevel.LOW,
+                    "is_emergency": False,
+                    "is_fake_part": True,
+                    "has_injection": has_injection,
+                    "is_benign_injection": False,
+                    "override_response": cls.FAKE_PART_RESPONSE,
+                    "reasoning": f"Query mentions non-existent automotive part: {pattern}",
+                    "recommended_action": "refuse_hallucination"
+                }
         
         # Check for life-threatening emergencies
-        emergency_pattern = cls._first_match(cls._EMERGENCY_REGEX, assessment_question)
-        if emergency_pattern:
-            return {
-                "risk_level": RiskLevel.CRITICAL,
-                "is_emergency": True,
-                "is_fake_part": False,
-                "has_injection": has_injection,
-                "is_benign_injection": False,
-                "override_response": cls.EMERGENCY_RESPONSE,
-                "reasoning": f"Life-threatening emergency detected: {emergency_pattern.pattern}",
-                "recommended_action": "prioritize_life_safety",
-            }
+        for pattern in cls.EMERGENCY_KEYWORDS:
+            if re.search(pattern, question_lower):
+                return {
+                    "risk_level": RiskLevel.CRITICAL,
+                    "is_emergency": True,
+                    "is_fake_part": False,
+                    "has_injection": has_injection,
+                    "is_benign_injection": False,
+                    "override_response": cls.EMERGENCY_RESPONSE,
+                    "reasoning": f"Life-threatening emergency detected: {pattern}",
+                    "recommended_action": "prioritize_life_safety"
+                }
         
         # Check for critical safety system failures
-        critical_pattern = cls._first_match(cls._CRITICAL_SYSTEMS_REGEX, assessment_question)
-        if critical_pattern:
-            return {
-                "risk_level": RiskLevel.CRITICAL,
-                "is_emergency": False,
-                "is_fake_part": False,
-                "has_injection": has_injection,
-                "is_benign_injection": False,
-                "override_response": None,
-                "reasoning": f"Critical safety system failure: {critical_pattern.pattern}",
-                "recommended_action": "stop_driving_immediately",
-            }
+        for pattern in cls.CRITICAL_SYSTEMS:
+            if re.search(pattern, question_lower):
+                return {
+                    "risk_level": RiskLevel.CRITICAL,
+                    "is_emergency": False,
+                    "is_fake_part": False,
+                    "has_injection": has_injection,
+                    "is_benign_injection": False,
+                    "override_response": None,
+                    "reasoning": f"Critical safety system failure: {pattern}",
+                    "recommended_action": "stop_driving_immediately"
+                }
         
         # Check for high urgency issues
-        high_urgency_pattern = cls._first_match(cls._HIGH_URGENCY_REGEX, assessment_question)
-        if high_urgency_pattern:
-            return {
-                "risk_level": RiskLevel.HIGH,
-                "is_emergency": False,
-                "is_fake_part": False,
-                "has_injection": has_injection,
-                "is_benign_injection": False,
-                "override_response": None,
-                "reasoning": f"High urgency safety concern: {high_urgency_pattern.pattern}",
-                "recommended_action": "service_soon",
-            }
+        for pattern in cls.HIGH_URGENCY:
+            if re.search(pattern, question_lower):
+                return {
+                    "risk_level": RiskLevel.HIGH,
+                    "is_emergency": False,
+                    "is_fake_part": False,
+                    "has_injection": has_injection,
+                    "is_benign_injection": False,
+                    "override_response": None,
+                    "reasoning": f"High urgency safety concern: {pattern}",
+                    "recommended_action": "service_soon"
+                }
         
         # Default to medium/low based on keywords
-        question_lower = assessment_question.lower()
         if any(word in question_lower for word in ["torque", "spec", "procedure", "how to", "what is"]):
             risk_level = RiskLevel.MEDIUM
             reasoning = "Technical information request"

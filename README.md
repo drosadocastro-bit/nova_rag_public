@@ -43,6 +43,7 @@ This is not a product—it's a **reference architecture** showing that safety-aw
 | **Reproducible** | Locked dependencies, versioned corpus, deterministic retrieval. |
 | **Hybrid Retrieval** | Vector similarity (FAISS) unioned with BM25 lexical search, then reranked and diversified (MMR). Toggle via NOVA_HYBRID_SEARCH. |
 | **Request Analytics** | Built-in request logging tracks queries, response times, model usage, and confidence scores. SQLite backend for trend analysis. |
+| **Risk Assessment & Safety Triage** | Detects emergencies (fire, smoke, unconscious), critical system failures (brakes/steering), and fake parts; blocks unsafe requests and prioritizes life safety before retrieval/LLM. |
 | **Injection Handling** | Hybrid "judge by intent, not syntax" approach: detects injection patterns, extracts core questions, assesses only clean content. Intent classifier blocks unsafe requests (e.g., disable ABS). See [Injection Handling Architecture](docs/INJECTION_HANDLING.md). |
 
 Why hybrid: improves recall for exact terms, part names, and diagnostic codes in safety‑critical manuals.
@@ -56,7 +57,7 @@ Why hybrid: improves recall for exact terms, part names, and diagnostic codes in
 | **Operates fully offline** | Local LLM via Ollama, local embeddings, FAISS index on disk. No network calls in inference path. See [Deployment Guide](docs/deployment/AIR_GAPPED_DEPLOYMENT.md). |
 | **Responses are grounded and auditable** | RAG pipeline with citation mechanism. All claims traced to source with page numbers. See [System Architecture](docs/architecture/SYSTEM_ARCHITECTURE.md). |
 | **Hallucination risks are mitigated** | Confidence gating (skip LLM if retrieval < 60%), citation audit, extractive fallback. 111 adversarial tests, 100% pass rate. See [Evaluation Summary](docs/evaluation/EVALUATION_SUMMARY.md). |
-| **Suitable for safety-critical contexts** | Human-on-the-loop model, explicit uncertainty handling, abstention over confabulation. See [Safety Model](docs/safety/SAFETY_MODEL.md). |
+| **Suitable for safety-critical contexts** | Human-on-the-loop model, explicit uncertainty handling, abstention over confabulation, and risk assessment that elevates critical safety-system failures. See [Safety Model](docs/safety/SAFETY_MODEL.md). |
 
 ---
 
@@ -107,7 +108,7 @@ See [Docker Deployment Guide](docs/deployment/DOCKER_DEPLOYMENT.md) for details.
 
 ```bash
 # Clone and install
-git clone https://github.com/yourusername/nic-public.git && cd nic-public
+git clone https://github.com/drosadocastro-bit/nic-public.git && cd nic-public
 python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 

@@ -1,10 +1,12 @@
 """
 Pytest configuration and shared fixtures for NIC tests.
 """
-import pytest
 import os
 import sys
+import warnings
 from pathlib import Path
+
+import pytest
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -16,6 +18,21 @@ os.environ["NOVA_DISABLE_VISION"] = "1"
 os.environ["NOVA_RATE_LIMIT_ENABLED"] = "0"  # Disable rate limiting in tests
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
+# Provide deterministic cache secret to avoid security warnings during tests
+os.environ.setdefault("NOVA_CACHE_SECRET", "test-cache-secret")
+os.environ.setdefault("NOVA_SUPPRESS_CACHE_UTILS_DEPRECATION", "1")
+
+# Silence the legacy cache_utils deprecation warning during tests
+warnings.filterwarnings(
+    "ignore",
+    message="cache_utils is deprecated.*",
+    category=DeprecationWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    category=DeprecationWarning,
+    module="cache_utils",
+)
 
 
 @pytest.fixture
@@ -58,6 +75,8 @@ def mock_env_vars(monkeypatch):
         "NOVA_ENABLE_RETRIEVAL_CACHE": "0",
         "NOVA_ENABLE_SQL_LOG": "0",
         "SECRET_KEY": "test-secret-key-for-testing-only",
+        "NOVA_CACHE_SECRET": os.environ["NOVA_CACHE_SECRET"],
+        "NOVA_SUPPRESS_CACHE_UTILS_DEPRECATION": os.environ["NOVA_SUPPRESS_CACHE_UTILS_DEPRECATION"],
     }
     for key, value in test_vars.items():
         monkeypatch.setenv(key, value)
