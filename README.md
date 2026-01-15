@@ -342,9 +342,12 @@ See [docs/CACHE_ARCHITECTURE.md](docs/CACHE_ARCHITECTURE.md) for details.
 └── data/                    # Corpus documents
 ```
 
----
+--- 
+
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/drosadocastro-bit/nova_rag_public?utm_source=oss&utm_medium=github&utm_campaign=drosadocastro-bit%2Fnova_rag_public&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 
 ## License
+
 
 MIT License. See [LICENSE](LICENSE).
 
