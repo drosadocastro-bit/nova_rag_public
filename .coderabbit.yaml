@@ -1,0 +1,90 @@
+# CodeRabbit configuration file
+# Documentation: https://docs.coderabbit.ai/guides/configure-coderabbit
+
+# Language setting
+language: en-US
+
+# Review settings
+reviews:
+  # Profile for review comments (chill, assertive, or professional)
+  profile: professional
+  
+  # Request changes on high-level issues
+  request_changes_workflow: false
+  
+  # Enable high-level summary
+  high_level_summary: true
+  
+  # Enable poem in review (fun feature)
+  poem: false
+  
+  # Review level (simple, detailed, or comprehensive)
+  review_status: true
+  
+  # Collapse walkthrough details
+  collapse_walkthrough: false
+  
+  # Enable auto-review
+  auto_review: 
+    enabled: true
+    
+    # Auto-approve PRs (use carefully)
+    auto_approve: false
+    
+    # Drafts - review draft PRs
+    drafts: false
+    
+    # Base branches to review
+    base_branches: 
+      - main
+      - master
+      - develop
+
+# Path filters - customize which files to review
+path_filters: 
+  # Files to exclude from review
+  exclude: 
+    - "**/*.md"
+    - "**/package-lock.json"
+    - "**/yarn.lock"
+    - "**/*. min.js"
+    - "**/*.min.css"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/.git/**"
+    
+  # Files to include (leave empty to include all)
+  include:  []
+
+# Chat settings
+chat:
+  # Enable chat with CodeRabbit
+  enabled:  true
+  
+  # Auto-reply to comments
+  auto_reply:  true
+
+# Tools to enable
+tools:
+  # GitHub Actions integration
+  github_actions:  true
+  
+  # Markdown lint
+  markdownlint: 
+    enabled: false
+  
+  # Shellcheck for shell scripts
+  shellcheck:
+    enabled: true
+  
+  # YAML lint
+  yamllint:
+    enabled: true
+
+# Tone settings
+tone_instructions:  |
+  - Be professional and constructive
+  - Provide actionable feedback
+  - Explain the "why" behind suggestions
+  - Focus on best practices, security, and performance
+  - Be encouraging and supportive
