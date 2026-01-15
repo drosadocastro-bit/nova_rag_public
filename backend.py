@@ -226,7 +226,13 @@ def nova_text_handler(
     q_raw = question.strip()
     multi_query_warning: str | None = None
 
+    session_state["last_decision_tag"] = None
     injection_result = handle_injection_and_multi_query(q_raw)
+    session_state["last_heuristic_triggers"] = injection_result.get("heuristic_triggers", [])
+    session_state["last_heuristic_trigger"] = (
+        injection_result.get("heuristic_trigger") or (session_state.get("last_heuristic_triggers") or [None])[-1]
+    )
+    session_state["last_decision_tag"] = injection_result.get("decision_tag")
     if injection_result["refusal"]:
         return injection_result["refusal"], injection_result.get("decision_tag", "")
 
@@ -256,6 +262,7 @@ def nova_text_handler(
                     "This question is outside the knowledge base (vehicle maintenance topics). "
                     "Please ask about maintenance procedures, diagnostics, or specifications."
                 )
+            session_state["last_decision_tag"] = reason
             refusal = {
                 "response_type": "refusal",
                 "reason": reason,

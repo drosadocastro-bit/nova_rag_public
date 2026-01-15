@@ -12,6 +12,7 @@ markers = [
     "unit: Unit tests (fast, no external dependencies)",
     "integration: Integration tests (may require services)",
     "slow: Slow tests that might timeout",
+    "performance: Performance-sensitive tests",
 ]
 
 [tool.coverage.run]
