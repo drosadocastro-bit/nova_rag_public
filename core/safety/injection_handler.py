@@ -4,10 +4,13 @@ Hybrid injection and multi-query handling: judge by intent, not syntax.
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any, Dict
 
 from .risk_assessment import RiskAssessment
+
+logger = logging.getLogger(__name__)
 
 
 def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
@@ -39,6 +42,21 @@ def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
 
     # Step 3: Assess risk on CLEAN segments (multi-query detection + per-segment risk)
     multi_assessment = RiskAssessment.assess_multi_query(q_clean)
+    heuristic_triggers = [
+        sub.get("assessment", {}).get("heuristic_trigger")
+        for sub in multi_assessment.get("sub_assessments", [])
+        if sub.get("assessment", {}).get("heuristic_trigger") is not None
+    ]
+
+    def _log_refusal(decision_tag: str, refusal_msg: str | None = None) -> None:
+        logger.info(
+            "safety_refusal",
+            extra={
+                "decision_tag": decision_tag,
+                "heuristic_triggers": heuristic_triggers,
+                "message_preview": (refusal_msg or "")[:200],
+            },
+        )
 
     # Early refusal for unsafe injection wrappers even if core question is safe
     q_orig_lower = q_original.lower()
@@ -61,6 +79,7 @@ def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
                 "I cannot process this because it contains unsafe instructions alongside a safe question. "
                 "Please ask only the safe, manufacturer-recommended question."
             )
+            _log_refusal("multi_query_mixed_intent_blocked | unsafe_injection_wrapper", override_msg)
             return {
                 "refusal": override_msg,
                 "decision_tag": "multi_query_mixed_intent_blocked | unsafe_injection_wrapper",
@@ -69,6 +88,7 @@ def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
                 "dangerous_injection": dangerous_injection,
                 "had_injection": bool(injection_meta.get("has_injection")),
                 "multi_query_warning": multi_query_warning,
+                "heuristic_triggers": heuristic_triggers,
             }
 
         print(f"[MULTI-QUERY] Detected {len(multi_assessment['sub_assessments'])} segments")
@@ -81,6 +101,7 @@ def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
                 "I cannot help with any of those requests. "
                 f"{multi_assessment['sub_assessments'][0]['assessment']['reasoning']}"
             )
+            _log_refusal("multi_query_all_dangerous", refusal_msg)
             return {
                 "refusal": refusal_msg,
                 "decision_tag": "multi_query_all_dangerous",
@@ -89,6 +110,7 @@ def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
                 "dangerous_injection": dangerous_injection,
                 "had_injection": bool(injection_meta.get("has_injection")),
                 "multi_query_warning": multi_query_warning,
+                "heuristic_triggers": heuristic_triggers,
             }
 
         # Rule 2: Mixed safe + dangerous → refuse
@@ -98,6 +120,7 @@ def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
                 "I cannot process this request because it contains both safe and unsafe queries. "
                 "Please separate them into individual requests."
             )
+            _log_refusal("multi_query_mixed_intent_blocked", override_msg)
             return {
                 "refusal": override_msg,
                 "decision_tag": "multi_query_mixed_intent_blocked",
@@ -106,6 +129,7 @@ def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
                 "dangerous_injection": dangerous_injection,
                 "had_injection": bool(injection_meta.get("has_injection")),
                 "multi_query_warning": multi_query_warning,
+                "heuristic_triggers": heuristic_triggers,
             }
 
         # Rule 3: All segments safe → answer using first safe segment
@@ -130,6 +154,7 @@ def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
                 decision_tag = f"risk_override | {risk_assessment['risk_level'].value}"
 
             print(f"[SAFETY] Override activated: {decision_tag}")
+            _log_refusal(decision_tag, override_msg)
             return {
                 "refusal": override_msg,
                 "decision_tag": decision_tag,
@@ -138,10 +163,13 @@ def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
                 "dangerous_injection": dangerous_injection,
                 "had_injection": bool(injection_meta.get("has_injection")),
                 "multi_query_warning": multi_query_warning,
+                "heuristic_trigger": risk_assessment.get("heuristic_trigger"),
+                "heuristic_triggers": heuristic_triggers,
             }
 
         # Unsafe injection wrapper detected even if core seems safe
         if dangerous_injection:
+            _log_refusal("unsafe_injection_wrapper | blocked")
             return {
                 "refusal": (
                     "I cannot help with that request because it attempts to bypass or disable safety guidance. "
@@ -153,6 +181,7 @@ def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
                 "dangerous_injection": dangerous_injection,
                 "had_injection": bool(injection_meta.get("has_injection")),
                 "multi_query_warning": multi_query_warning,
+                "heuristic_triggers": heuristic_triggers,
             }
 
         q_raw = q_clean
@@ -173,4 +202,5 @@ def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
         "had_injection": bool(injection_meta.get("has_injection")),
         "multi_query_warning": multi_query_warning,
         "q_lower": q_lower,
+        "heuristic_triggers": heuristic_triggers,
     }

@@ -37,9 +37,14 @@ def _init_db():
             session_id TEXT,
             user_ip TEXT,
             response_type TEXT,
-            error TEXT
+            error TEXT,
+            decision_tag TEXT,
+            heuristic_trigger TEXT,
+            heuristic_triggers TEXT
         )
     ''')
+
+    _ensure_request_log_columns(cursor)
     
     # Popular queries aggregation
     cursor.execute('''
@@ -73,6 +78,20 @@ def _init_db():
     conn.close()
 
 
+def _ensure_request_log_columns(cursor: sqlite3.Cursor) -> None:
+    """Ensure request_log has trigger and decision columns (lightweight migration)."""
+    cursor.execute("PRAGMA table_info(request_log)")
+    existing = {row[1] for row in cursor.fetchall()}
+    new_columns = {
+        "decision_tag": "TEXT",
+        "heuristic_trigger": "TEXT",
+        "heuristic_triggers": "TEXT",
+    }
+    for col, col_type in new_columns.items():
+        if col not in existing:
+            cursor.execute(f"ALTER TABLE request_log ADD COLUMN {col} {col_type}")
+
+
 def log_request(
     question: str,
     mode: str,
@@ -85,21 +104,36 @@ def log_request(
     session_id: Optional[str] = None,
     user_ip: Optional[str] = None,
     response_type: str = "answer",
-    error: Optional[str] = None
-):
+    error: Optional[str] = None,
+    decision_tag: Optional[str] = None,
+    heuristic_trigger: Optional[str] = None,
+    heuristic_triggers: Optional[Any] = None,
+) -> None:
     """Log a request to the analytics database."""
     _init_db()
     
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
+    triggers_json: Optional[str]
+    if heuristic_triggers is None:
+        triggers_json = None
+    elif isinstance(heuristic_triggers, str):
+        triggers_json = heuristic_triggers
+    else:
+        try:
+            triggers_json = json.dumps(heuristic_triggers)
+        except Exception:
+            triggers_json = str(heuristic_triggers)
+
     try:
         cursor.execute('''
             INSERT INTO request_log (
                 timestamp, question, mode, model_used, confidence,
                 response_time_ms, retrieval_score, num_sources, answer_length,
-                session_id, user_ip, response_type, error
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                session_id, user_ip, response_type, error,
+                decision_tag, heuristic_trigger, heuristic_triggers
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             datetime.now().isoformat(),
             question,
@@ -113,7 +147,10 @@ def log_request(
             session_id,
             user_ip,
             response_type,
-            error
+            error,
+            decision_tag,
+            heuristic_trigger,
+            triggers_json,
         ))
         
         # Update query stats

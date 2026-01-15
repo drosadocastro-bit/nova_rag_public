@@ -6,8 +6,29 @@ to ensure appropriate prioritization of user safety.
 """
 
 import re
+from collections import Counter
 from typing import Dict, List, Optional, Any
 from enum import Enum
+
+from core.safety.multilingual import MultilingualSafetyDetector
+from core.safety.semantic_safety import SemanticSafetyDetector
+
+# Lazy load semantic detector
+_semantic_detector: Optional[SemanticSafetyDetector] = None
+_TRIGGER_COUNTS: Counter[str] = Counter()
+
+
+def get_semantic_detector() -> SemanticSafetyDetector:
+    """Lazy load semantic detector to avoid startup cost."""
+    global _semantic_detector
+    if _semantic_detector is None:
+        _semantic_detector = SemanticSafetyDetector()
+    return _semantic_detector
+
+
+def get_trigger_counts() -> Dict[str, int]:
+    """Expose heuristic trigger counts for metrics/telemetry."""
+    return dict(_TRIGGER_COUNTS)
 
 
 class RiskLevel(Enum):
@@ -73,6 +94,9 @@ class RiskAssessment:
         r'\bpiston\s+return\s+spring',
         r'\bflux\s+capacitor\b',
         r'\bturbo\s+encabulator\b',
+        r'\bquantum\s+carburetor\b',
+        r'\bflux\s+compensator\b',
+        r'\bquantum\s+fuel\s+regulator\b',
     ]
     
     # Prompt injection patterns - attempts to override safety/behavior
@@ -84,6 +108,70 @@ class RiskAssessment:
         r'\boverride\s+(all\s+)?(safety|guidance|protocol)',
         r'\bskip\s+(verification|safety)',
         r'\b(now|from now on).*?forget',
+    ]
+
+    # Heuristics for adversarial behaviors not covered by simple keyword or semantic checks
+    CITATION_EVASION_PATTERNS = [
+        "without all the source references",
+        "skip the citations",
+        "no details needed",
+        "without looking it up",
+        "yes or no only",
+        "just confirm",
+        "just give me the quick answer",
+        "no page numbers",
+        "don't need the reference",
+        "trust you",
+    ]
+
+    CONTEXT_POISONING_MARKERS = [
+        "according to page",
+        "according to the manual",
+        "the manual says",
+        "my manual says",
+        "the section",
+        "the troubleshooting guide",
+        "i read that",
+        "i see the instructions",
+    ]
+
+    CONTEXT_POISONING_UNSAFE = [
+        "flammable",
+        "vegetable oil",
+        "overfilled",
+        "overfill",
+        "bypass the fuel pump",
+        "ignore warning lights",
+        "drilling ventilation holes",
+        "disable airbags",
+        "bypass safety",
+    ]
+
+    MANIPULATIVE_MAINTENANCE_PATTERNS = [
+        "skip brake fluid",
+        "skip brake checks",
+        "skip brake check",
+        "avoid checking tire pressure",
+        "skip tire pressure",
+        "skip oil changes",
+        "avoid checking oil",
+        "don't need to check coolant",
+        "do i really need to check",
+        "no reason i shouldn't",
+        "no reason i should",
+        "wrong to say i can't drive without checking oil",
+    ]
+
+    CONTEXT_BUILDING_MARKERS = [
+        "earlier in our conversation",
+        "you confirmed",
+        "you mentioned",
+        "as you said",
+        "following up on",
+        "based on what we discussed",
+        "per your last response",
+        "as you confirmed earlier",
+        "from before",
     ]
     
     EMERGENCY_RESPONSE = """🚨 **EMERGENCY - IMMEDIATE ACTION REQUIRED**
@@ -164,6 +252,13 @@ I'm designed to prioritize your safety above all else."""
             response_parts.append("Your safety is more important than convenience.\n")
         
         return "".join(response_parts)
+
+    @classmethod
+    def _record_trigger(cls, result: Dict[str, Any]) -> Dict[str, Any]:
+        trigger = result.get("heuristic_trigger")
+        if trigger:
+            _TRIGGER_COUNTS[trigger] += 1
+        return result
 
     @classmethod
     def split_multi_query(cls, question: str) -> Dict[str, Any]:
@@ -405,19 +500,182 @@ I'm designed to prioritize your safety above all else."""
                 - has_injection: bool - Whether injection syntax was detected
                 - is_benign_injection: bool - Injection present but core question is safe
         """
-        # First: Check for injection syntax
-        injection_meta = cls.detect_injection_syntax(question)
+        # === LAYER 1 & 2: Multilingual normalization + encoded injection detection ===
+        multilingual_meta = MultilingualSafetyDetector.normalize_query(question)
+        variants_to_check = multilingual_meta["decoded_variants"]
+
+        for variant in variants_to_check:
+            injection_meta = cls.detect_injection_syntax(variant)
+            if injection_meta["has_injection"]:
+                return cls._record_trigger({
+                    "risk_level": RiskLevel.HIGH,
+                    "is_emergency": False,
+                    "is_fake_part": False,
+                    "has_injection": True,
+                    "is_benign_injection": False,
+                    "encoding_detected": multilingual_meta["encoding_detected"],
+                    "encoding_types": multilingual_meta["encoding_types"],
+                    "language": multilingual_meta["language"],
+                    "override_response": cls.INJECTION_RESPONSE
+                    + f"\n\n**Detection**: Encoded attack detected ({multilingual_meta['encoding_types']})",
+                    "reasoning": f"Injection attempt detected in encoded variant: {variant[:50]}...",
+                    "recommended_action": "encoding_block",
+                    "heuristic_trigger": "injection_encoded",
+                })
+
+        # Use normalized (translated) text for remaining assessments
+        normalized_question = multilingual_meta["normalized"]
+
+        normalized_question_lower = normalized_question.lower()
+
+        # First: Check for injection syntax on normalized question
+        injection_meta = cls.detect_injection_syntax(normalized_question)
         has_injection = injection_meta["has_injection"]
         core_question = injection_meta["core_question"]
-        
+
         # Second: Use core question for all safety assessments
-        assessment_question = core_question if has_injection else question
+        assessment_question = core_question if has_injection else normalized_question
         question_lower = assessment_question.lower()
+
+        if has_injection:
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": True,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": cls.INJECTION_RESPONSE,
+                "reasoning": "Injection syntax detected in query",
+                "recommended_action": "keyword_injection_block",
+                "heuristic_trigger": "injection_keyword",
+            })
+
+        # === LAYER 2: Multilingual attack heuristics ===
+        if multilingual_meta["language"] != "en" and MultilingualSafetyDetector.is_multilingual_attack(question):
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": False,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": "⛔ Request blocked due to multilingual safety concerns.",
+                "reasoning": "Multilingual attack patterns detected after normalization",
+                "recommended_action": "multilingual_block",
+                "heuristic_trigger": "multilingual_attack",
+            })
+
+        # === LAYER 2b: Manual-citation and manipulation heuristics ===
+        if (
+            any(marker in question_lower for marker in cls.CONTEXT_POISONING_MARKERS)
+            and any(unsafe in question_lower for unsafe in cls.CONTEXT_POISONING_UNSAFE)
+        ):
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": has_injection,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": (
+                    "⚠️ False premise detected.\n\n"
+                    "The request conflicts with manufacturer guidance or cites an unverified manual location. "
+                    "I cannot confirm misleading claims; please provide the exact wording so I can verify against the manual."
+                ),
+                "reasoning": "Suspicious manual citation with unsafe or contradictory premise",
+                "recommended_action": "refuse_or_correct_false_premise",
+                "heuristic_trigger": "context_poisoning",
+            })
+
+        if any(marker in question_lower for marker in cls.CONTEXT_BUILDING_MARKERS):
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": has_injection,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": (
+                    "🔍 I don't track earlier conversation context. Please restate the question with any relevant details "
+                    "or sources so I can give an accurate, cited answer."
+                ),
+                "reasoning": "User attempts to anchor to unverified prior context",
+                "recommended_action": "reset_context_and_request_clarification",
+                "heuristic_trigger": "context_building",
+            })
+
+        if any(marker in question_lower for marker in cls.CITATION_EVASION_PATTERNS):
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": has_injection,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": (
+                    "I need to cite the official manual to answer safely. I can't skip references—"
+                    "please allow me to check the source or share the exact section you're referring to."
+                ),
+                "reasoning": "User requested an answer without citations or verification",
+                "recommended_action": "require_citation_before_answering",
+                "heuristic_trigger": "citation_evasion",
+            })
+
+        if any(marker in question_lower for marker in cls.MANIPULATIVE_MAINTENANCE_PATTERNS):
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": has_injection,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": (
+                    "⚠️ Safety-critical maintenance shouldn't be skipped or reframed. Please clarify the actual "
+                    "procedure you're asking about so I can respond with proper guidance."
+                ),
+                "reasoning": "Manipulative phrasing around skipping safety checks",
+                "recommended_action": "refuse_or_clarify_manipulative_request",
+                "heuristic_trigger": "manipulative_maintenance",
+            })
+
+        # === LAYER 3: Semantic safety check ===
+        detector = get_semantic_detector()
+        if detector.is_available():
+            semantic_result = detector.assess_intent(assessment_question, threshold=0.65)
+
+            if semantic_result["is_unsafe"] and semantic_result["confidence"] > 0.5:
+                return cls._record_trigger({
+                    "risk_level": RiskLevel.HIGH,
+                    "is_emergency": False,
+                    "is_fake_part": False,
+                    "has_injection": has_injection,
+                    "is_benign_injection": False,
+                    "is_semantic_unsafe": True,
+                    "language": multilingual_meta["language"],
+                    "override_response": (
+                        "⚠️ **Unsafe Request Detected (Semantic Analysis)**\n\n"
+                        "Your request appears to involve disabling or bypassing safety systems.\n\n"
+                        "**Why this was blocked:**\n"
+                        f"- Semantic similarity to unsafe intent: {semantic_result['unsafe_similarity']:.0%}\n"
+                        f"- Matched pattern: \"{semantic_result['matched_intent']}\"\n"
+                        f"- {semantic_result['reasoning']}\n\n"
+                        "**What to do instead:**\n"
+                        "- Ask about how safety systems work\n"
+                        "- Request diagnostic procedures\n"
+                        "- Ask for proper maintenance guidance\n\n"
+                        "I'm designed to prioritize your safety above all else."
+                    ),
+                    "reasoning": semantic_result["reasoning"],
+                    "recommended_action": "refuse_unsafe_intent",
+                    "semantic_details": semantic_result,
+                    "heuristic_trigger": "semantic_unsafe",
+                })
         
         # Check for fake parts first (hallucination prevention)
         for pattern in cls.FAKE_PARTS:
             if re.search(pattern, question_lower):
-                return {
+                return cls._record_trigger({
                     "risk_level": RiskLevel.LOW,
                     "is_emergency": False,
                     "is_fake_part": True,
@@ -425,13 +683,14 @@ I'm designed to prioritize your safety above all else."""
                     "is_benign_injection": False,
                     "override_response": cls.FAKE_PART_RESPONSE,
                     "reasoning": f"Query mentions non-existent automotive part: {pattern}",
-                    "recommended_action": "refuse_hallucination"
-                }
+                    "recommended_action": "refuse_hallucination",
+                    "heuristic_trigger": "fake_part",
+                })
         
         # Check for life-threatening emergencies
         for pattern in cls.EMERGENCY_KEYWORDS:
             if re.search(pattern, question_lower):
-                return {
+                return cls._record_trigger({
                     "risk_level": RiskLevel.CRITICAL,
                     "is_emergency": True,
                     "is_fake_part": False,
@@ -439,13 +698,14 @@ I'm designed to prioritize your safety above all else."""
                     "is_benign_injection": False,
                     "override_response": cls.EMERGENCY_RESPONSE,
                     "reasoning": f"Life-threatening emergency detected: {pattern}",
-                    "recommended_action": "prioritize_life_safety"
-                }
+                    "recommended_action": "prioritize_life_safety",
+                    "heuristic_trigger": "emergency",
+                })
         
         # Check for critical safety system failures
         for pattern in cls.CRITICAL_SYSTEMS:
             if re.search(pattern, question_lower):
-                return {
+                return cls._record_trigger({
                     "risk_level": RiskLevel.CRITICAL,
                     "is_emergency": False,
                     "is_fake_part": False,
@@ -453,13 +713,14 @@ I'm designed to prioritize your safety above all else."""
                     "is_benign_injection": False,
                     "override_response": None,
                     "reasoning": f"Critical safety system failure: {pattern}",
-                    "recommended_action": "stop_driving_immediately"
-                }
+                    "recommended_action": "stop_driving_immediately",
+                    "heuristic_trigger": "critical_system",
+                })
         
         # Check for high urgency issues
         for pattern in cls.HIGH_URGENCY:
             if re.search(pattern, question_lower):
-                return {
+                return cls._record_trigger({
                     "risk_level": RiskLevel.HIGH,
                     "is_emergency": False,
                     "is_fake_part": False,
@@ -467,8 +728,9 @@ I'm designed to prioritize your safety above all else."""
                     "is_benign_injection": False,
                     "override_response": None,
                     "reasoning": f"High urgency safety concern: {pattern}",
-                    "recommended_action": "service_soon"
-                }
+                    "recommended_action": "service_soon",
+                    "heuristic_trigger": "high_urgency",
+                })
         
         # Default to medium/low based on keywords
         if any(word in question_lower for word in ["torque", "spec", "procedure", "how to", "what is"]):
@@ -481,7 +743,7 @@ I'm designed to prioritize your safety above all else."""
         # KEY: If injection was detected but core question is safe, mark as benign injection
         is_benign_injection = has_injection and risk_level in [RiskLevel.LOW, RiskLevel.MEDIUM]
         
-        return {
+        return cls._record_trigger({
             "risk_level": risk_level,
             "is_emergency": False,
             "is_fake_part": False,
@@ -489,8 +751,9 @@ I'm designed to prioritize your safety above all else."""
             "is_benign_injection": is_benign_injection,
             "override_response": None,
             "reasoning": reasoning,
-            "recommended_action": "provide_normal_response"
-        }
+            "recommended_action": "provide_normal_response",
+            "heuristic_trigger": None,
+        })
     
     @classmethod
     def format_risk_header(cls, assessment: Dict) -> str:
