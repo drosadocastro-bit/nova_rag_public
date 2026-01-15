@@ -47,7 +47,7 @@ path_filters:
     - "**/*.md"
     - "**/package-lock.json"
     - "**/yarn.lock"
-    - "**/*. min.js"
+    - "**/*.min.js"
     - "**/*.min.css"
     - "**/dist/**"
     - "**/build/**"

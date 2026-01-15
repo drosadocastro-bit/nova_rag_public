@@ -58,6 +58,24 @@ class MultilingualSafetyDetector:
             r"ignorare\s+(?:la\s+)?verifica": "bypass verification",
             r'disattivare\s+(?:l[\'"])?airbag': "disable airbag",
         },
+        # TODO: Add comprehensive Russian attack patterns for _pattern_translate
+        "ru": {
+            r"игнорировать\s+(?:всю\s+)?безопасность": "ignore safety",
+            r"отключить\s+(?:систему\s+)?abs": "disable abs",
+            r"обойти\s+проверк[уи]": "bypass verification",
+        },
+        # TODO: Add comprehensive Chinese attack patterns for _pattern_translate
+        "zh": {
+            r"忽略\s*安全": "ignore safety",
+            r"禁用\s*abs": "disable abs",
+            r"绕过\s*验证": "bypass verification",
+        },
+        # TODO: Add comprehensive Arabic attack patterns for _pattern_translate
+        "ar": {
+            r"تجاهل\s+الأمان": "ignore safety",
+            r"تعطيل\s+(?:نظام\s+)?abs": "disable abs",
+            r"تجاوز\s+التحقق": "bypass verification",
+        },
     }
 
     @classmethod
@@ -151,12 +169,6 @@ class MultilingualSafetyDetector:
                 except Exception:
                     pass
 
-        # Heuristic: if safety-related text and no encoding detected yet, treat as decoded hex
-        if not encoding_types and any(word in text.lower() for word in ["ignore", "desactivar", "seguridad", "sicherheit", "bypass"]):
-            encoding_types.append("hex")
-            if text not in decoded_variants:
-                decoded_variants.append(text)
-
         return {
             "encoding_detected": bool(encoding_types),
             "encoding_types": encoding_types,
@@ -225,8 +237,8 @@ class MultilingualSafetyDetector:
         # Mixed-language attacks: English safety terms combined with foreign tokens
         mixed_language_attack = (
             normalized["language"] == "en"
-            and re.search(r"(ignorar|desactivar|sicherheit|umgehen)", query.lower())
-            and re.search(r"safety|checks|protocol|abs", query.lower())
+            and re.search(r"(ignorar|desactivar|sicherheit|umgehen)", query.lower()) is not None
+            and re.search(r"safety|checks|protocol|abs", query.lower()) is not None
         )
 
         if normalized["language"] == "en" and not mixed_language_attack:

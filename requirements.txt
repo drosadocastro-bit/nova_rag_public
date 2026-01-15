@@ -5,7 +5,6 @@ faiss-cpu==1.13.1
 
 # === Multilingual & Semantic Safety (Priority 3) ===
 langdetect==1.0.9           # Language detection for multilingual safety
-ftfy==6.1.1                 # Text normalization/cleaning for decoded content
 sentence-transformers==5.2.0
 torch==2.9.1               # Python 3.13 compatible; use +cpu wheels for smaller download
 # Optional: pip install torch==2.9.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu

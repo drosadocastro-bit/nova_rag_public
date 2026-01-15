@@ -7,6 +7,7 @@ to ensure appropriate prioritization of user safety.
 
 import re
 from collections import Counter
+from threading import Lock
 from typing import Dict, List, Optional, Any
 from enum import Enum
 
@@ -16,6 +17,7 @@ from core.safety.semantic_safety import SemanticSafetyDetector
 # Lazy load semantic detector
 _semantic_detector: Optional[SemanticSafetyDetector] = None
 _TRIGGER_COUNTS: Counter[str] = Counter()
+_trigger_counts_lock = Lock()
 
 
 def get_semantic_detector() -> SemanticSafetyDetector:
@@ -28,7 +30,8 @@ def get_semantic_detector() -> SemanticSafetyDetector:
 
 def get_trigger_counts() -> Dict[str, int]:
     """Expose heuristic trigger counts for metrics/telemetry."""
-    return dict(_TRIGGER_COUNTS)
+    with _trigger_counts_lock:
+        return dict(_TRIGGER_COUNTS)
 
 
 class RiskLevel(Enum):
@@ -257,7 +260,8 @@ I'm designed to prioritize your safety above all else."""
     def _record_trigger(cls, result: Dict[str, Any]) -> Dict[str, Any]:
         trigger = result.get("heuristic_trigger")
         if trigger:
-            _TRIGGER_COUNTS[trigger] += 1
+            with _trigger_counts_lock:
+                _TRIGGER_COUNTS[trigger] += 1
         return result
 
     @classmethod

@@ -22,7 +22,10 @@ class TestCompleteSecurityPipeline:
 class TestDefenseInDepth:
     def test_multiple_layers_can_catch_same_attack(self) -> None:
         assessment = RiskAssessment.assess_query("disable ABS")
-        assert assessment.get("override_response") or assessment.get("risk_level")
+        # Verify that attack was actually blocked or flagged
+        assert assessment.get("override_response"), "Expected attack to be blocked"
+        # Verify that heuristic triggers were activated
+        assert assessment.get("heuristic_trigger"), "Expected heuristic trigger to be set"
 
 
 class TestFalsePositiveRate:
