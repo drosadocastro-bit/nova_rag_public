@@ -238,6 +238,108 @@ make ci-local           # Simulate CI pipeline
 
 ---
 
+## Phase 2.5: Enhanced Multi-Domain Retrieval
+
+Building on the core NIC architecture, **Phase 2.5** adds intelligent domain-aware features for improved accuracy in safety-critical multi-domain scenarios.
+
+### What's New
+
+**1. Multi-Domain Indexing with Domain Tagging**
+- Automatically detects and tags documents by domain (vehicle, military equipment, HVAC, radar, forklift)
+- Prevents contamination across domains during retrieval
+- Maintains domain-specific keyword indices for faster routing
+
+**2. HTML Document Support**
+- Extended ingestion pipeline now handles HTML manuals (e.g., Volkswagen GTI HTML documentation)
+- Recursive subdirectory scanning for organized document collections
+- Uses BeautifulSoup4 for robust HTML parsing with script/style cleanup
+
+**3. Evidence Chain Tracking**
+- Complete audit trail of multi-stage retrieval pipeline:
+  - Router stage: domain inference and filtering
+  - GAR (Glossary Augmented Retrieval): query expansion effectiveness
+  - Reranking: score distributions and top candidates
+  - Final Selection: domain distribution and cap enforcement
+- JSON-serializable evidence chains for debugging contamination
+
+**4. Domain Caps for Diversity**
+- Per-domain chunk limits enforce balanced results across domains
+- Example: max 3 chunks per domain prevents forklift manual from overshadowing vehicle queries
+- Configurable via `NOVA_MAX_CHUNKS_PER_DOMAIN`
+
+**5. Adaptive Keyword Refinement**
+- Data-driven keyword optimization based on clustering analysis
+- Identifies keyword overlaps across domains
+- Validates improvements with cross-contamination benchmarks
+
+**6. Intelligent Domain Router**
+- Combines zero-shot classification with keyword heuristics
+- Falls back gracefully when models unavailable
+- Records router evidence for every query
+
+### How It Works
+
+```
+Query → Router (domain inference) → GAR (expansion) → Retrieval (hybrid search)
+         ↓                          ↓
+         [Evidence]          → Reranking → Domain Caps → Final Selection
+                                             ↓
+                                          [Evidence Chain]
+```
+
+**Example Configuration:**
+```bash
+# Enable all Phase 2.5 features
+export NOVA_EVIDENCE_TRACKING=1              # Track evidence chain
+export NOVA_MAX_CHUNKS_PER_DOMAIN=3          # Max 3 chunks per domain
+export NOVA_ROUTER_FILTERING=1               # Use domain router
+export NOVA_DOMAIN_ZS_MODEL="facebook/bart-large-mnli"  # Zero-shot classifier
+
+python nova_flask_app.py
+```
+
+**Query Flow with Evidence:**
+```python
+from core.retrieval.retrieval_engine_phase2 import retrieve_with_phase2
+
+results = retrieve_with_phase2(
+    query="How do I check tire pressure?",
+    k=12,                              # Retrieve 12 candidates
+    top_n=6,                           # Return top 6
+    enable_evidence_tracking=True,     # Capture evidence chain
+    enable_domain_caps=True,           # Apply per-domain limits
+    enable_router_filtering=True       # Use domain router
+)
+
+# Access evidence if available
+if results.evidence:
+    print(results.evidence.summary())
+    # Shows router decisions, GAR expansion ratio, reranking scores, 
+    # domain distribution, and which domains were capped
+```
+
+### Benefits for Safety-Critical Domains
+
+- **Reduced Cross-Contamination**: Domain caps prevent military vehicle manual from interfering with civilian vehicle queries
+- **Auditability**: Evidence chain documents every routing and filtering decision for compliance
+- **Precision**: Keyword refinement targets domain-specific terminology (e.g., "hydraulic" for forklifts vs "transmission" for vehicles)
+- **Graceful Degradation**: Falls back to keyword-only routing if zero-shot classifier unavailable
+- **Extensibility**: Easy to add new domains without retraining
+
+### Current Multi-Domain Index
+
+- **vehicle_military**: 404 chunks (tactical vehicles, amphibians, military-spec documents)
+- **vehicle_civilian**: 32 chunks (standard vehicle maintenance, diagnostic procedures)
+- **forklift**: 986 chunks (largest domain; lift operation, safety procedures)
+- **hvac**: 54 chunks (heating, cooling, refrigerant handling)
+- **radar**: 216 chunks (weather radar operation, signal processing)
+
+**Total: 1,692 chunks across 5 domains**
+
+For validation, see [validate_phase25.py](validate_phase25.py) and the [Phase 2.5 Architecture](docs/architecture/PHASE2_5_ARCHITECTURE.md) document.
+
+---
+
 ## Hybrid Retrieval
 
 Hybrid search combines vector similarity (FAISS) with lexical BM25 to improve recall for specific terminology, codes, and procedures. It is enabled by default.

@@ -32,6 +32,15 @@ except ImportError:  # pragma: no cover - fallback when secure_cache is missing
     import pickle  # type: ignore
 
     SECURE_CACHE_AVAILABLE = False
+    
+    # Provide stub functions for type checker
+    def secure_pickle_dump(obj, filepath):
+        with open(filepath, 'wb') as f:
+            pickle.dump(obj, f)
+    
+    def secure_pickle_load(filepath):
+        with open(filepath, 'rb') as f:
+            return pickle.load(f)
 
 # Optional GAR expansion
 try:

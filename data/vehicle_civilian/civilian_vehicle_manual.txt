@@ -1,0 +1,288 @@
+# CIVILIAN VEHICLE OWNER'S MANUAL
+## 2024 Sedan Model
+
+### SECTION 1: VEHICLE SPECIFICATIONS
+
+**Engine Specifications**
+- Engine Type: 4-cylinder inline gasoline engine
+- Displacement: 2.0L (1998 cc)
+- Maximum Power: 150 HP @ 6000 RPM
+- Maximum Torque: 140 lb-ft @ 4200 RPM
+- Fuel System: Multi-point fuel injection
+- Recommended Fuel: Regular unleaded gasoline (87 octane minimum)
+
+**Transmission**
+- Type: 6-speed automatic transmission with manual mode
+- Gear Ratios: 1st: 3.520, 2nd: 2.042, 3rd: 1.400, 4th: 1.000, 5th: 0.713, 6th: 0.582
+- Final Drive Ratio: 3.727:1
+
+**Tire Specifications**
+- Standard Tire Size: 205/55R16
+- Recommended Tire Pressure (Cold):
+  * Front: 32 PSI (2.2 bar)
+  * Rear: 30 PSI (2.1 bar)
+- Spare Tire: Temporary use T125/70D16, 60 PSI (4.1 bar)
+
+**Brake System**
+- Front Brakes: Ventilated disc brakes, 11.0 inch diameter
+- Rear Brakes: Solid disc brakes, 10.2 inch diameter
+- Parking Brake: Electronic parking brake (EPB) with auto-hold function
+
+**Battery & Electrical**
+- Battery Type: 12V, 60 Ah maintenance-free battery
+- Alternator Output: 110 Amp
+- Headlights: LED headlights with automatic on/off
+
+### SECTION 2: ROUTINE MAINTENANCE
+
+**Engine Oil Change**
+
+The engine oil and oil filter should be changed according to the maintenance schedule. For normal driving conditions, change every 7,500 miles or 12 months, whichever comes first.
+
+**Required Materials:**
+- Engine oil: 5W-30 synthetic blend, 4.5 quarts
+- Oil filter: Part number OF-2024-STD
+- Oil drain plug washer (replace each change)
+- Oil filter wrench
+- Drain pan (minimum 5 quart capacity)
+
+**Procedure:**
+1. Warm the engine to operating temperature (about 5 minutes of driving)
+2. Park on level ground and engage parking brake
+3. Turn off engine and wait 5 minutes for oil to drain to pan
+4. Locate oil drain plug under vehicle (front center of oil pan)
+5. Place drain pan under plug
+6. Remove drain plug using 14mm socket wrench
+7. Allow oil to drain completely (approximately 10 minutes)
+8. Replace drain plug washer and reinstall plug (torque: 29 lb-ft)
+9. Locate oil filter on passenger side of engine
+10. Remove old filter using filter wrench (turn counterclockwise)
+11. Apply thin layer of new oil to new filter's rubber gasket
+12. Install new filter by hand until gasket contacts, then tighten 3/4 turn
+13. Add 4 quarts of new oil through filler cap
+14. Start engine and let idle for 2 minutes
+15. Check for leaks around drain plug and filter
+16. Turn off engine, wait 5 minutes, check oil level
+17. Add remaining oil to bring level to "FULL" mark
+18. Reset maintenance reminder in vehicle computer
+
+**Air Filter Replacement**
+
+Replace engine air filter every 30,000 miles or when visibly dirty.
+
+**Procedure:**
+1. Open hood and locate air filter housing (black plastic box on driver's side)
+2. Release four clips securing housing cover
+3. Lift cover and remove old filter element
+4. Inspect housing for debris and clean if necessary
+5. Install new filter with pleated side facing down
+6. Ensure filter seats properly in housing grooves
+7. Replace cover and secure all four clips
+8. Verify cover is fully seated
+
+**Tire Rotation & Pressure Check**
+
+Rotate tires every 7,500 miles to ensure even wear. Check tire pressure monthly and before long trips.
+
+**Rotation Pattern (Front-Wheel Drive):**
+- Front left → Rear right
+- Front right → Rear left  
+- Rear left → Front left
+- Rear right → Front right
+
+**Checking Tire Pressure:**
+1. Check when tires are cold (driven less than 1 mile)
+2. Remove valve cap
+3. Press tire gauge firmly onto valve stem
+4. Read pressure and compare to specification (door jamb sticker)
+5. Add or release air as needed
+6. Replace valve cap
+
+**Brake Fluid Check**
+
+Check brake fluid level monthly. Fluid should be between MIN and MAX marks on reservoir.
+
+**Procedure:**
+1. Locate brake fluid reservoir (driver's side of engine bay, near firewall)
+2. Clean area around cap to prevent contamination
+3. Check fluid level without removing cap (reservoir is translucent)
+4. If low, remove cap and add DOT 4 brake fluid to MAX line
+5. Do not overfill
+6. Replace cap securely
+7. If fluid is consistently low, have brake system inspected immediately
+
+**Battery Maintenance**
+
+Check battery terminals every 6 months for corrosion. Clean if necessary.
+
+**Cleaning Procedure:**
+1. Turn off engine and remove key
+2. Disconnect negative (-) terminal first using 10mm wrench
+3. Disconnect positive (+) terminal
+4. Mix baking soda and water (1 tablespoon per cup)
+5. Apply solution to terminals and cable ends with brush
+6. Rinse with clean water
+7. Dry thoroughly
+8. Apply thin layer of petroleum jelly to prevent corrosion
+9. Reconnect positive (+) terminal first, then negative (-)
+10. Tighten terminals securely (torque: 11 lb-ft)
+
+### SECTION 3: COMMON TROUBLESHOOTING
+
+**Engine Won't Start**
+
+If engine won't start, check the following:
+
+1. **Battery Dead:**
+   - Symptoms: No lights, no sounds when turning key
+   - Solution: Jump start or replace battery
+   - Jump start procedure:
+     * Connect red cable to dead battery positive (+)
+     * Connect other red cable end to good battery positive (+)
+     * Connect black cable to good battery negative (-)
+     * Connect other black cable to unpainted metal on dead car (not battery)
+     * Start good car, let run 2 minutes
+     * Try starting dead car
+     * Remove cables in reverse order
+
+2. **Fuel System Issues:**
+   - Symptoms: Engine cranks but won't start, fuel gauge shows empty
+   - Check: Fuel level, fuel pump fuse (15A in under-hood fuse box, position 23)
+   - Listen for fuel pump hum when key turned to ON (before START)
+
+3. **Starter Motor Failure:**
+   - Symptoms: Click sound but engine doesn't turn
+   - Check: Battery voltage (should be 12.4V or higher)
+   - Have starter tested at auto parts store
+
+4. **Security System Lockout:**
+   - Symptoms: Security light flashing, engine cranks but won't start
+   - Solution: Try second key fob, wait 10 minutes with key in ON position
+   - If persists, tow to dealer for key programming
+
+**Check Engine Light**
+
+When check engine light illuminates:
+1. Check gas cap - tighten until it clicks 3 times
+2. Drive normally for 3 days to see if light resets
+3. If light flashes, stop driving immediately (indicates misfire)
+4. Have diagnostic codes read at parts store or dealer
+5. Common codes:
+   - P0420: Catalytic converter efficiency below threshold
+   - P0171: System too lean (vacuum leak or MAF sensor)
+   - P0301-P0304: Cylinder misfire (spark plugs or coils)
+
+**Brake Warning Light**
+
+If brake warning light stays on:
+1. Check parking brake - ensure fully released
+2. Check brake fluid level - add DOT 4 if low
+3. If light stays on with parking brake released and fluid full:
+   - DO NOT DRIVE
+   - Have vehicle towed to repair facility
+   - May indicate brake system failure
+
+**Tire Pressure Warning**
+
+When tire pressure light illuminates:
+1. Stop safely and check all tire pressures
+2. Inflate to specification on door jamb sticker
+3. Drive at 50+ mph for 10 minutes to reset sensor
+4. If light stays on, one or more sensors may need replacement
+
+**Overheating Engine**
+
+If temperature gauge enters red zone or steam appears:
+1. Pull over safely and turn off engine immediately
+2. DO NOT open radiator cap when hot
+3. Wait 30 minutes for engine to cool
+4. Check coolant level in overflow reservoir
+5. If low, add 50/50 coolant mix to cold fill line
+6. Check for visible leaks under vehicle
+7. If coolant full and no leaks, have cooling system inspected
+
+**Poor Fuel Economy**
+
+If fuel economy decreases significantly:
+1. Check tire pressure - under-inflated tires reduce efficiency
+2. Replace air filter if dirty
+3. Check driving habits - aggressive acceleration reduces MPG
+4. Remove excess weight from vehicle
+5. Use cruise control on highway
+6. Ensure AC is not running when not needed
+7. Have fuel system cleaned if over 50,000 miles
+
+### SECTION 4: SEASONAL MAINTENANCE
+
+**Winter Preparation**
+
+Before winter driving:
+1. Install winter tires or all-season tires with adequate tread (4/32" minimum)
+2. Check battery - cold reduces capacity by 30-50%
+3. Fill washer fluid with winter formula (rated to -20°F minimum)
+4. Check wiper blades - replace if streaking
+5. Test heater and defroster operation
+6. Keep emergency kit: blanket, flashlight, ice scraper, sand/salt
+7. Keep fuel tank at least half full to prevent fuel line freeze
+
+**Summer Preparation**
+
+Before summer driving:
+1. Check AC system operation - should blow cold (40°F or less)
+2. Inspect coolant level and condition
+3. Check coolant concentration (should be 50/50 mix for -34°F to 265°F protection)
+4. Test cooling fan operation (runs when AC on or engine hot)
+5. Check tire pressure (increases in heat - adjust accordingly)
+6. Replace cabin air filter if musty smell present
+
+### SECTION 5: FLUID CAPACITIES & SPECIFICATIONS
+
+**Fluid Types and Capacities:**
+
+| System | Capacity | Type | Replacement Interval |
+|--------|----------|------|---------------------|
+| Engine Oil | 4.5 qt | 5W-30 synthetic blend | 7,500 mi / 12 mo |
+| Coolant | 6.3 qt | Ethylene glycol, extended life | 10 years / 100,000 mi |
+| Transmission | 7.4 qt | ATF SP-IV | 60,000 mi (normal) / 30,000 mi (severe) |
+| Brake Fluid | 0.7 qt | DOT 4 | 3 years |
+| Power Steering | N/A | Electric assist (no fluid) | N/A |
+| Differential | 2.8 qt | 75W-90 gear oil | 60,000 mi |
+| Washer Fluid | 1.2 gal | All-season washer fluid | As needed |
+
+**Fuse Locations:**
+
+**Under-hood Fuse Box (Driver Side):**
+1. ABS (10A)
+2. Engine Control (10A)
+3. Fuel Pump (15A) - Position 23
+4. Cooling Fan (30A)
+5. AC Compressor (10A)
+6. Headlight Left (10A)
+7. Headlight Right (10A)
+
+**Interior Fuse Box (Driver Side Dashboard):**
+1. Radio (15A)
+2. Power Windows (20A)
+3. Interior Lights (10A)
+4. Instrument Panel (10A)
+5. Cigarette Lighter/Power Outlet (15A)
+
+### SECTION 6: WARRANTY INFORMATION
+
+**Basic Limited Warranty:**
+- 3 years / 36,000 miles (whichever comes first)
+- Covers all components except normal wear items
+
+**Powertrain Warranty:**
+- 5 years / 60,000 miles
+- Covers engine, transmission, drivetrain
+
+**Corrosion Warranty:**
+- 5 years / unlimited miles
+- Covers body panel rust-through
+
+**Maintenance Schedule for Warranty Compliance:**
+- Follow maintenance schedule exactly
+- Keep all service records
+- Use manufacturer-approved parts for major repairs
+- Use recommended fluid types

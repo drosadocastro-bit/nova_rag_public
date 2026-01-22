@@ -1,0 +1,20 @@
+{
+  "total_chunks": 1692,
+  "domain_stats": {
+    "vehicle_military": 404,
+    "vehicle": 32,
+    "forklift": 986,
+    "hvac": 54,
+    "radar": 216
+  },
+  "chunk_size": 500,
+  "overlap": 100,
+  "embedding_model": 384,
+  "domains": [
+    "vehicle_military",
+    "vehicle",
+    "forklift",
+    "hvac",
+    "radar"
+  ]
+}
