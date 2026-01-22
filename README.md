@@ -325,6 +325,26 @@ export NOVA_RETRIEVAL_K=12                 # Retrieve 12 candidates before reran
 python nova_flask_app.py
 ```
 
+### Safety State Machine (Phase 2/2.5)
+
+```
+Input (Injection/Risk Check)
+  ├─ block → Unsafe/Injection response
+  └─ pass
+        ↓
+Retrieval (Hybrid + Domain Filter)
+        ↓
+Validation (score ≥ 0.60)
+  ├─ fail → Abstain ("I don't know") or Extractive Fallback
+  └─ pass
+        ↓
+Generation (Grounded answer + citations)
+        ↓
+Audit (Citations verified; evidence logged)
+```
+
+Kill switches: injection/risk block, low-score abstain, and circuit-breaker to BM25-only if vectors fail. Evidence is captured at each state for auditability.
+
 ---
 
 ## Phase 2.5: Enhanced Multi-Domain Retrieval
@@ -640,6 +660,20 @@ export NOVA_EVIDENCE_TRACKING=1
 ```
 
 **Why:** Evidence chains are JSON-serializable and logged. Minimal overhead (<5%) for enormous debugging value.
+
+### 7. HTML Tag Stripping Disabled (Phase 2.5 Ingestion)
+
+**Problem:** Raw HTML (scripts/divs/styles) bloats token usage and pollutes embeddings, hurting recall.
+
+**Symptom:** Retrieval returns irrelevant boilerplate (navigation, headers) instead of procedures.
+
+**Fix:** Ensure HTML cleaning is enabled during ingestion:
+```bash
+export NOVA_HTML_CLEAN=1          # Strip script/style/nav tags
+export NOVA_HTML_STRIP_COMMENTS=1 # Remove HTML comments
+```
+
+**Why:** Token budget is precious; embeddings should represent instructions, not layout chrome. Stripping tags improves recall and reduces cost.
 
 ---
 
