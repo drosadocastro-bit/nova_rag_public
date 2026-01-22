@@ -474,6 +474,7 @@ def _save_bm25_index():
             "b": _BM25_B,
         }
         if SECURE_CACHE_AVAILABLE:
+            from secure_cache import secure_pickle_dump
             secure_pickle_dump(data, BM25_CACHE_PATH)
         else:
             import pickle
