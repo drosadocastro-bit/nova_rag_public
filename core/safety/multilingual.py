@@ -225,11 +225,11 @@ class MultilingualSafetyDetector:
         # Mixed-language attacks: English safety terms combined with foreign tokens
         mixed_language_attack = (
             normalized["language"] == "en"
-            and re.search(r"(ignorar|desactivar|sicherheit|umgehen)", query.lower())
-            and re.search(r"safety|checks|protocol|abs", query.lower())
+            and bool(re.search(r"(ignorar|desactivar|sicherheit|umgehen)", query.lower()))
+            and bool(re.search(r"safety|checks|protocol|abs", query.lower()))
         )
 
         if normalized["language"] == "en" and not mixed_language_attack:
             return False
 
-        return any(keyword in normalized_lower for keyword in attack_keywords) or mixed_language_attack
+        return bool(any(keyword in normalized_lower for keyword in attack_keywords)) or mixed_language_attack
