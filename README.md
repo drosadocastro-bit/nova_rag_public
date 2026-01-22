@@ -289,6 +289,44 @@ make ci-local           # Simulate CI pipeline
 
 ---
 
+## Phase 2: Safety-Hardened Retrieval
+
+Building on the MVP, **Phase 2** hardens the pipeline for safety-critical use: it prioritizes abstention over confabulation, makes failures observable, and keeps retrieval deterministic.
+
+### What's New
+
+**1. Multi-Layer Safety Controls**
+- Confidence gating (skip LLM if retrieval quality < threshold)
+- Citation audit plus extractive fallback for low-confidence answers
+- Risk assessment blocks unsafe intents before retrieval
+
+**2. Reliability & Error Handling**
+- Granular retries with exponential backoff for embeddings and rerankers
+- Circuit-breaker fallback to BM25-only when vector stack is degraded
+- Structured error reporting for pipeline stages
+
+**3. Observability & Logging**
+- Structured logs with `query_id`, domain, scores, and latencies
+- Evidence logging for router → retrieval → rerank decisions
+
+**4. Deterministic Caching**
+- Versioned FAISS/BM25 caches with hash-based invalidation
+- Rebuilds automatically when corpus, model, or chunking changes
+
+**5. Validated Safety Behavior**
+- 111/111 adversarial tests passing with confidence gating and audit trail
+
+### Quick Configuration (Phase 2 defaults)
+```bash
+export NOVA_CONFIDENCE_THRESHOLD=0.60     # Abstain below this
+export NOVA_EXTRACTIVE_FALLBACK=1          # Use extractive answers when low confidence
+export NOVA_EVIDENCE_TRACKING=1            # Log router/retrieval/rerank evidence
+export NOVA_RETRIEVAL_K=12                 # Retrieve 12 candidates before rerank
+python nova_flask_app.py
+```
+
+---
+
 ## Phase 2.5: Enhanced Multi-Domain Retrieval
 
 Building on the core NIC architecture, **Phase 2.5** adds intelligent domain-aware features for improved accuracy in safety-critical multi-domain scenarios.
