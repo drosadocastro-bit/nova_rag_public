@@ -15,6 +15,7 @@ import hmac
 from pathlib import Path
 import time
 from collections import OrderedDict
+from core.safety import risk_assessment as safety_metrics
 
 # Lightweight in-process retrieval cache to replace legacy cache_utils
 _RETRIEVAL_CACHE_ENABLED = os.environ.get("NOVA_ENABLE_RETRIEVAL_CACHE", "0") == "1"
@@ -232,6 +233,10 @@ def api_ask():
         # Build response with consistent structure
         # Note: answer can be either a string or dict (for structured responses like troubleshooting, procedures, etc.)
         # Flask's jsonify() automatically handles proper JSON serialization for both types
+        safety_meta = {
+            "heuristic_triggers": session_state.get("last_heuristic_triggers") or [],
+            "heuristic_trigger": session_state.get("last_heuristic_trigger"),
+        }
         response_data = {
             "answer": answer,
             "confidence": f"{confidence_pct*100:.1f}%",
@@ -241,7 +246,8 @@ def api_ask():
             "session_id": session_state.get("session_id"),
             "session_active": session_state.get("active", False),
             "audit_status": "enabled" if "audit" in model_info.lower() else "disabled",
-            "effective_safety": "strict" if "strict" in model_info.lower() else "standard"
+            "effective_safety": "strict" if "strict" in model_info.lower() else "standard",
+            "safety_meta": safety_meta,
         }
         
         # Log request analytics
@@ -258,7 +264,10 @@ def api_ask():
             answer_length=len(answer_text),
             session_id=session_state.get("session_id"),
             user_ip=user_ip,
-            response_type="answer"
+            response_type="answer",
+            decision_tag=session_state.get("last_decision_tag"),
+            heuristic_trigger=session_state.get("last_heuristic_trigger"),
+            heuristic_triggers=session_state.get("last_heuristic_triggers"),
         )
         
         return jsonify(response_data)
@@ -318,6 +327,7 @@ def metrics():
         "cache_enabled": os.environ.get("NOVA_ENABLE_RETRIEVAL_CACHE", "0") == "1",
         "rate_limit_enabled": RATE_LIMIT_ENABLED,
         "hybrid_search_enabled": os.environ.get("NOVA_HYBRID_SEARCH", "1") == "1",
+        "safety_heuristic_triggers": safety_metrics.get_trigger_counts(),
     }
     
     return jsonify(metrics_data)
