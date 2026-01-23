@@ -18,10 +18,26 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install pytest (minimal)
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest
+          pip install -r requirements.txt
+          pip install pytest ruff
+
+      - name: Lint (ruff)
+        run: |
+          ruff --version
+          ruff check .
+
+      - name: Run unit tests (core)
+        env:
+          NOVA_FORCE_OFFLINE: "1"
+          NOVA_DISABLE_CROSS_ENCODER: "1"
+          NOVA_DISABLE_VISION: "1"
+          NOVA_BM25_CACHE: "0"
+          NOVA_HYBRID_SEARCH: "0"
+        run: |
+          pytest tests/unit -q
 
       - name: Run smoke tests
         run: |

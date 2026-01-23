@@ -7,6 +7,7 @@
 [![Validated](https://img.shields.io/badge/Adversarial%20Tests-111%2F111%20passed-brightgreen.svg)](docs/evaluation/EVALUATION_SUMMARY.md)
 [![Hybrid Retrieval](https://img.shields.io/badge/Retrieval-Hybrid%20(Vector+BM25)-purple.svg)](#hybrid-retrieval)
 [![Load Tested](https://img.shields.io/badge/Load%20Tested-20%20users-blue)](docs/evaluation/LOAD_TEST_RESULTS.md)
+[![Nightly CI](https://github.com/drosadocastro-bit/nova_rag_public/actions/workflows/nightly.yml/badge.svg?branch=main)](https://github.com/drosadocastro-bit/nova_rag_public/actions/workflows/nightly.yml)
 
 ---
 
