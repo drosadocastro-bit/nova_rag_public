@@ -1,0 +1,442 @@
+# HVAC SYSTEM MAINTENANCE & TROUBLESHOOTING GUIDE
+
+## SECTION 1: SYSTEM OVERVIEW
+
+**Residential HVAC Components**
+
+A typical residential HVAC (Heating, Ventilation, and Air Conditioning) system consists of the following main components:
+
+1. **Thermostat**: Control interface for temperature settings
+2. **Air Handler**: Indoor unit containing blower motor and evaporator coil
+3. **Condensing Unit**: Outdoor unit with compressor and condenser coil  
+4. **Refrigerant Lines**: Copper pipes connecting indoor and outdoor units
+5. **Ductwork**: Air distribution system throughout the building
+6. **Air Filter**: Removes particulates from circulating air
+
+**System Specifications**
+
+- Refrigerant Type: R-410A (Puron) - environmentally friendly
+- Cooling Capacity: 2-5 tons (24,000-60,000 BTU/hr)
+- Heating Capacity: 40,000-120,000 BTU/hr (gas furnace)
+- SEER Rating: 14-21 (Seasonal Energy Efficiency Ratio)
+- Operating Voltage: 240V AC for compressor, 24V AC for controls
+
+**Refrigerant Cycle Overview**
+
+The cooling cycle operates on vapor-compression principles:
+1. Compressor pressurizes refrigerant gas (outdoor unit)
+2. Hot gas flows to condenser coil, releases heat outdoors
+3. Refrigerant condenses to high-pressure liquid
+4. Liquid passes through expansion valve, pressure drops
+5. Low-pressure liquid enters evaporator coil (indoor unit)
+6. Liquid absorbs indoor heat, evaporates to gas
+7. Cool gas returns to compressor, cycle repeats
+
+## SECTION 2: ROUTINE MAINTENANCE
+
+**Monthly Maintenance Tasks**
+
+**Air Filter Replacement/Cleaning**
+
+Frequency: Every 30 days (more often if pets or allergies present)
+
+Procedure:
+1. Locate filter slot (usually in return air grille or air handler)
+2. Note airflow direction arrow on old filter
+3. Remove old filter and inspect for dirt accumulation
+4. Measure filter size (common: 16x20, 20x25, 16x25)
+5. Install new filter with arrow pointing toward air handler
+6. Ensure filter fits snugly in slot - gaps reduce efficiency
+7. Mark installation date on filter frame
+
+Filter Types:
+- Fiberglass (MERV 1-4): Cheapest, minimal filtration
+- Pleated (MERV 8-12): Good balance of cost and filtration
+- HEPA (MERV 13-16): Best filtration, may restrict airflow
+- Electrostatic: Washable, reusable, moderate efficiency
+
+**Thermostat Battery Check**
+
+If thermostat uses batteries:
+1. Check display for low battery indicator
+2. Replace batteries annually (typically 2x AA)
+3. Preserve settings by replacing one battery at a time
+4. Test system operation after replacement
+
+**Seasonal Maintenance (Spring & Fall)**
+
+**Outdoor Condenser Unit Cleaning**
+
+Perform before cooling season (spring) and after (fall):
+
+1. **Safety First:**
+   - Turn off power at outdoor disconnect switch
+   - Turn off circuit breaker at main panel
+   - Verify power is off with voltage tester
+
+2. **Remove Debris:**
+   - Clear leaves, grass clippings, and debris from around unit
+   - Maintain 2-foot clearance on all sides
+   - Remove top grille/fan guard (usually 4 screws)
+   - Remove large debris by hand
+
+3. **Clean Condenser Fins:**
+   - Spray fins from inside out with garden hose (low pressure)
+   - Use commercial coil cleaner for heavy dirt:
+     * Spray cleaner on fins per product directions
+     * Let sit 5-10 minutes
+     * Rinse thoroughly with water
+   - Avoid pressure washer - damages fins
+   - Straighten bent fins with fin comb
+
+4. **Clean Fan Blades:**
+   - Wipe fan blades with damp cloth
+   - Remove any buildup on blade edges
+   - Check for cracks or damage
+
+5. **Reassemble and Test:**
+   - Replace fan guard and secure with screws
+   - Restore power at breaker and disconnect
+   - Set thermostat to cooling mode
+   - Verify unit starts and runs smoothly
+
+**Indoor Evaporator Coil Inspection**
+
+Perform annually (before cooling season):
+
+1. **Access Coil:**
+   - Turn off power to air handler
+   - Remove access panel (usually sheet metal screws)
+   - Locate evaporator coil (A-frame or slab configuration)
+
+2. **Visual Inspection:**
+   - Check for dirt buildup on coil fins
+   - Look for signs of corrosion or refrigerant leaks
+   - Inspect drain pan for standing water or rust
+
+3. **Cleaning (if dirty):**
+   - Spray no-rinse coil cleaner on coil surface
+   - Let foam action work for 10-15 minutes
+   - Wipe excess with soft brush if accessible
+   - Do NOT use water - can damage electrical components
+
+4. **Drain Pan Service:**
+   - Remove standing water with wet vac
+   - Clean pan with bleach solution (1 cup per gallon)
+   - Check drain line for clogs
+
+**Condensate Drain Line Maintenance**
+
+Clogged drain lines cause water damage. Clean quarterly:
+
+1. **Locate Drain Line:**
+   - Usually 3/4" PVC pipe exiting air handler
+   - Exits near outdoor unit or through foundation
+
+2. **Clear Line:**
+   - Pour 1 cup white vinegar into drain pan
+   - Wait 30 minutes
+   - Flush with 1 gallon water
+   - Check for flow at outdoor exit point
+
+3. **Severe Clogs:**
+   - Attach wet/dry vac to outdoor exit point
+   - Seal connection with duct tape
+   - Run vac for 2-3 minutes to pull clog
+   - Flush line after clearing
+
+4. **Prevention:**
+   - Install drain pan tablets (algae prevention)
+   - Replace tablets every 3 months
+
+## SECTION 3: TROUBLESHOOTING
+
+**System Won't Turn On**
+
+**Symptom:** No response when thermostat set to COOL or HEAT
+
+Check:
+1. **Thermostat Settings:**
+   - Verify mode set to COOL or HEAT (not OFF)
+   - Temperature set below room temp (cooling) or above (heating)
+   - Fan set to AUTO or ON
+
+2. **Power Supply:**
+   - Check circuit breaker - reset if tripped
+   - Verify outdoor disconnect switch is ON
+   - Replace blown fuses at disconnect (5A time-delay fuses)
+
+3. **Thermostat Issues:**
+   - Replace batteries if display dim or blank
+   - Check wire connections at thermostat base
+   - Common wires: R (power), W (heat), Y (cool), G (fan), C (common)
+
+4. **Safety Switches:**
+   - Check condensate float switch (if installed)
+   - Verify filter access door switch is closed
+   - Reset limit switches if tripped
+
+**Insufficient Cooling**
+
+**Symptom:** System runs but doesn't cool adequately
+
+Causes and Solutions:
+
+1. **Dirty Air Filter:**
+   - Restricts airflow, reduces efficiency by 15-20%
+   - Replace filter immediately
+   - Check airflow at vents - should be strong
+
+2. **Dirty Condenser Coils:**
+   - Outdoor unit covered in dust/debris
+   - Clean coils per maintenance procedure
+   - Efficiency loss: 5% per year without cleaning
+
+3. **Low Refrigerant:**
+   - Signs: Ice on refrigerant lines, hissing sounds
+   - Requires professional service (EPA certified)
+   - Usually indicates leak - find and repair before recharging
+
+4. **Undersized System:**
+   - System runs constantly, can't maintain temperature
+   - Calculate required capacity: BTU/hr = (sq ft × 25) + additional factors
+   - May need larger unit or zone system
+
+5. **Thermostat Placement:**
+   - Located in direct sunlight or near heat source
+   - Reads incorrectly high temperature
+   - Relocate or install sun shield
+
+**System Short Cycling**
+
+**Symptom:** Unit turns on and off every few minutes
+
+Causes:
+1. **Oversized System:**
+   - Cools space too quickly, shuts off prematurely
+   - Reduces efficiency and equipment life
+   - Solution: Variable-speed compressor or smaller unit
+
+2. **Dirty Evaporator Coil:**
+   - Frozen coil triggers safety shutdown
+   - Clean coil and replace filter
+   - Allow 24 hours to thaw before restart
+
+3. **Refrigerant Issues:**
+   - Overcharged or undercharged system
+   - Requires professional diagnosis and correction
+
+4. **Failing Compressor:**
+   - Hard-start kit may extend life temporarily
+   - Eventually requires compressor replacement
+
+**Frozen Evaporator Coil**
+
+**Symptom:** Ice buildup on indoor coil or refrigerant lines
+
+Immediate Action:
+1. Turn system OFF
+2. Set fan to ON (continuous)
+3. Allow 4-6 hours to thaw completely
+4. Place towels under unit to catch water
+
+Causes:
+1. **Restricted Airflow:**
+   - Dirty filter (most common)
+   - Closed registers (open all vents)
+   - Collapsed/disconnected ductwork
+
+2. **Low Refrigerant:**
+   - System leaking refrigerant
+   - Requires professional leak detection and repair
+
+3. **Blower Motor Issues:**
+   - Motor running too slow
+   - Check capacitor (bulging = failed)
+   - Test motor amperage draw
+
+**Noisy Operation**
+
+**Symptom:** Unusual sounds during operation
+
+Sound Diagnosis:
+
+1. **Squealing/Screeching:**
+   - Source: Blower motor or belt
+   - Cause: Worn belt or failing motor bearings
+   - Action: Replace belt or lubricate motor (if oil ports present)
+
+2. **Banging/Clanking:**
+   - Source: Compressor or blower wheel
+   - Cause: Loose component or failed mount
+   - Action: Tighten mounts, inspect for loose parts
+
+3. **Hissing:**
+   - Source: Refrigerant lines or expansion valve
+   - Cause: Normal operation OR refrigerant leak
+   - Action: If loud or continuous, call professional
+
+4. **Clicking:**
+   - Source: Relay or contactor
+   - Cause: Normal startup sound OR failing contactor
+   - Action: If rapid clicking, replace contactor
+
+5. **Buzzing:**
+   - Source: Electrical components
+   - Cause: Failing contactor or loose wire
+   - Action: Check electrical connections, replace contactor if pitted
+
+## SECTION 4: ENERGY EFFICIENCY TIPS
+
+**Optimizing System Performance**
+
+1. **Programmable Thermostat:**
+   - Set temperature back 7-10°F when away (8+ hours)
+   - Saves 10% annually on cooling costs
+   - Sample schedule:
+     * Wake: 72°F (6:00 AM)
+     * Leave: 78°F (8:00 AM)
+     * Return: 72°F (5:00 PM)
+     * Sleep: 75°F (10:00 PM)
+
+2. **Optimal Temperature Settings:**
+   - Summer: 78°F when home, 85°F when away
+   - Winter: 68°F when home, 60°F when away
+   - Each degree lower (summer) adds 3-5% to cooling costs
+
+3. **Airflow Management:**
+   - Keep all vents open (closing doesn't save energy)
+   - Ensure furniture doesn't block return grilles
+   - Keep interior doors open for proper circulation
+
+4. **Duct Sealing:**
+   - Seal duct joints with mastic (not duct tape)
+   - Insulate ducts in unconditioned spaces
+   - Typical duct leakage: 20-30% of airflow
+   - Sealing saves 15-20% on HVAC costs
+
+5. **Ceiling Fans:**
+   - Run counterclockwise in summer (downdraft)
+   - Allows 4°F higher thermostat setting
+   - Turn off when room is unoccupied
+
+## SECTION 5: PROFESSIONAL MAINTENANCE SCHEDULE
+
+**Annual Professional Service**
+
+Schedule professional tune-up before cooling season (spring) and heating season (fall):
+
+**Cooling System Tune-Up (Spring):**
+1. Test starting capabilities and system startup
+2. Measure refrigerant charge, add if low
+3. Check pressure and temperature readings
+4. Test thermostat accuracy and calibration
+5. Inspect electrical connections and components
+6. Measure amp draw of compressor and blower motor
+7. Clean and adjust blower components
+8. Lubricate motors and bearings
+9. Check condensate drain operation
+10. Test safety controls and limits
+11. Inspect ductwork for leaks
+12. Record system performance data
+
+**Heating System Tune-Up (Fall):**
+1. Inspect heat exchanger for cracks (carbon monoxide risk)
+2. Test gas pressure and burner operation
+3. Clean burner assembly
+4. Check ignition system
+5. Test safety controls (limit switches, rollout switches)
+6. Inspect venting and flue pipe
+7. Check blower operation
+8. Lubricate motors
+9. Test thermostat operation
+10. Measure temperature rise across heat exchanger
+
+**Cost:** $75-150 per visit
+**Savings:** 15-20% reduction in operating costs
+**Benefit:** Early detection of problems, extended equipment life
+
+## SECTION 6: REFRIGERANT SPECIFICATIONS
+
+**R-410A (Puron) Properties:**
+
+- Chemical Formula: CH2F2 + CHF2CF3 (50/50 blend)
+- Global Warming Potential (GWP): 2,088
+- Ozone Depletion Potential (ODP): 0
+- Operating Pressure: 200-400 PSI (vs. R-22 at 150-250 PSI)
+- Temperature Glide: <0.3°F (near-azeotropic)
+
+**System Pressures (70°F ambient):**
+- Low Side (suction): 118-125 PSI
+- High Side (discharge): 210-250 PSI
+
+**Important Notes:**
+- R-410A is NOT compatible with R-22 systems
+- Requires different tools and gauges (higher pressure ratings)
+- Must be charged as liquid (not vapor)
+- EPA Section 608 certification required for handling
+
+**Leak Detection:**
+- Electronic leak detector (most sensitive)
+- Bubble solution at suspected joints
+- UV dye injection (requires UV light)
+- Pressure test with nitrogen
+
+## SECTION 7: CAPACITOR REPLACEMENT
+
+**Warning:** Capacitors store electrical charge even when power is off. Can cause injury or death. Discharge before handling.
+
+**Types:**
+- Start Capacitor: Provides initial boost to motor
+- Run Capacitor: Maintains efficient operation
+
+**Signs of Failure:**
+- Bulging or swollen case
+- Leaking oil
+- System won't start
+- Motor runs hot or slow
+
+**Replacement Procedure:**
+
+1. **Safety:**
+   - Turn off all power (breaker and disconnect)
+   - Verify power off with multimeter
+
+2. **Discharge Capacitor:**
+   - Use insulated screwdriver across terminals (3-5 seconds)
+   - Or use 20,000 ohm resistor
+   - Verify 0V with multimeter
+
+3. **Documentation:**
+   - Photo wire connections before removal
+   - Note capacitor rating (MFD/μF and voltage)
+
+4. **Removal:**
+   - Label wires (C, HERM, FAN)
+   - Disconnect wires from terminals
+   - Remove mounting strap or bracket
+
+5. **Selection:**
+   - Match MFD rating exactly (+/- 10% acceptable)
+   - Voltage rating same or higher
+   - Shape/size doesn't matter (electrical equivalent)
+
+6. **Installation:**
+   - Mount new capacitor securely
+   - Connect wires per photo/labels
+   - Ensure tight connections
+
+7. **Testing:**
+   - Restore power
+   - Test system operation
+   - Listen for normal startup
+
+**Common Ratings:**
+- Compressor: 35-70 MFD, 370V or 440V
+- Blower Motor: 5-20 MFD, 370V
+- Condenser Fan: 5-10 MFD, 370V
+
+**Dual vs Single:**
+- Dual capacitor: Two capacitors in one can (compressor + fan)
+- Terminals labeled: C (common), HERM (compressor), FAN
+- Can replace dual with two singles if space permits
