@@ -1,6 +1,6 @@
 flask==3.0.0
 flask-limiter==3.5.0
-waitress==3.0.1
+waitress==3.0.2
 faiss-cpu==1.13.1
 
 # === Multilingual & Semantic Safety (Priority 3) ===
