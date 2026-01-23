@@ -1,0 +1,38 @@
+name: Nightly CI
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # 03:00 UTC nightly
+  workflow_dispatch:
+
+jobs:
+  smoke-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install pytest (minimal)
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      - name: Run smoke tests
+        run: |
+          pytest -m smoke -q
+
+      - name: Upload logs and artifacts (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-artifacts
+          path: |
+            TEST_RESULTS_DETAILED.md
+            test_safety_output.txt
+            server_log.txt
