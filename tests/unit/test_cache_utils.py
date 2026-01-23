@@ -3,9 +3,6 @@ Unit tests for cache_utils module.
 Tests secure caching, retrieval caching, and SQL logging.
 """
 import pytest
-import os
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 
 class TestRetrievalCache:
@@ -207,8 +204,9 @@ class TestSecureCache:
     
     def test_secure_cache_availability(self):
         """Test that secure cache module is importable."""
+        import importlib
         try:
-            from secure_cache import secure_pickle_dump, secure_pickle_load
+            importlib.import_module("secure_cache")
             assert True
         except ImportError:
             # It's OK if not available, cache_utils falls back to regular pickle

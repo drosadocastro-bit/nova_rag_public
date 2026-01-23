@@ -3,7 +3,6 @@ Integration tests for end-to-end workflows.
 Tests complete RAG pipeline from query to response.
 """
 import pytest
-import os
 
 
 @pytest.mark.integration

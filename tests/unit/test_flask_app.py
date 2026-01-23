@@ -4,7 +4,7 @@ Tests Flask routes, rate limiting, security headers, and API endpoints.
 """
 import pytest
 import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 
 @pytest.fixture
@@ -82,7 +82,7 @@ class TestRateLimiting:
         import os
         os.environ["NOVA_RATE_LIMIT_ENABLED"] = "0"
         
-        from nova_flask_app import app, RATE_LIMIT_ENABLED
+        from nova_flask_app import RATE_LIMIT_ENABLED
         
         assert RATE_LIMIT_ENABLED is False
     
@@ -96,7 +96,7 @@ class TestRateLimiting:
         if 'nova_flask_app' in sys.modules:
             del sys.modules['nova_flask_app']
         
-        from nova_flask_app import app, RATE_LIMIT_ENABLED
+        from nova_flask_app import RATE_LIMIT_ENABLED
         
         assert RATE_LIMIT_ENABLED is True
     

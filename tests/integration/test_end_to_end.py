@@ -5,8 +5,7 @@ Tests complete RAG pipeline: retrieval → LLM → answer with proper mocking fo
 
 import pytest
 import os
-from unittest.mock import Mock, patch, MagicMock
-from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 
 @pytest.mark.integration
@@ -216,7 +215,7 @@ The recommended oil change interval is 5,000 miles or 6 months, whichever comes 
         Simulates slow model response and verifies fallback.
         """
         import backend
-        from backend import LLM_OSS, LLM_LLAMA
+        from backend import LLM_OSS
         
         # Mock a timeout on first call, success on second
         call_count = [0]

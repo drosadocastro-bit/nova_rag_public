@@ -49,7 +49,7 @@ class LoadTester:
                     data = json.load(f)
                     if isinstance(data, list):
                         return data
-                    print(f"[WARNING] Invalid fixture format, using defaults")
+                    print("[WARNING] Invalid fixture format, using defaults")
             except Exception as e:
                 print(f"[WARNING] Failed to load fixtures: {e}, using defaults")
         
@@ -140,7 +140,7 @@ class LoadTester:
                     memory_gb = process.memory_info().rss / 1024**3
                     with self.lock:
                         self.peak_memory = max(self.peak_memory, memory_gb)
-                except:
+                except Exception:
                     pass
             
             # Small random delay to simulate human behavior
@@ -151,7 +151,7 @@ class LoadTester:
         print("=" * 70)
         print("NOVARAG LOAD TEST")
         print("=" * 70)
-        print(f"Configuration:")
+        print("Configuration:")
         print(f"  Users: {self.users}")
         print(f"  Duration: {self.duration}s ({self.duration // 60} minutes)")
         print(f"  Model: {self.model}")
@@ -192,7 +192,7 @@ class LoadTester:
                 self.start_memory = process.memory_info().rss / 1024**3
                 self.peak_memory = self.start_memory
                 print(f"\nStarting memory: {self.start_memory:.1f} GB")
-            except:
+            except Exception:
                 pass
         
         # Start load test
@@ -234,7 +234,7 @@ class LoadTester:
             return
         
         # Basic stats
-        print(f"\nBasic Metrics:")
+        print("\nBasic Metrics:")
         print(f"  Total Queries: {total_queries}")
         print(f"  Successful: {len(self.results)}")
         print(f"  Failed: {len(self.errors)}")
@@ -246,7 +246,7 @@ class LoadTester:
             avg_latency = statistics.mean(latencies)
             p95_latency = sorted(latencies)[int(len(latencies) * 0.95)] if len(latencies) > 0 else 0
             
-            print(f"\nLatency Metrics:")
+            print("\nLatency Metrics:")
             print(f"  Average: {avg_latency:.1f}s")
             print(f"  p50 (median): {statistics.median(latencies):.1f}s")
             print(f"  p95: {p95_latency:.1f}s")
@@ -255,20 +255,20 @@ class LoadTester:
             
             # Throughput
             throughput_per_min = len(self.results) / (self.duration / 60)
-            print(f"\nThroughput:")
+            print("\nThroughput:")
             print(f"  Queries/minute: {throughput_per_min:.1f}")
             print(f"  Queries/second: {throughput_per_min / 60:.2f}")
         
         # Memory usage
         if PSUTIL_AVAILABLE and self.peak_memory > 0:
-            print(f"\nMemory Usage:")
+            print("\nMemory Usage:")
             print(f"  Starting: {self.start_memory:.1f} GB")
             print(f"  Peak: {self.peak_memory:.1f} GB")
             print(f"  Growth: +{(self.peak_memory - self.start_memory):.1f} GB")
         
         # Error summary
         if self.errors:
-            print(f"\nError Summary:")
+            print("\nError Summary:")
             error_types = {}
             for err in self.errors:
                 error_type = err.get("error", "Unknown")
@@ -288,8 +288,8 @@ class LoadTester:
             throughput_per_min = len(self.results) / (self.duration / 60)
             error_rate_pct = len(self.errors) / total_queries * 100
             
-            print(f"| Users | Avg Latency (s) | p95 Latency (s) | Throughput (q/min) | Error Rate | Memory Peak (GB) |")
-            print(f"|-------|-----------------|-----------------|---------------------|------------|------------------|")
+            print("| Users | Avg Latency (s) | p95 Latency (s) | Throughput (q/min) | Error Rate | Memory Peak (GB) |")
+            print("|-------|-----------------|-----------------|---------------------|------------|------------------|")
             memory_str = f"{self.peak_memory:.1f}" if PSUTIL_AVAILABLE and self.peak_memory > 0 else "N/A"
             print(f"| {self.users:5} | {avg_latency:15.1f} | {p95_latency:15.1f} | {throughput_per_min:19.0f} | {error_rate_pct:9.0f}% | {memory_str:16} |")
         
