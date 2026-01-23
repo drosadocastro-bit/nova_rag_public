@@ -8,8 +8,29 @@
 [![Hybrid Retrieval](https://img.shields.io/badge/Retrieval-Hybrid%20(Vector+BM25)-purple.svg)](#hybrid-retrieval)
 [![Load Tested](https://img.shields.io/badge/Load%20Tested-20%20users-blue)](docs/evaluation/LOAD_TEST_RESULTS.md)
 [![Nightly CI](https://github.com/drosadocastro-bit/nova_rag_public/actions/workflows/nightly.yml/badge.svg?branch=main)](https://github.com/drosadocastro-bit/nova_rag_public/actions/workflows/nightly.yml)
+[![CI](https://github.com/drosadocastro-bit/nova_rag_public/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/drosadocastro-bit/nova_rag_public/actions/workflows/ci.yml)
 
 ---
+
+## CI
+
+This repo uses two GitHub Actions workflows to keep quality and safety high:
+
+- **CI**: Runs on push/PR to `main` and `develop`.
+   - Matrix builds on Python 3.12 and 3.13
+   - Installs deps, runs `pytest` for all tests
+   - Lints with `ruff`, checks formatting, basic import checks
+   - Security scanning with `pip-audit` and `bandit` (reports uploaded)
+   - Documentation link validation for `docs/*` using `markdown-link-check`
+   - See the workflow: https://github.com/drosadocastro-bit/nova_rag_public/actions/workflows/ci.yml
+
+- **Nightly CI**: Runs nightly at 03:00 UTC and on manual dispatch.
+   - Installs deps, lints with `ruff`
+   - Executes unit tests and smoke tests with safe offline env flags
+   - Uploads artifacts (logs, test outputs) for inspection
+   - See the workflow: https://github.com/drosadocastro-bit/nova_rag_public/actions/workflows/nightly.yml
+
+Status badges for both workflows are shown above.
 
 ## Purpose
 
