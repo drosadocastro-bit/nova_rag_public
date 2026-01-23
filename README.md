@@ -71,8 +71,7 @@ NIC evolved from a basic proof-of-concept to a production-grade safety-critical 
 |-------|-------|-----------------|
 | **Phase 1 (MVP)** | Basic retrieval + single LLM pass | Working end-to-end pipeline |
 | **Phase 2 (Safety)** | Multi-layer defenses, evidence tracking | 111/111 adversarial tests passing |
-| **Phase 2.5 (Multi-Domain)** | Domain-aware retrieval, cross-contamination prevention | 1,692 chunks across 5 domains with per-domain caps |
-| **Production Review (Jan 2026)** | Code quality hardening, validation rigor | 100% validated error handling |
+| **Phase 2.5 (Multi-Domain)** | Domain-aware retrieval, cross-contamination prevention | 1,692 chunks across 5 domains with per-domain caps || **Phase 3 (Scalability)** | Incremental indexing, hot-reload, real corpus | Zero-downtime scaling: 3.3s per manual (34% faster than target) || **Production Review (Jan 2026)** | Code quality hardening, validation rigor | 100% validated error handling |
 
 ### Key Architectural Decisions & Why
 
@@ -446,6 +445,138 @@ if results.evidence:
 **Total: 1,692 chunks across 5 domains**
 
 For validation, see [validate_phase25.py](validate_phase25.py) and the [Phase 2.5 Architecture](docs/architecture/PHASE2_5_ARCHITECTURE.md) document.
+
+---
+
+## Phase 3: Scalability & Real-World Corpus ✅ COMPLETE
+
+Phase 3 delivered **zero-downtime incremental indexing** and **production-grade corpus scaling**—enabling real-world deployment without compromising safety guarantees.
+
+### What Was Built
+
+**1. Incremental Indexing System**
+- File-hash tracking (`corpus_manifest.py`) - 420 lines, 45 tests
+- Append-only FAISS updates (`incremental_faiss.py`) - 320 lines, 20 tests
+- Incremental BM25 expansion (`incremental_bm25.py`) - 280 lines, 25 tests
+- Hot-reload API endpoint (`hot_reload.py`) - 400 lines, 15 tests
+- **Result:** Add manuals without downtime, atomic updates, full auditability
+
+**2. Real Corpus Integration**
+- Researched 7 public-domain sources (TM-9-803, Model T, Arduino, RPi, OpenPLC, NASA, NIST)
+- Download automation scripts (220 + 120 + 340 lines)
+- Validation framework with SHA-256 integrity checks
+- Import automation with domain categorization
+- **Result:** Production-ready corpus pipeline for safety-critical technical docs
+
+**3. End-to-End Validation**
+- 9-step hot-reload test workflow (`test_hot_reload_ingestion.py`) - 340 lines
+- Success criteria validation: 1,000+ chunks, <5s per manual, zero degradation, no restart
+- **Result:** All criteria exceeded (3.3s per manual = 34% faster than target)
+
+### Performance Results
+
+| Metric | Target | Actual | Improvement |
+|--------|--------|--------|-------------|
+| Single manual | <5s | 3.3s | 34% faster |
+| 10 manuals | <30s | 22s | 27% faster |
+| 100 manuals | <5min | 185s | 38% faster |
+
+### Key Design Decisions
+
+- **Monotonic Chunk IDs:** Never reuse IDs even after deletion (prevents FAISS collision)
+- **BM25 Rebuild Strategy:** Rebuild entire index on corpus change (deterministic, fast with caching)
+- **FAISS Append-Only:** Add new vectors without touching existing (stability + safety)
+- **Backup-Before-Modify:** Atomic updates with rollback capability
+- **Atomic Updates:** All-or-nothing index operations (no partial states)
+
+**Total Delivered:** 5,780 lines (1,620 production + 600 tests + 680 scripts + 2,880 docs) across 20+ files
+
+For complete details, see [Phase 3 Completion Documentation](docs/roadmap/PHASE3_COMPLETE.md).
+
+---
+
+## Phase 3.5: Neural Advisory Layer 🚀 IN PROGRESS
+
+Phase 3.5 introduces **neural networks as advisors**, not decision-makers—improving quality without breaking determinism or safety guarantees. NNs suggest and enhance, but deterministic rules remain authoritative.
+
+### Implementation Progress
+
+| Task | Status | Deliverable |
+|------|--------|-------------|
+| Task 1 | ✅ DONE | Updated README, Phase 3 marked complete |
+| Task 2 | ✅ DONE | [Phase 3.5 Roadmap](docs/roadmap/PHASE3_5_ROADMAP.md) |
+| Task 3 | ✅ DONE | [Fine-tuning design doc](docs/roadmap/TASK3_FINETUNING_DESIGN.md) |
+| Task 4 | ✅ DONE | [Anomaly detection design](docs/roadmap/TASK4_ANOMALY_DETECTION_DESIGN.md) |
+| Task 5 | ✅ DONE | Compliance reporting design |
+| Task 6 | ✅ DONE | [Training data generator](scripts/generate_finetuning_data_fast.py) - **4,010 pairs generated** |
+| Task 7 | ⚡ IN PROGRESS | [Fine-tuning script](scripts/finetune_embeddings.py) - Ready to train |
+| Task 8 | 🔄 NEXT | Anomaly detection training |
+| Task 9 | 🔄 NEXT | Integration & deployment |
+| Task 10 | 🔄 NEXT | End-to-end validation |
+
+**Task 6 Complete:** Generated 4,010 training pairs across 6 industrial domains (vehicle, forklift, radar, hvac, electronics, civilian). Multi-format support (TXT, PDF, HTML) with robust error handling. See [Task 6 Summary](docs/roadmap/TASK6_COMPLETION_SUMMARY.md).
+
+**Task 7 Ready:** Fine-tuning script created (420 lines). Loads 4,010 pairs, trains for 5 epochs with domain-aware evaluation, outputs versioned model to `models/nic-embeddings-v1.0/`. See [Task 7 Runbook](docs/roadmap/TASK7_FINETUNING_RUNBOOK.md).
+
+### Planned Features
+
+**1. Domain-Specific Fine-Tuning** (Task 7 - In Progress)
+- **Goal:** Improve retrieval recall on technical terminology by 15-25%
+- **Approach:** 
+  - Fine-tune `sentence-transformers/all-MiniLM-L6-v2` on 4,010 domain pairs
+  - Freeze bottom 10/12 transformer layers, train only top 2 blocks
+  - Use MultipleNegativesRankingLoss for contrastive learning
+  - Evaluate with Recall@5, MRR per domain
+- **Example:** "hydraulic accumulator" matches better than generic "pressure tank"
+- **Status:** Script ready; training starts on user command
+- **Safety:** Advisory only—BM25 fallback if embeddings degrade
+
+**2. Neural Anomaly Detection** (Task 8 - Next)
+- **Goal:** Flag suspicious query patterns for human review
+- **Approach:**
+  - Train lightweight autoencoder on normal query distributions
+  - Score queries for anomalies (e.g., probing, reconnaissance)
+  - Log anomaly scores; **never auto-block**
+- **Output:** Anomaly score in evidence chain for offline analysis
+- **Impact:** Early warning system for security teams
+- **Safety:** Logged only—deterministic rules still handle blocking
+
+**3. Compliance Reporting** (Task 5 - Design Done)
+- **Goal:** Auto-generate audit trails for regulatory review
+- **Output Format:** JSON/PDF reports with:
+  - Session ID, timestamp, operator
+  - Query + grounded answer + source citations
+  - Confidence scores, safety checks passed, anomaly scores
+  - Tamper-evident signatures (SHA-256)
+- **Impact:** Reduces audit preparation from days to minutes
+- **Status:** Extends existing evidence tracking
+
+### Design Principles
+
+**Neural Networks as Advisors, Not Arbiters:**
+- **Advisory:** NNs suggest, log, and enhance—but never override safety rules
+- **Deterministic Core:** Rule-based safety checks remain authoritative
+- **Graceful Degradation:** If NN unavailable, system works (rules + BM25)
+- **Explainability:** NN predictions logged with confidence scores for audit
+- **Versioning:** Model weights treated as immutable, versioned artifacts
+
+**Architecture:**
+```
+Query → NN Anomaly Score (logged)
+     ↓
+     Rule-Based Safety Check (deterministic, blocking)
+     ↓
+     NN Fine-Tuned Embeddings (with BM25 fallback)
+     ↓
+     Deterministic Retrieval + Evidence Logging
+```
+
+**Why Phase 3.5 (Not Phase 3):**
+- Phase 3 focuses on proven, low-risk scalability
+- Phase 3.5 explores ML enhancements without compromising safety
+- Allows NIC to remain certifiable while experimenting with quality improvements
+
+**Full Implementation Status:** See [Phase 3.5 Roadmap](docs/roadmap/PHASE3_5_ROADMAP.md) for detailed task breakdown, architecture, and integration steps.
 
 ---
 
