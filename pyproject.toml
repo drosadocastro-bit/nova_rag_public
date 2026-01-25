@@ -1,12 +1,15 @@
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra -q --strict-markers --cov-report=term-missing"
+addopts = "-ra -q --strict-markers --cov=. --cov-report=term-missing --cov-report=html --cov-fail-under=60"
 testpaths = [
     "tests",
 ]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
+filterwarnings = [
+    "ignore::DeprecationWarning:cache_utils.*",
+]
 
 markers = [
     "unit: Unit tests (fast, no external dependencies)",
@@ -14,10 +17,13 @@ markers = [
     "slow: Slow tests that might timeout",
     "performance: Performance-sensitive tests",
     "smoke: Quick smoke tests for core functionality",
+    "regression: Regression tests for known issues",
 ]
 
 [tool.coverage.run]
 source = ["."]
+branch = true
+parallel = true
 omit = [
     "*/tests/*",
     "*/test_*.py",
@@ -28,12 +34,16 @@ omit = [
     "*/models/*",
     "*/data/*",
     "*/vector_db/*",
+    "*/cache/*",
+    "conftest.py",
+    "setup.py",
 ]
 
 [tool.coverage.report]
 precision = 2
 show_missing = true
 skip_covered = false
+fail_under = 60
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
@@ -43,6 +53,8 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
+    "except ImportError",
+    "except ModuleNotFoundError",
 ]
 
 [tool.coverage.html]
