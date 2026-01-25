@@ -42,16 +42,15 @@ import argparse
 import logging
 import time
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional
 import random
 
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from sentence_transformers import SentenceTransformer, InputExample, losses, models, util
-from sentence_transformers.evaluation import SentenceEvaluator, EmbeddingSimilarityEvaluator
-from sentence_transformers.util import batch_to_device
+from sentence_transformers import SentenceTransformer, InputExample, losses, util
+from sentence_transformers.evaluation import SentenceEvaluator
 
 
 # ============================================================================
@@ -167,10 +166,33 @@ def create_model(
         total_params = 0
         
         # Iterate through transformer layers
-        transformer = model[0].auto_model  # Extract BERT-like model
-        num_layers = len(transformer.encoder.layer)
+        base_module: Any = model[0]
+        transformer: Any = getattr(base_module, "auto_model", None)
+        if transformer is None:
+            logging.warning("auto_model missing on base module; skipping layer freezing")
+            return model
+
+        encoder_layers: List[Any] = []
         
-        for layer_idx, layer in enumerate(transformer.encoder.layer):
+        # Try different ways to extract encoder layers based on model architecture
+        encoder = getattr(transformer, "encoder", None)
+        if encoder is not None:
+            if hasattr(encoder, 'layer') and hasattr(encoder.layer, '__iter__'):
+                # Standard BERT-like models have encoder.layer as ModuleList
+                encoder_layers = list(encoder.layer)
+            elif hasattr(encoder, 'layer'):
+                # Single layer case
+                encoder_layers = [encoder.layer]
+            elif hasattr(encoder, 'layers') and hasattr(encoder.layers, '__iter__'):
+                # Some models use encoder.layers instead
+                encoder_layers = list(encoder.layers)
+            elif hasattr(encoder, 'layers'):
+                # Single layer case
+                encoder_layers = [encoder.layers]
+        
+        num_layers = len(encoder_layers)
+        
+        for layer_idx, layer in enumerate(encoder_layers):
             if layer_idx < num_layers - freeze_layers:
                 for param in layer.parameters():
                     param.requires_grad = False
@@ -223,7 +245,7 @@ class DomainAwareEvaluator(SentenceEvaluator):
             by_domain[domain].append(pair)
         return by_domain
     
-    def __call__(self, model: SentenceTransformer, output_path: str, epoch: int = -1, steps: int = -1) -> float:
+    def __call__(self, model: SentenceTransformer, output_path: str | None = None, epoch: int = -1, steps: int = -1) -> float:
         """Compute evaluation metrics."""
         model.eval()
         
@@ -368,7 +390,7 @@ def train_model(
     best_metric = 0
     best_model_path = None
     
-    logging.info(f"\nStarting training:")
+    logging.info("\nStarting training:")
     logging.info(f"  Epochs: {config.epochs}")
     logging.info(f"  Batch size: {config.batch_size}")
     logging.info(f"  Total steps: {total_steps}")
@@ -397,19 +419,11 @@ def train_model(
             # Forward pass
             optimizer.zero_grad()
             
-            # Encode all texts
-            features = model.tokenize([
-                list(examples[i].texts) for i in range(len(examples))
-            ])
-            
-            # Flatten for loss computation
-            embeddings_list = []
-            for i in range(len(examples)):
-                text_embeddings = model(features[i])
-                embeddings_list.append(text_embeddings)
-            
-            # Compute loss (simplified - ideally use a proper triplet loss)
-            loss = sum(train_loss([ex for ex in examples]) for _ in [0])  # Placeholder
+            # Prepare sentence features using SentenceTransformer's batching utilities
+            sentence_features, _ = model.smart_batching_collate(examples)
+
+            # Compute loss with MultipleNegativesRankingLoss
+            loss = train_loss(sentence_features)
             
             # Backward pass
             loss.backward()
@@ -433,7 +447,7 @@ def train_model(
                 
                 if metric > best_metric:
                     best_metric = metric
-                    best_model_path = Path(output_dir) / f"checkpoint-best"
+                    best_model_path = Path(output_dir) / "checkpoint-best"
                     best_model_path.mkdir(parents=True, exist_ok=True)
                     model.save(str(best_model_path))
                     logging.info(f"Saved best model to {best_model_path}")
