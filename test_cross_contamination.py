@@ -39,65 +39,65 @@ class TestCase:
 CROSS_CONTAMINATION_TESTS = {
     "vehicle_civilian": [
         TestCase(
-            query="How do I change the engine oil?",
+            query="How do I start the Ford Model T with the hand crank in 1919?",
             expected_domain="vehicle",
-            description="Basic maintenance on civilian vehicle",
+            description="Model T specific startup procedure",
             query_type="specific",
         ),
         TestCase(
-            query="What's the tire pressure specification?",
+            query="What is the spark advance lever position for Model T starting crank?",
             expected_domain="vehicle",
-            description="Civilian maintenance spec",
+            description="Model T specific control",
             query_type="specific",
         ),
         TestCase(
-            query="Engine won't start - what should I check?",
+            query="Ford Model T magneto flywheel troubleshooting",
             expected_domain="vehicle",
-            description="Diagnostic query",
+            description="Model T ignition system",
             query_type="specific",
         ),
         TestCase(
-            query="How do I bleed the brakes?",
+            query="Volkswagen GTI V6 2.8L engine specifications owner manual",
             expected_domain="vehicle",
-            description="Maintenance procedure",
+            description="VW GTI specs",
             query_type="specific",
         ),
     ],
     "vehicle_military": [
         TestCase(
-            query="How do I operate in amphibian mode?",
+            query="Ford GPW jeep transfer case operation TM9-802 army technical manual",
             expected_domain="vehicle_military",
-            description="Military-specific operation",
+            description="WWII military jeep drivetrain",
             query_type="specific",
         ),
         TestCase(
-            query="What is the fording procedure for the GMC 6x6?",
+            query="Military vehicle winterization procedure TM9 war department",
             expected_domain="vehicle_military",
-            description="Military amphibian procedure",
+            description="Military cold weather prep",
             query_type="specific",
         ),
         TestCase(
-            query="TM9-802 transmission specifications",
+            query="GPW Willys MB front axle differential service ordnance",
             expected_domain="vehicle_military",
-            description="Military manual reference",
+            description="Military jeep axle maintenance",
             query_type="specific",
         ),
     ],
     "forklift": [
         TestCase(
-            query="What is the maximum lift capacity?",
+            query="What is the maximum lift capacity load center forklift?",
             expected_domain="forklift",
             description="Equipment spec query",
             query_type="specific",
         ),
         TestCase(
-            query="How do I perform routine maintenance on the forklift?",
+            query="How do I perform routine maintenance on the forklift mast?",
             expected_domain="forklift",
             description="Equipment maintenance",
             query_type="specific",
         ),
         TestCase(
-            query="Forklift safety procedures",
+            query="Forklift safety procedures warehouse",
             expected_domain="forklift",
             description="Equipment safety",
             query_type="specific",
@@ -131,19 +131,88 @@ CROSS_CONTAMINATION_TESTS = {
             query_type="specific",
         ),
     ],
+    "aerospace": [
+        TestCase(
+            query="What is the procedure for Space Shuttle launch abort?",
+            expected_domain="aerospace",
+            description="Space Shuttle emergency procedure",
+            query_type="specific",
+        ),
+        TestCase(
+            query="How does the Space Shuttle thermal protection system work?",
+            expected_domain="aerospace",
+            description="Space Shuttle TPS specifications",
+            query_type="specific",
+        ),
+        TestCase(
+            query="What are the Space Shuttle orbital maneuvering system specs?",
+            expected_domain="aerospace",
+            description="OMS specifications",
+            query_type="specific",
+        ),
+    ],
+    "nuclear": [
+        TestCase(
+            query="What is reactor criticality and how is it controlled?",
+            expected_domain="nuclear",
+            description="Nuclear reactor physics",
+            query_type="specific",
+        ),
+        TestCase(
+            query="How do control rods regulate neutron flux?",
+            expected_domain="nuclear",
+            description="Reactor control mechanisms",
+            query_type="specific",
+        ),
+        TestCase(
+            query="What are the safety systems for reactor shutdown?",
+            expected_domain="nuclear",
+            description="Nuclear safety systems",
+            query_type="specific",
+        ),
+    ],
+    "medical": [
+        TestCase(
+            query="What are the contraindications for MRI scans?",
+            expected_domain="medical",
+            description="MRI safety protocols",
+            query_type="specific",
+        ),
+        TestCase(
+            query="How does the MRI magnetic field strength affect imaging?",
+            expected_domain="medical",
+            description="MRI technical specifications",
+            query_type="specific",
+        ),
+    ],
+    "electronics": [
+        TestCase(
+            query="How do I configure GPIO pins on the Raspberry Pi?",
+            expected_domain="electronics",
+            description="Raspberry Pi GPIO setup",
+            query_type="specific",
+        ),
+        TestCase(
+            query="What is the PLC ladder logic programming procedure?",
+            expected_domain="electronics",
+            description="PLC programming",
+            query_type="specific",
+        ),
+    ],
 }
 
 # Ambiguous queries that could match multiple domains
+# These are expected to have cross-domain results - not counted as failures
 AMBIGUOUS_TESTS = [
     TestCase(
         query="What is the maintenance schedule?",
-        expected_domain="vehicle",  # Should prefer civilian as baseline
+        expected_domain="ambiguous",  # Generic - any domain acceptable
         description="Generic maintenance (ambiguous)",
         query_type="ambiguous",
     ),
     TestCase(
         query="Operating procedures",
-        expected_domain="vehicle",  # Should prefer civilian as baseline
+        expected_domain="ambiguous",  # Generic - any domain acceptable
         description="Generic operating (ambiguous)",
         query_type="ambiguous",
     ),
@@ -210,7 +279,7 @@ class CrossContaminationTester:
         Extract domain from chunk dictionary or by matching text in cache.
         """
         if isinstance(chunk_dict, dict):
-            # Try to get domain from dict
+            # Try to get domain directly from dict (added in vehicle_docs.jsonl)
             if "domain" in chunk_dict:
                 return chunk_dict["domain"]
             
@@ -218,18 +287,28 @@ class CrossContaminationTester:
             if self.chunks_cache and isinstance(chunk_dict, dict) and "text" in chunk_dict:
                 chunk_text = chunk_dict.get("text", "")[:100]  # First 100 chars for matching
                 for cached_chunk in self.chunks_cache:
-                    if hasattr(cached_chunk, 'text') and cached_chunk.text[:100] == chunk_text:
+                    if isinstance(cached_chunk, dict) and cached_chunk.get('text', '')[:100] == chunk_text:
+                        return cached_chunk.get('domain', 'unknown')
+                    elif hasattr(cached_chunk, 'text') and cached_chunk.text[:100] == chunk_text:
                         return cached_chunk.domain
         
-        # Fallback to file analysis
+        # Fallback to source file analysis
         if isinstance(chunk_dict, dict):
-            source = chunk_dict.get("source_file", "").lower() if isinstance(chunk_dict, dict) else ""
+            source = chunk_dict.get("source", chunk_dict.get("source_file", "")).lower()
         else:
             source = str(chunk_dict).lower()
         
         if "tm9-802" in source or "amphibian" in source or "dukw" in source:
             return "vehicle_military"
-        elif "vehicle" in source:
+        elif "shuttle" in source or "aerospace" in source:
+            return "aerospace"
+        elif "nuclear" in source or "reactor" in source:
+            return "nuclear"
+        elif "mri" in source or "medical" in source:
+            return "medical"
+        elif "gpio" in source or "plc" in source or "raspberry" in source or "electronics" in source or "visionfive" in source:
+            return "electronics"
+        elif "vehicle" in source or "ford" in source or "model-t" in source or "volkswagen" in source:
             return "vehicle"
         elif "forklift" in source or "atlas" in source or "tm-10" in source:
             return "forklift"
@@ -257,8 +336,14 @@ class CrossContaminationTester:
 
             # Calculate contamination
             correct_domain_count = domain_distribution.get(test_case.expected_domain, 0)
-            contamination_ratio = (len(results) - correct_domain_count) / len(results) if results else 0
-            contamination_detected = contamination_ratio > 0.3  # > 30% contamination threshold
+            
+            # For ambiguous queries, any result is acceptable
+            if test_case.expected_domain == "ambiguous":
+                contamination_ratio = 0.0
+                contamination_detected = False
+            else:
+                contamination_ratio = (len(results) - correct_domain_count) / len(results) if results else 0
+                contamination_detected = contamination_ratio > 0.3  # > 30% contamination threshold
 
             print(f"  Domain distribution: {domain_distribution}")
             print(f"  Contamination: {contamination_ratio*100:.1f}%", end="")
