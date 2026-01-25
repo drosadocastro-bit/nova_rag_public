@@ -17,10 +17,9 @@ import torch
 from sentence_transformers import (
     SentenceTransformer,
     InputExample,
-    losses,
-    evaluation
+    losses
 )
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 # Setup logging
 logging.basicConfig(
@@ -67,6 +66,19 @@ def split_train_val(pairs: List[Dict], val_ratio: float = 0.1) -> tuple:
     
     logging.info(f"Train/Val split: {len(train_pairs)}/{len(val_pairs)} ({val_ratio*100:.1f}% val)")
     return train_pairs, val_pairs
+
+
+class InputExampleDataset(Dataset):
+    """Wrapper to convert InputExample list to a PyTorch Dataset."""
+    
+    def __init__(self, examples: List[InputExample]):
+        self.examples = examples
+    
+    def __len__(self):
+        return len(self.examples)
+    
+    def __getitem__(self, idx):
+        return self.examples[idx]
 
 
 def main():
@@ -118,7 +130,6 @@ def main():
         )
     
     # Convert validation pairs
-    val_examples = []
     val_queries = []
     val_corpus = {}
     val_relevant_docs = {}
@@ -137,14 +148,14 @@ def main():
     
     # Create DataLoader
     train_dataloader = DataLoader(
-        train_examples,
+        InputExampleDataset(train_examples),
         shuffle=True,
         batch_size=args.batch_size
     )
     
     # Create loss
     train_loss = losses.MultipleNegativesRankingLoss(model)
-    logging.info(f"Initialized MultipleNegativesRankingLoss")
+    logging.info("Initialized MultipleNegativesRankingLoss")
     
     # Create evaluator
     evaluator = None  # Skip evaluation for faster training
@@ -177,10 +188,10 @@ def main():
     logging.info("\n" + "="*70)
     logging.info("TASK 7 COMPLETE ✓")
     logging.info("="*70)
-    logging.info(f"\nTo use the fine-tuned model:")
-    logging.info(f"  from sentence_transformers import SentenceTransformer")
-    logging.info(f"  model = SentenceTransformer('{args.output_dir}')")
-    logging.info(f"  embeddings = model.encode(['your query here'])")
+    logging.info("\nTo use the fine-tuned model:")
+    logging.info("  from sentence_transformers import SentenceTransformer")
+    logging.info("  model = SentenceTransformer('%s')", args.output_dir)
+    logging.info("  embeddings = model.encode(['your query here'])")
 
 
 def create_model_card(output_dir: Path, train_pairs: List[Dict], val_pairs: List[Dict], args):
