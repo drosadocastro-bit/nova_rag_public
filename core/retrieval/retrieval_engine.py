@@ -11,12 +11,14 @@ import json
 import os
 import re
 from collections import defaultdict
+from importlib.util import find_spec
+from math import log
 from pathlib import Path
-from typing import Any, Tuple
 
 import faiss
 import torch
 from joblib import load as joblib_load
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 from core.utils.text_processing import (
     load_pdf_text_with_pages,
@@ -24,14 +26,7 @@ from core.utils.text_processing import (
 )
 
 # Import secure pickle if available (used for BM25 cache)
-try:
-    from secure_cache import secure_pickle_dump, secure_pickle_load
-
-    SECURE_CACHE_AVAILABLE = True
-except ImportError:  # pragma: no cover - fallback when secure_cache is missing
-    import pickle  # type: ignore
-
-    SECURE_CACHE_AVAILABLE = False
+SECURE_CACHE_AVAILABLE = find_spec("secure_cache") is not None
 
 # Optional GAR expansion
 try:
@@ -52,6 +47,20 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 DOCS_DIR = BASE_DIR / "data"
 INDEX_DIR = BASE_DIR / "vector_db"
 INDEX_DIR.mkdir(parents=True, exist_ok=True)
+
+ANOMALY_DETECTOR_ENABLED = os.environ.get("NOVA_ANOMALY_DETECTOR", "0") == "1"
+ANOMALY_MODEL_PATH = Path(
+    os.environ.get(
+        "NOVA_ANOMALY_MODEL",
+        str(BASE_DIR / "models" / "anomaly_detector_v1.0.pth"),
+    )
+)
+ANOMALY_CONFIG_PATH = Path(
+    os.environ.get(
+        "NOVA_ANOMALY_CONFIG",
+        str(BASE_DIR / "models" / "anomaly_detector_v1.0_config.json"),
+    )
+)
 
 INDEX_PATH = INDEX_DIR / "vehicle_index.faiss"
 DOCS_PATH = INDEX_DIR / "vehicle_docs.jsonl"
@@ -85,6 +94,9 @@ os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 print("[NovaRAG] Text embedding model will load lazily when needed...")
 text_embed_model = None
 text_embed_model_error: str | None = None
+
+anomaly_detector = None
+anomaly_detector_error: str | None = None
 
 
 def get_text_embed_model():
@@ -137,6 +149,31 @@ def get_cross_encoder():
         print("[NovaRAG] Loading cross-encoder for reranking...")
         cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
     return cross_encoder
+
+
+def get_anomaly_detector():
+    """Load anomaly detector if enabled and artifacts exist."""
+    global anomaly_detector, anomaly_detector_error
+    if not ANOMALY_DETECTOR_ENABLED:
+        return None
+    if anomaly_detector is not None:
+        return anomaly_detector
+    try:
+        from core.safety.anomaly_detector import AnomalyDetector
+
+        if not ANOMALY_MODEL_PATH.exists() or not ANOMALY_CONFIG_PATH.exists():
+            anomaly_detector_error = "Anomaly detector artifacts missing"
+            print(
+                f"[NovaRAG] Anomaly detector disabled: missing {ANOMALY_MODEL_PATH} or {ANOMALY_CONFIG_PATH}"
+            )
+            return None
+        anomaly_detector = AnomalyDetector(ANOMALY_MODEL_PATH, ANOMALY_CONFIG_PATH)
+        print("[NovaRAG] Anomaly detector loaded")
+        return anomaly_detector
+    except Exception as e:  # pragma: no cover - runtime logging
+        anomaly_detector_error = str(e)
+        print(f"[NovaRAG] Failed to load anomaly detector: {e}")
+        return None
 
 
 if not DISABLE_VISION:
@@ -213,8 +250,6 @@ USE_VISION_AWARE_RERANKER = (
 # TF-IDF CACHE (vision reranker)
 # =======================
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-
 
 tfidf_vectorizer = None
 tfidf_vectorizer_fitted = False
@@ -228,8 +263,6 @@ def init_tfidf_vectorizer():
         return
 
     try:
-        import numpy as np
-
         if not DOCS_PATH.exists():
             print("[NovaRAG] TF-IDF: Docs file not found, skipping cache init")
             return
@@ -437,8 +470,6 @@ if USE_VISION_AWARE_RERANKER and bool(os.environ.get("NOVA_INIT_TFIDF_CACHE", "0
 # BM25 INDEX
 # =======================
 
-from math import log
-
 _BM25_INDEX: dict[str, dict[int, int]] = {}
 _BM25_DOC_LEN: list[int] = []
 _BM25_AVGDL: float = 0.0
@@ -499,6 +530,7 @@ def _load_bm25_index() -> bool:
             print("[NovaRAG] BM25 cache invalid (corpus changed); rebuilding...")
             return False
         if SECURE_CACHE_AVAILABLE:
+            from secure_cache import secure_pickle_load
             data = secure_pickle_load(BM25_CACHE_PATH)
         else:
             import pickle
@@ -604,6 +636,198 @@ def lexical_retrieve(query: str, k: int = 12, top_n: int = 6) -> list[dict]:
 # =======================
 
 
+def _apply_anomaly_metadata(results: list[dict], query: str, text_model) -> None:
+    if not results or text_model is None:
+        return
+    detector = get_anomaly_detector()
+    if detector is None:
+        return
+    try:
+        embedding = text_model.encode([query], convert_to_numpy=True)
+        anomaly = detector.score_embedding(embedding[0])
+        for d in results:
+            d["anomaly_score"] = anomaly.score
+            d["anomaly_threshold"] = anomaly.threshold
+            d["anomaly_flag"] = anomaly.flagged
+            d["anomaly_category"] = anomaly.category
+    except Exception as e:  # pragma: no cover - runtime logging
+        print(f"[NovaRAG] Anomaly scoring failed: {e}")
+
+
+# =======================
+# DOMAIN INTENT CLASSIFIER
+# =======================
+
+# Enable/disable domain boosting via environment variable
+DOMAIN_BOOST_ENABLED = os.environ.get("NOVA_DOMAIN_BOOST", "1") == "1"
+DOMAIN_BOOST_FACTOR = float(os.environ.get("NOVA_DOMAIN_BOOST_FACTOR", "0.25"))
+
+# Domain-specific vocabulary for intent classification
+_DOMAIN_VOCABULARY: dict[str, set[str]] = {
+    "vehicle": {
+        # Civilian vehicle manufacturers and models
+        "ford model t", "model t", "volkswagen", "vw", "gti", "jetta", "passat",
+        "toyota", "honda", "chevrolet", "chevy", "bmw", "mercedes", "audi",
+        "hand crank", "magneto", "spark advance", "throttle lever", "choke",
+        # Consumer auto terms - civilian-specific
+        "car", "sedan", "suv", "minivan", "pickup truck", "passenger vehicle",
+        "dealership", "warranty", "owner manual", "driver", "mpg", "fuel economy",
+        # Model T specific
+        "1919", "1920", "1921", "1922", "1923", "1924", "1925", "1926", "1927",
+        "starting crank", "planetary transmission", "pedal", "ignition coil",
+        "flywheel magneto", "timer", "commutator", "trembler coil",
+        # Civilian operation terms
+        "parking", "highway", "traffic", "garage", "commute", "roadtrip",
+    },
+    "vehicle_military": {
+        # Military vehicle designations - must include these
+        "tm9-802", "tm-9-802", "tm9", "gpw", "willys mb", "willys", "mb",
+        "jeep", "military jeep", "quarter-ton", "1/4 ton", "4x4 military",
+        "gmc 6x6", "6x6", "dukw", "duck", "amphibian", "amphibious",
+        # Military-specific operation terms
+        "fording", "water crossing", "winterization", "blackout", "convoy",
+        "tactical", "combat", "field maintenance", "depot", "ordnance",
+        "army", "military", "war department", "technical manual",
+        # GPW/MB specific components
+        "transfer case", "front axle", "rear axle", "differential",
+        "pintle hook", "jerry can", "blackout light", "pioneer tools",
+        "tow bar", "winch", "power takeoff", "pto",
+        # WWII context
+        "wwii", "world war", "1941", "1942", "1943", "1944", "1945",
+        "enlisted", "officer", "soldier", "troop", "battalion", "regiment",
+    },
+    "forklift": {
+        # Forklift-specific terms
+        "forklift", "fork lift", "lift truck", "pallet jack", "mast",
+        "forks", "fork tines", "lift capacity", "load center", "counterweight",
+        "overhead guard", "tm-10-3930", "tm10-3930", "atlas", "rough terrain",
+        # Material handling
+        "warehouse", "pallet", "loading dock", "stacking", "cargo handling",
+    },
+    "aerospace": {
+        # Space Shuttle and aerospace
+        "space shuttle", "shuttle", "orbiter", "sts", "nasa", "kennedy",
+        "launch", "orbit", "reentry", "thermal protection", "tps", "tiles",
+        "oms", "rcs", "apu", "ssme", "srb", "external tank", "payload bay",
+        "mission control", "astronaut", "crew", "eva", "spacewalk",
+    },
+    "nuclear": {
+        # Nuclear reactor terminology
+        "reactor", "nuclear", "fission", "criticality", "neutron", "flux",
+        "control rod", "moderator", "coolant", "fuel rod", "containment",
+        "scram", "decay heat", "half-life", "shielding", "radiation",
+        "meltdown", "core", "enrichment", "uranium", "plutonium",
+    },
+    "medical": {
+        # MRI and medical imaging
+        "mri", "magnetic resonance", "imaging", "scanner", "tesla",
+        "contraindication", "pacemaker", "ferromagnetic", "gradient coil",
+        "rf coil", "contrast agent", "gadolinium", "patient", "radiologist",
+        "diagnosis", "scan", "slice", "fov", "field of view",
+    },
+    "electronics": {
+        # Electronics and embedded systems
+        "gpio", "raspberry pi", "rpi", "arduino", "plc", "ladder logic",
+        "visionfive", "risc-v", "embedded", "microcontroller", "i2c", "spi",
+        "uart", "pwm", "adc", "dac", "pullup", "interrupt", "pin",
+        "breadboard", "circuit", "voltage", "current", "resistor",
+    },
+    "hvac": {
+        # HVAC terminology
+        "hvac", "air conditioning", "heat pump", "furnace", "thermostat",
+        "refrigerant", "r-410a", "freon", "compressor", "evaporator",
+        "condenser", "ductwork", "carrier", "trane", "lennox", "btu", "seer",
+        "cooling", "heating", "ventilation", "air handler",
+    },
+    "radar": {
+        # Radar and weather systems
+        "radar", "wxr", "weather radar", "antenna", "sweep", "tilt", "gain",
+        "reflectivity", "precipitation", "turbulence", "wind shear",
+        "multiscan", "range", "bearing", "azimuth", "target", "echo",
+        "doppler", "airborne weather", "cockpit", "avionics",
+    },
+}
+
+
+def detect_domain_intent(query: str) -> tuple[str | None, float]:
+    """
+    Detect the likely target domain based on query vocabulary.
+    
+    Returns:
+        Tuple of (domain_name, confidence) where confidence is 0.0-1.0.
+        Returns (None, 0.0) if no strong domain signal detected.
+    """
+    q_lower = query.lower()
+    
+    domain_scores: dict[str, float] = {}
+    
+    for domain, vocabulary in _DOMAIN_VOCABULARY.items():
+        score = 0.0
+        matches = 0
+        for term in vocabulary:
+            if term in q_lower:
+                # Longer terms get more weight
+                term_weight = 1.0 + (len(term.split()) - 1) * 0.5
+                score += term_weight
+                matches += 1
+        
+        if matches > 0:
+            # Normalize by number of matches for consistency
+            domain_scores[domain] = score
+    
+    if not domain_scores:
+        return None, 0.0
+    
+    # Find best matching domain
+    best_domain = max(domain_scores, key=domain_scores.get)  # type: ignore[arg-type]
+    best_score = domain_scores[best_domain]
+    
+    # Calculate confidence based on score gap to second-best
+    sorted_scores = sorted(domain_scores.values(), reverse=True)
+    if len(sorted_scores) > 1:
+        gap = sorted_scores[0] - sorted_scores[1]
+        confidence = min(1.0, 0.5 + gap * 0.2)
+    else:
+        confidence = min(1.0, 0.5 + best_score * 0.1)
+    
+    return best_domain, confidence
+
+
+def apply_domain_boost(
+    candidates: list[dict],
+    scores: list[float],
+    target_domain: str,
+    boost_factor: float = 0.15,
+) -> list[float]:
+    """
+    Apply a score boost to candidates matching the target domain.
+    
+    Args:
+        candidates: List of candidate documents
+        scores: Current relevance scores
+        target_domain: Domain to boost
+        boost_factor: How much to boost matching domain (default 0.15)
+        
+    Returns:
+        Updated scores with domain boost applied
+    """
+    boosted_scores = []
+    for i, cand in enumerate(candidates):
+        doc_domain = cand.get("domain", "")
+        score = scores[i]
+        
+        if doc_domain == target_domain:
+            # Boost matching domain
+            score = min(1.0, score + boost_factor)
+        elif doc_domain:
+            # Slight penalty for non-matching domains
+            score = max(0.0, score - boost_factor * 0.3)
+        
+        boosted_scores.append(score)
+    
+    return boosted_scores
+
+
 def retrieve(
     query: str,
     k: int = 12,
@@ -629,11 +853,22 @@ def retrieve(
                 for d in bm25_docs:
                     norm_score = d.get("bm25_score", 0) / max_score
                     d["confidence"] = 0.5 + (norm_score * 0.45)
+            _apply_anomaly_metadata(bm25_docs, query, text_model)
             return bm25_docs[:top_n]
-        return lexical_retrieve(query, k=k, top_n=top_n)
+        lexical_docs = lexical_retrieve(query, k=k, top_n=top_n)
+        _apply_anomaly_metadata(lexical_docs, query, text_model)
+        return lexical_docs
 
+    # Detect domain intent early for domain-aware retrieval
+    early_domain, early_confidence = None, 0.0
+    if DOMAIN_BOOST_ENABLED:
+        early_domain, early_confidence = detect_domain_intent(original_query)
+
+    # Over-fetch to allow domain filtering
+    fetch_k = k * 3 if early_domain and early_confidence >= 0.6 else k
+    
     q_emb = text_model.encode([query], convert_to_numpy=True)
-    distances, indices = index.search(q_emb, k)  # type: ignore[call-arg]
+    distances, indices = index.search(q_emb, fetch_k)  # type: ignore[call-arg]
 
     candidates = []
     for idx in indices[0]:
@@ -642,7 +877,7 @@ def retrieve(
 
     if HYBRID_SEARCH_ENABLED:
         try:
-            bm25_candidates = bm25_retrieve(query, k=k, top_n=k)
+            bm25_candidates = bm25_retrieve(query, k=fetch_k, top_n=fetch_k)
             seen = set((c.get("id"), c.get("source"), c.get("page")) for c in candidates)
             for d_bm in bm25_candidates:
                 key = (d_bm.get("id"), d_bm.get("source"), d_bm.get("page"))
@@ -651,6 +886,16 @@ def retrieve(
                     seen.add(key)
         except Exception as e:  # pragma: no cover
             print(f"[NovaRAG] Hybrid BM25 union failed: {e}")
+    
+    # Domain-aware pre-filtering: prioritize matching domain
+    if early_domain and early_confidence >= 0.6 and len(candidates) > k:
+        matching = [c for c in candidates if c.get("domain") == early_domain]
+        non_matching = [c for c in candidates if c.get("domain") != early_domain]
+        # Prioritize matching domain, but keep some non-matching for diversity
+        target_matching = int(k * 0.8)  # 80% from target domain
+        target_other = k - target_matching
+        candidates = matching[:target_matching] + non_matching[:target_other]
+    
     if not candidates:
         return []
 
@@ -813,6 +1058,16 @@ def retrieve(
         b_n = b / (np.linalg.norm(b) + 1e-12)
         return float(np.dot(a_n, b_n))
 
+    # Apply domain boosting if enabled
+    detected_domain = None
+    if DOMAIN_BOOST_ENABLED:
+        detected_domain, domain_confidence = detect_domain_intent(original_query)
+        if detected_domain and domain_confidence >= 0.5:
+            sim_to_q = apply_domain_boost(
+                candidates, sim_to_q, detected_domain, DOMAIN_BOOST_FACTOR
+            )
+            print(f"[Domain] Detected: {detected_domain} (confidence: {domain_confidence:.2f})")
+
     selected = []
     selected_embs = []
     selected_scores = []
@@ -843,7 +1098,58 @@ def retrieve(
         doc["confidence"] = float(selected_scores[i])
         results.append(doc)
 
+    _apply_anomaly_metadata(results, query, text_model)
     return results
+
+
+class RetrievalEngine:
+    """Thin wrapper class for compatibility with older tests."""
+
+    def __init__(self):
+        self.index = index
+        self.docs = docs
+        self._BM25_INDEX = _BM25_INDEX
+        self._BM25_DOC_LEN = _BM25_DOC_LEN
+        self._BM25_AVGDL = _BM25_AVGDL
+        self._BM25_READY = _BM25_READY
+
+    @staticmethod
+    def get_text_embed_model():
+        return get_text_embed_model()
+
+    @staticmethod
+    def get_anomaly_detector():
+        return get_anomaly_detector()
+
+    def _sync_to_module(self) -> None:
+        global index, docs, _BM25_INDEX, _BM25_DOC_LEN, _BM25_AVGDL, _BM25_READY
+        index = self.index
+        docs = self.docs
+        _BM25_INDEX = self._BM25_INDEX
+        _BM25_DOC_LEN = self._BM25_DOC_LEN
+        _BM25_AVGDL = self._BM25_AVGDL
+        _BM25_READY = self._BM25_READY
+
+    def retrieve(
+        self,
+        query: str,
+        k: int = 12,
+        top_n: int = 6,
+        lambda_diversity: float = 0.5,
+        use_reranker: bool = True,
+        use_sklearn_reranker: bool | None = None,
+        use_gar: bool = True,
+    ) -> list[dict]:
+        self._sync_to_module()
+        return retrieve(
+            query,
+            k=k,
+            top_n=top_n,
+            lambda_diversity=lambda_diversity,
+            use_reranker=use_reranker,
+            use_sklearn_reranker=use_sklearn_reranker,
+            use_gar=use_gar,
+        )
 
 
 # =======================
@@ -970,8 +1276,10 @@ __all__ = [
     "HYBRID_SEARCH_ENABLED",
     "EMBED_BATCH_SIZE",
     "text_embed_model_error",
+    "anomaly_detector_error",
     "get_text_embed_model",
     "get_cross_encoder",
+    "get_anomaly_detector",
     "ensure_vision_loaded",
     "build_index",
     "load_index",
@@ -980,6 +1288,7 @@ __all__ = [
     "bm25_retrieve",
     "lexical_retrieve",
     "retrieve",
+    "RetrievalEngine",
     "detect_error_code",
     "boost_error_docs",
     "_boost_error_docs",
