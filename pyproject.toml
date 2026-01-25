@@ -10,6 +10,8 @@ python_functions = "test_*"
 filterwarnings = [
     "ignore::DeprecationWarning:cache_utils.*",
 ]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 markers = [
     "unit: Unit tests (fast, no external dependencies)",
@@ -18,6 +20,7 @@ markers = [
     "performance: Performance-sensitive tests",
     "smoke: Quick smoke tests for core functionality",
     "regression: Regression tests for known issues",
+    "asyncio: Async tests using pytest-asyncio",
 ]
 
 [tool.coverage.run]
