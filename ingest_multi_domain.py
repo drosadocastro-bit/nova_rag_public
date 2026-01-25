@@ -5,24 +5,37 @@ Extracts PDFs from data/ subdirectories, tags by domain, chunks text,
 and stores in FAISS with metadata for measuring retrieval accuracy by domain.
 """
 
-import os
 import re
 import pickle
 import json
 import faiss
 import numpy as np
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 from dataclasses import dataclass, asdict
 from sentence_transformers import SentenceTransformer
 import pdfplumber
 
 # Optional HTML support
 try:
-    from bs4 import BeautifulSoup
+    import bs4  # noqa: F401 - imported for availability check
     HTML_SUPPORT_AVAILABLE = True
 except ImportError:
     HTML_SUPPORT_AVAILABLE = False
+
+# Optional OCR support for scanned PDFs
+try:
+    from pdf2image import convert_from_path
+    import pytesseract
+    # Set Tesseract path for Windows if not in PATH
+    import shutil
+    if shutil.which("tesseract") is None:
+        tesseract_path = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
+        if tesseract_path.exists():
+            pytesseract.pytesseract.tesseract_cmd = str(tesseract_path)
+    OCR_AVAILABLE = True
+except ImportError:
+    OCR_AVAILABLE = False
 
 # Configuration
 DATA_DIR = Path("data")
@@ -60,6 +73,26 @@ DOMAIN_CONFIG = {
         "keywords": ["radar", "weather", "detection", "signal", "operator"],
         "priority": 5,
     },
+    "aerospace": {
+        "type": "technical",
+        "keywords": ["shuttle", "space", "flight", "orbit", "nasa", "rocket"],
+        "priority": 6,
+    },
+    "electronics": {
+        "type": "technical",
+        "keywords": ["plc", "gpio", "raspberry", "pi", "circuit", "microcontroller"],
+        "priority": 7,
+    },
+    "nuclear": {
+        "type": "technical",
+        "keywords": ["reactor", "nuclear", "fission", "neutron", "radiation"],
+        "priority": 8,
+    },
+    "medical": {
+        "type": "technical",
+        "keywords": ["mri", "imaging", "scanner", "patient", "diagnostic"],
+        "priority": 9,
+    },
 }
 
 # Domain folder mapping
@@ -69,6 +102,18 @@ DOMAIN_FOLDERS = {
     "forklift": "forklift",
     "hvac": "hvac",
     "radar": "radar",
+    "aerospace": "aerospace",
+    "electronics": "electronics",
+    "nuclear": "nuclear",
+    "medical": "medical",
+}
+
+# Scanned PDFs that require OCR (will use OCR if available, skip otherwise)
+SCANNED_PDFS = {
+    "Space Shuttle Operator's Manual.pdf",
+    "The Space Shuttle Operator's Manual.pdf",
+    "Ford Model T Manual 1919.pdf",
+    "Ford-Model-T-Man-1919.pdf",
 }
 
 
@@ -105,11 +150,49 @@ class MultiDomainIngester:
         methods = ["pdfplumber"]
         try:
             with pdfplumber.open(pdf_path) as pdf:
-                for page in pdf.pages:
-                    text += page.extract_text() or ""
+                failed_pages = 0
+                for page_num, page in enumerate(pdf.pages):
+                    try:
+                        page_text = page.extract_text() or ""
+                        if page_text.strip():
+                            text += page_text + "\n\n"  # Add separator between pages
+                    except Exception:
+                        # Skip problematic pages but continue with others
+                        failed_pages += 1
+                        continue
+                if failed_pages > 0:
+                    method = f"pdfplumber ({failed_pages} pages failed)"
         except Exception:
             text = ""
-        return text, method, methods
+        return text.strip(), method, methods
+
+    def extract_text_with_ocr(self, pdf_path: Path) -> Tuple[str, str, List[str]]:
+        """
+        Extract text from scanned PDF using OCR (pytesseract + pdf2image).
+        Returns (text, extraction_method, methods_attempted)
+        """
+        if not OCR_AVAILABLE:
+            return "", "ocr_unavailable", ["ocr"]
+        
+        text = ""
+        method = "ocr"
+        methods = ["ocr"]
+        try:
+            # Convert PDF pages to images
+            images = convert_from_path(pdf_path, dpi=150)  # Lower DPI for speed
+            for i, image in enumerate(images):
+                try:
+                    page_text = pytesseract.image_to_string(image) or ""
+                    if page_text.strip():
+                        text += page_text + "\n\n"
+                except Exception:
+                    continue
+            if text.strip():
+                method = f"ocr ({len(images)} pages)"
+        except Exception as e:
+            method = f"ocr_failed: {str(e)[:50]}"
+            text = ""
+        return text.strip(), method, methods
 
     def extract_text_from_html(self, html_path: Path) -> Tuple[str, bool]:
         """
@@ -170,14 +253,35 @@ class MultiDomainIngester:
     ) -> List[str]:
         """Split text into overlapping chunks, preferring paragraph boundaries."""
         chunks = []
-        paragraphs = text.split('\n\n')
-
-        current_chunk = ""
+        
+        # Normalize text: split on any sequence of 2+ newlines or treat single newlines as breaks
+        # This handles both plain text (double newlines) and PDFs (single newlines between lines)
+        paragraphs = re.split(r'\n\s*\n', text)
+        
+        # Further split very long paragraphs at sentence boundaries
+        processed_paragraphs = []
         for para in paragraphs:
             para = para.strip()
             if not para:
                 continue
+            # If paragraph is too long, split at sentence boundaries
+            if len(para) > chunk_size * 2:
+                # Split on sentence endings
+                sentences = re.split(r'(?<=[.!?])\s+', para)
+                current = ""
+                for sent in sentences:
+                    if len(current) + len(sent) > chunk_size and current:
+                        processed_paragraphs.append(current.strip())
+                        current = sent
+                    else:
+                        current += " " + sent if current else sent
+                if current:
+                    processed_paragraphs.append(current.strip())
+            else:
+                processed_paragraphs.append(para)
 
+        current_chunk = ""
+        for para in processed_paragraphs:
             # If adding this paragraph would exceed chunk size
             if len(current_chunk) + len(para) > chunk_size and current_chunk:
                 chunks.append(current_chunk.strip())
@@ -188,9 +292,14 @@ class MultiDomainIngester:
                 current_chunk = overlap_text + " " + para
             else:
                 current_chunk += " " + para if current_chunk else para
+            
+            # Force split if current chunk exceeds 2x target (safety valve)
+            while len(current_chunk) > chunk_size * 2:
+                chunks.append(current_chunk[:chunk_size].strip())
+                current_chunk = current_chunk[chunk_size - overlap:]
 
         # Add the last chunk
-        if current_chunk:
+        if current_chunk.strip():
             chunks.append(current_chunk.strip())
 
         return chunks
@@ -215,20 +324,34 @@ class MultiDomainIngester:
 
             domain_chunks = 0
 
-            # Process PDFs
-            for pdf_file in folder_path.glob("*.pdf"):
-                print(f"  [PDF] {pdf_file.name}...", end=" ", flush=True)
+            # Process PDFs (including subdirectories with rglob)
+            for pdf_file in folder_path.rglob("*.pdf"):
+                # Show relative path for subdirectory PDFs
+                rel_path = pdf_file.relative_to(folder_path)
+                print(f"  [PDF] {rel_path}...", end=" ", flush=True)
 
-                text, method, methods = self.extract_text_from_pdf(pdf_file)
-                if not text:
-                    print(f"(extraction failed: {' → '.join(methods)})")
-                    continue
+                # Check if this is a scanned PDF requiring OCR
+                if pdf_file.name in SCANNED_PDFS:
+                    if OCR_AVAILABLE:
+                        text, method, methods = self.extract_text_with_ocr(pdf_file)
+                        if not text:
+                            print(f"(OCR failed: {method})")
+                            continue
+                    else:
+                        print("(skipped: scanned PDF, OCR not available)")
+                        continue
+                else:
+                    text, method, methods = self.extract_text_from_pdf(pdf_file)
+                    if not text:
+                        print(f"(extraction failed: {' → '.join(methods)})")
+                        continue
 
                 detected_domain, domain_type = self.detect_domain(text, pdf_file.name)
-                if detected_domain != domain_id and domain_id != "vehicle_military":
-                    # Override detection if folder suggests otherwise
+                # Always use folder domain for files in domain-specific folders
+                # The folder structure is the authoritative source of domain assignment
+                if detected_domain != domain_id:
                     detected_domain = domain_id
-                    domain_type = DOMAIN_CONFIG[domain_id]["type"]
+                    domain_type = DOMAIN_CONFIG.get(domain_id, {}).get("type", "general")
 
                 chunks = self.split_into_chunks(text)
                 print(f"{len(chunks)} chunks [{method}]")
@@ -357,7 +480,7 @@ class MultiDomainIngester:
 
     def create_vector_index(self) -> faiss.IndexFlatL2:
         """Create FAISS index from chunks."""
-        print(f"\n[PROGRESS] Creating vector embeddings...")
+        print("\n[PROGRESS] Creating vector embeddings...")
         print(f"   Encoding {len(self.chunks)} chunks...")
 
         chunk_texts = [chunk.text for chunk in self.chunks]
@@ -445,8 +568,8 @@ def main():
         # Print statistics
         ingester.print_domain_statistics()
 
-        print(f"\n[OK] Multi-domain ingestion pipeline complete!")
-        print(f"   Ready for cross-contamination testing")
+        print("\n[OK] Multi-domain ingestion pipeline complete!")
+        print("   Ready for cross-contamination testing")
 
     except Exception as e:
         print(f"\n[ERROR] Ingestion failed: {e}")
