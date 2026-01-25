@@ -384,10 +384,10 @@
       "aft",
       "back section"
     ],
-    "ford": [
-      "water crossing",
-      "river crossing",
-      "water traverse"
+    "fording procedure": [
+      "water crossing procedure",
+      "river crossing procedure",
+      "water traverse procedure"
     ],
     "tm9": [
       "technical manual 9",
@@ -603,6 +603,258 @@
       "tolerance",
       "gap",
       "spacing"
+    ],
+    "gpw": [
+      "ford gpw",
+      "military jeep",
+      "quarter-ton truck"
+    ],
+    "tm9-802": [
+      "technical manual 9-802",
+      "ford gpw manual",
+      "willys mb manual"
+    ]
+  },
+  "aerospace": {
+    "space shuttle": [
+      "orbiter",
+      "shuttle orbiter",
+      "sts",
+      "space transportation system"
+    ],
+    "launch abort": [
+      "abort mode",
+      "rtls",
+      "return to launch site",
+      "tal",
+      "transatlantic abort"
+    ],
+    "thermal protection": [
+      "tps",
+      "heat shield",
+      "thermal tiles",
+      "silica tiles"
+    ],
+    "oms": [
+      "orbital maneuvering system",
+      "oms engine",
+      "orbital propulsion"
+    ],
+    "rcs": [
+      "reaction control system",
+      "attitude thrusters",
+      "maneuvering jets"
+    ],
+    "apu": [
+      "auxiliary power unit",
+      "hydraulic power",
+      "shuttle apu"
+    ],
+    "payload bay": [
+      "cargo bay",
+      "payload compartment"
+    ],
+    "ssme": [
+      "space shuttle main engine",
+      "main engine",
+      "rs-25"
+    ],
+    "srb": [
+      "solid rocket booster",
+      "booster",
+      "solid rocket"
+    ],
+    "external tank": [
+      "shuttle external tank",
+      "propellant tank",
+      "orange tank",
+      "et"
+    ],
+    "reentry": [
+      "atmospheric reentry",
+      "deorbit",
+      "return"
+    ],
+    "orbit": [
+      "orbital",
+      "space flight",
+      "leo",
+      "low earth orbit"
+    ]
+  },
+  "nuclear": {
+    "reactor": [
+      "nuclear reactor",
+      "fission reactor",
+      "power reactor"
+    ],
+    "criticality": [
+      "critical state",
+      "sustained chain reaction",
+      "k-effective"
+    ],
+    "control rod": [
+      "control element",
+      "absorber rod",
+      "shutdown rod"
+    ],
+    "neutron flux": [
+      "neutron density",
+      "flux level",
+      "neutron population"
+    ],
+    "moderator": [
+      "neutron moderator",
+      "graphite",
+      "heavy water"
+    ],
+    "coolant": [
+      "reactor coolant",
+      "primary coolant",
+      "cooling water"
+    ],
+    "fuel rod": [
+      "fuel element",
+      "fuel assembly",
+      "fuel pellet"
+    ],
+    "containment": [
+      "containment building",
+      "reactor containment",
+      "pressure vessel"
+    ],
+    "scram": [
+      "emergency shutdown",
+      "reactor trip",
+      "safety shutdown"
+    ],
+    "decay heat": [
+      "residual heat",
+      "afterheat"
+    ],
+    "half-life": [
+      "decay rate",
+      "radioactive decay"
+    ],
+    "shielding": [
+      "radiation shielding",
+      "biological shield"
+    ]
+  },
+  "medical": {
+    "mri": [
+      "magnetic resonance imaging",
+      "mr imaging",
+      "nmr imaging"
+    ],
+    "magnetic field": [
+      "field strength",
+      "tesla",
+      "gauss"
+    ],
+    "contraindication": [
+      "safety concern",
+      "exclusion criteria",
+      "not recommended"
+    ],
+    "pacemaker": [
+      "cardiac pacemaker",
+      "implanted device"
+    ],
+    "ferromagnetic": [
+      "magnetic metal",
+      "iron-based"
+    ],
+    "gradient coil": [
+      "imaging gradient",
+      "field gradient"
+    ],
+    "rf coil": [
+      "radiofrequency coil",
+      "transmit coil",
+      "receive coil"
+    ],
+    "sequence": [
+      "pulse sequence",
+      "imaging protocol"
+    ],
+    "artifact": [
+      "image artifact",
+      "distortion",
+      "noise"
+    ],
+    "contrast": [
+      "contrast agent",
+      "gadolinium",
+      "enhancement"
+    ],
+    "slice": [
+      "image slice",
+      "cross-section"
+    ],
+    "fov": [
+      "field of view",
+      "imaging area"
+    ]
+  },
+  "electronics": {
+    "gpio": [
+      "general purpose input output",
+      "digital pin",
+      "io pin"
+    ],
+    "raspberry pi": [
+      "rpi",
+      "pi",
+      "raspberry"
+    ],
+    "plc": [
+      "programmable logic controller",
+      "industrial controller"
+    ],
+    "ladder logic": [
+      "relay logic",
+      "plc programming",
+      "rung"
+    ],
+    "visionfive": [
+      "visionfive2",
+      "risc-v board",
+      "starfive"
+    ],
+    "i2c": [
+      "i-squared-c",
+      "inter-integrated circuit",
+      "two-wire"
+    ],
+    "spi": [
+      "serial peripheral interface",
+      "spi bus"
+    ],
+    "uart": [
+      "universal asynchronous receiver transmitter",
+      "serial port"
+    ],
+    "pwm": [
+      "pulse width modulation",
+      "duty cycle"
+    ],
+    "adc": [
+      "analog to digital converter",
+      "analog input"
+    ],
+    "dac": [
+      "digital to analog converter",
+      "analog output"
+    ],
+    "pullup": [
+      "pull-up resistor",
+      "internal pullup"
+    ],
+    "interrupt": [
+      "hardware interrupt",
+      "irq",
+      "gpio interrupt"
     ]
   },
   "_domains": [
@@ -610,7 +862,11 @@
     "military_vehicle",
     "forklift",
     "hvac",
-    "radar"
+    "radar",
+    "aerospace",
+    "nuclear",
+    "medical",
+    "electronics"
   ],
-  "_last_updated": "2026-01-21"
+  "_last_updated": "2026-01-24"
 }
