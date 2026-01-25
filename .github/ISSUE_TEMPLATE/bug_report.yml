@@ -1,0 +1,88 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug", "triage"]
+
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: Clear description of what went wrong
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to reproduce the bug
+      placeholder: |
+        1. Start the server with `python nova_flask_app.py`
+        2. Send query: "..."
+        3. Observe error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Your deployment environment details
+      value: |
+        - OS: 
+        - Python version: 
+        - NIC Version: 
+        - Deployment type: [local/docker/air-gapped]
+        - LLM Model: 
+        - Embedding Model: 
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: Include any error messages or log output
+      render: shell
+      placeholder: Paste logs here...
+
+  - type: dropdown
+    id: safety-impact
+    attributes:
+      label: Safety Impact
+      description: Does this bug affect safety-critical functionality?
+      options:
+        - "No - General bug"
+        - "Yes - Potential hallucination issue"
+        - "Yes - Incorrect safety procedure returned"
+        - "Yes - Security concern"
+        - "Critical - System failure affecting safety"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: evidence
+    attributes:
+      label: Evidence Tracking
+      description: Help us investigate
+      options:
+        - label: I have checked the audit logs for relevant entries
+        - label: I can provide query/response evidence chain
+        - label: This is reproducible consistently
