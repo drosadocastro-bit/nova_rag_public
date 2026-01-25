@@ -13,6 +13,7 @@ markers = [
     "integration: Integration tests (may require services)",
     "slow: Slow tests that might timeout",
     "performance: Performance-sensitive tests",
+    "smoke: Quick smoke tests for core functionality",
 ]
 
 [tool.coverage.run]
