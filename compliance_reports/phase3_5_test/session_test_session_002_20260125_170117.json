@@ -1,0 +1,66 @@
+{
+  "session_id": "test_session_002",
+  "timestamp": "2026-01-25T17:01:17.155604",
+  "operator": null,
+  "system_version": "0.3.5",
+  "query": "What is torque spec for head bolts?",
+  "domain": "vehicle",
+  "intent_classification": "spec_lookup",
+  "retrieval_sources": [
+    "manual.pdf"
+  ],
+  "confidence_scores": [
+    0.92
+  ],
+  "reranking_decisions": {},
+  "safety_checks": {
+    "heuristic_triggers": [],
+    "passed": true
+  },
+  "anomaly_score": 1e-06,
+  "anomaly_flagged": false,
+  "answer": "The head bolt torque specification is 85 ft-lbs, applied in 3 stages. See manual.pdf page 10.",
+  "citations": [
+    "manual.pdf#page:10"
+  ],
+  "extractive_fallback_used": false,
+  "evidence_chain": {
+    "session_id": "test_session_002",
+    "system_version": "0.3.5",
+    "query": "What is torque spec for head bolts?",
+    "domain": "vehicle",
+    "intent": "spec_lookup",
+    "decision_tag": null,
+    "retrieved_documents": [
+      {
+        "source": "manual.pdf",
+        "page": 10,
+        "score": 0.92,
+        "anomaly_score": 1e-06,
+        "anomaly_flag": false,
+        "domain": "vehicle",
+        "snippet": "Head bolt torque: 85 ft-lbs in 3 stages"
+      }
+    ],
+    "reranking": {},
+    "safety_checks": {
+      "heuristic_triggers": [],
+      "passed": true
+    },
+    "anomaly_score": 1e-06,
+    "anomaly_flagged": false,
+    "citations": [
+      "manual.pdf#page:10"
+    ],
+    "extractive_fallback": false,
+    "retrieval_time_ms": 120.0,
+    "generation_time_ms": 480.0,
+    "total_time_ms": 600.0,
+    "model_used": "llama3.2",
+    "timestamp": "2026-01-25T21:01:17.155587Z"
+  },
+  "retrieval_time_ms": 120.0,
+  "generation_time_ms": 480.0,
+  "total_time_ms": 600.0,
+  "report_hash": "bd9c24e3de8a0e4e6d95f0e5da6fcdddbc4b6ce2bd054625eae290f7291c8630"
+}

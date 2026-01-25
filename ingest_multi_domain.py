@@ -36,6 +36,8 @@ try:
     OCR_AVAILABLE = True
 except ImportError:
     OCR_AVAILABLE = False
+    pytesseract = None  # type: ignore
+    convert_from_path = None  # type: ignore
 
 # Configuration
 DATA_DIR = Path("data")
@@ -171,7 +173,7 @@ class MultiDomainIngester:
         Extract text from scanned PDF using OCR (pytesseract + pdf2image).
         Returns (text, extraction_method, methods_attempted)
         """
-        if not OCR_AVAILABLE:
+        if not OCR_AVAILABLE or convert_from_path is None or pytesseract is None:
             return "", "ocr_unavailable", ["ocr"]
         
         text = ""

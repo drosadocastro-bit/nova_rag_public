@@ -4,6 +4,7 @@ import os
 import tempfile
 import time
 from pathlib import Path
+from typing import Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -372,7 +373,7 @@ class TestCachedQueryDecorator:
         call_count = 0
         
         @cached_query(cache)
-        def search(query: str, domain: str = None):
+        def search(query: str, domain: Optional[str] = None):
             nonlocal call_count
             call_count += 1
             return f"result for {query}"

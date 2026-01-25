@@ -532,7 +532,7 @@ class MemoryProfiler:
             self._monitor_thread.join(timeout=5)
         logger.info("Stopped memory monitoring")
     
-    def force_gc(self) -> Dict[str, int]:
+    def force_gc(self) -> Dict[str, Any]:
         """
         Force garbage collection and return stats.
         
@@ -541,7 +541,7 @@ class MemoryProfiler:
         """
         before = self._get_process_memory()[0]
         
-        collected = {
+        collected: Dict[str, Any] = {
             "gen0": gc.collect(0),
             "gen1": gc.collect(1),
             "gen2": gc.collect(2),

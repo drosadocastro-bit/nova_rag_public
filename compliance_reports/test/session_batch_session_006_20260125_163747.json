@@ -1,0 +1,78 @@
+{
+  "session_id": "batch_session_006",
+  "timestamp": "2026-01-25T16:37:47.954870",
+  "operator": "test_operator",
+  "system_version": "1.0.0",
+  "query": "Test query 7",
+  "domain": "forklift",
+  "intent_classification": "procedure",
+  "retrieval_sources": [
+    "forklift_maintenance_manual.pdf",
+    "brake_system_guide.pdf"
+  ],
+  "confidence_scores": [
+    0.92,
+    0.87
+  ],
+  "reranking_decisions": {
+    "method": "semantic",
+    "scores_improved": true
+  },
+  "safety_checks": {
+    "passed": true,
+    "injection_detected": false,
+    "toxic_content": false
+  },
+  "anomaly_score": 7e-06,
+  "anomaly_flagged": false,
+  "answer": "To replace brake pads on a forklift:\n\n1. Park on level ground and engage parking brake\n2. Remove wheel and tire assembly\n3. Clean brake assembly\n4. Remove retaining clips and old brake pads\n5. Install new brake pads with anti-squeal compound\n6. Reinstall components and test brake function\n\nAlways refer to the manufacturer's service manual for specific torque specifications.",
+  "citations": [
+    "forklift_maintenance_manual.pdf (Section 5.2)",
+    "brake_system_guide.pdf (Page 42)"
+  ],
+  "extractive_fallback_used": false,
+  "evidence_chain": {
+    "session_id": "batch_session_006",
+    "system_version": "1.0.0",
+    "query": "Test query 7",
+    "domain": "forklift",
+    "intent": "procedure",
+    "retrieved_documents": [
+      {
+        "source": "forklift_maintenance_manual.pdf",
+        "score": 0.92,
+        "chunk_id": "chunk_123"
+      },
+      {
+        "source": "brake_system_guide.pdf",
+        "score": 0.87,
+        "chunk_id": "chunk_456"
+      }
+    ],
+    "reranking": {
+      "method": "semantic",
+      "scores_improved": true
+    },
+    "safety_checks": {
+      "passed": true,
+      "injection_detected": false,
+      "toxic_content": false
+    },
+    "anomaly_score": 7e-06,
+    "anomaly_flagged": false,
+    "answer": "To replace brake pads on a forklift:\n\n1. Park on level ground and engage parking brake\n2. Remove wheel and tire assembly\n3. Clean brake assembly\n4. Remove retaining clips and old brake pads\n5. Install new brake pads with anti-squeal compound\n6. Reinstall components and test brake function\n\nAlways refer to the manufacturer's service manual for specific torque specifications.",
+    "citations": [
+      "forklift_maintenance_manual.pdf (Section 5.2)",
+      "brake_system_guide.pdf (Page 42)"
+    ],
+    "extractive_fallback": false,
+    "retrieval_time_ms": 45.3,
+    "generation_time_ms": 123.7,
+    "total_time_ms": 169.0,
+    "operator": "test_operator"
+  },
+  "retrieval_time_ms": 45.3,
+  "generation_time_ms": 123.7,
+  "total_time_ms": 169.0,
+  "report_hash": "3a8c19800727bd0b867c57ad403a4fcd3f5d5629ae7f83d69eb7295bff69e486"
+}

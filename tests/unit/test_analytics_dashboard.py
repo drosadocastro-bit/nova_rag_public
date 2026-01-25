@@ -118,13 +118,13 @@ class TestCalculatePercentile:
     
     def test_p50(self):
         """Test 50th percentile."""
-        values = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        values = [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0]
         p50 = _calculate_percentile(values, 50)
         assert p50 == 60  # Index 5
     
     def test_p95(self):
         """Test 95th percentile."""
-        values = list(range(1, 101))  # 1-100
+        values = [float(x) for x in range(1, 101)]  # 1-100
         p95 = _calculate_percentile(values, 95)
         assert p95 == 96  # Index 95
 

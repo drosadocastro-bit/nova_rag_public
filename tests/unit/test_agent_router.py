@@ -81,10 +81,10 @@ class TestStripMarkdownCodeBlocks:
         """Test handling of non-string input."""
         from agents.agent_router import strip_markdown_code_blocks
         
-        result = strip_markdown_code_blocks(None)
+        result = strip_markdown_code_blocks(None)  # type: ignore[arg-type]
         assert result is None
         
-        result = strip_markdown_code_blocks(123)
+        result = strip_markdown_code_blocks(123)  # type: ignore[arg-type]
         assert result == 123
 
 

@@ -289,8 +289,8 @@ class CrossContaminationTester:
                 for cached_chunk in self.chunks_cache:
                     if isinstance(cached_chunk, dict) and cached_chunk.get('text', '')[:100] == chunk_text:
                         return cached_chunk.get('domain', 'unknown')
-                    elif hasattr(cached_chunk, 'text') and cached_chunk.text[:100] == chunk_text:
-                        return cached_chunk.domain
+                    elif hasattr(cached_chunk, 'text') and getattr(cached_chunk, 'text')[:100] == chunk_text:
+                        return getattr(cached_chunk, 'domain')
         
         # Fallback to source file analysis
         if isinstance(chunk_dict, dict):
