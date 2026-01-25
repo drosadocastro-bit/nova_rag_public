@@ -3,6 +3,7 @@ flask-limiter==3.5.0
 waitress==3.0.2
 faiss-cpu==1.13.1
 prometheus-client==0.21.0
+psutil==6.1.1
 
 # === Multilingual & Semantic Safety (Priority 3) ===
 langdetect==1.0.9           # Language detection for multilingual safety

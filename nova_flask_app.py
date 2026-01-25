@@ -361,6 +361,90 @@ def metrics():
     from flask import Response
     return Response(generate_metrics(), mimetype=get_content_type())
 
+
+# ==============================================================================
+# Health Check Endpoints
+# ==============================================================================
+
+@app.route("/health", methods=["GET"])
+@limiter.limit("60 per minute")
+def health():
+    """
+    Comprehensive health check endpoint.
+    
+    Returns detailed status of all system components:
+    - Database connectivity
+    - FAISS vector index
+    - BM25 lexical cache
+    - Ollama LLM service
+    - Disk space
+    - Memory usage
+    
+    Response format:
+    {
+        "status": "healthy" | "degraded" | "unhealthy",
+        "timestamp": "2026-01-25T10:30:00Z",
+        "version": "0.3.5",
+        "checks": { ... }
+    }
+    """
+    from core.monitoring.health_checks import run_all_checks
+    
+    report = run_all_checks()
+    report_dict = report.to_dict()
+    
+    # Map internal status to user-friendly names
+    status_map = {"pass": "healthy", "warn": "degraded", "fail": "unhealthy"}
+    report_dict["status"] = status_map.get(report_dict["status"], report_dict["status"])
+    
+    # HTTP status: 200 for pass/warn, 503 for fail
+    http_status = 200 if report.status != "fail" else 503
+    
+    return jsonify(report_dict), http_status
+
+
+@app.route("/health/ready", methods=["GET"])
+@limiter.limit("120 per minute")
+def health_ready():
+    """
+    Kubernetes readiness probe endpoint.
+    
+    Indicates whether the service is ready to accept traffic.
+    Checks database, FAISS index, and Ollama connectivity.
+    
+    Returns:
+        200: Ready to serve traffic
+        503: Not ready (startup in progress or dependency failure)
+    """
+    from core.monitoring.health_checks import run_readiness_checks
+    
+    is_ready, details = run_readiness_checks()
+    http_status = 200 if is_ready else 503
+    
+    return jsonify(details), http_status
+
+
+@app.route("/health/live", methods=["GET"])
+@limiter.limit("300 per minute")
+def health_live():
+    """
+    Kubernetes liveness probe endpoint.
+    
+    Indicates whether the service process is alive and not deadlocked.
+    Lightweight check that doesn't test external dependencies.
+    
+    Returns:
+        200: Process is alive
+        503: Process may be deadlocked (restart recommended)
+    """
+    from core.monitoring.health_checks import run_liveness_checks
+    
+    is_alive, details = run_liveness_checks()
+    http_status = 200 if is_alive else 503
+    
+    return jsonify(details), http_status
+
+
 @app.route("/api/analytics", methods=["GET"])
 @limiter.limit("30 per minute")
 def api_analytics():
