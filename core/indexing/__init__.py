@@ -31,6 +31,14 @@ from .hot_reload import (
     ReloadResult,
     create_reload_endpoint,
 )
+from .batch_ingestion import (
+    BatchIngestionPipeline,
+    IngestionConfig,
+    IngestionStatus,
+    BatchProgress,
+    DocumentResult,
+    stream_documents,
+)
 
 __all__ = [
     "CorpusManifest",
@@ -48,4 +56,11 @@ __all__ = [
     "ReloadProgress",
     "ReloadResult",
     "create_reload_endpoint",
+    # Batch ingestion
+    "BatchIngestionPipeline",
+    "IngestionConfig",
+    "IngestionStatus",
+    "BatchProgress",
+    "DocumentResult",
+    "stream_documents",
 ]

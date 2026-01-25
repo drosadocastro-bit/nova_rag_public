@@ -56,6 +56,18 @@ from .compliance_reporting import (
     ComplianceReport,
 )
 
+from .memory_profiler import (
+    MemoryProfiler,
+    MemorySnapshot,
+    MemoryLeak,
+    MemoryReport,
+    MemoryRecommendation,
+    MemorySeverity,
+    track_memory,
+    get_memory_profiler,
+    reset_memory_profiler,
+)
+
 __all__ = [
     # Prometheus metrics
     "get_metrics_registry",
@@ -93,4 +105,14 @@ __all__ = [
     "SLAMetrics",
     "SafetyAuditReport",
     "ComplianceReport",
+    # Memory profiler
+    "MemoryProfiler",
+    "MemorySnapshot",
+    "MemoryLeak",
+    "MemoryReport",
+    "MemoryRecommendation",
+    "MemorySeverity",
+    "track_memory",
+    "get_memory_profiler",
+    "reset_memory_profiler",
 ]
