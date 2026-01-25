@@ -1,0 +1,17 @@
+{
+  "model_name": "C:/nova_rag_public/models/all-MiniLM-L6-v2",
+  "training_pairs": 3607,
+  "validation_pairs": 403,
+  "epochs": 2,
+  "batch_size": 16,
+  "learning_rate": 2e-05,
+  "domains": {
+    "electronics": 160,
+    "forklift": 1082,
+    "hvac": 140,
+    "radar": 674,
+    "vehicle": 1500,
+    "vehicle_civilian": 454
+  },
+  "training_date": "2026-01-23T08:39:36.322136"
+}
