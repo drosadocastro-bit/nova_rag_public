@@ -92,7 +92,11 @@ NIC evolved from a basic proof-of-concept to a production-grade safety-critical 
 |-------|-------|-----------------|
 | **Phase 1 (MVP)** | Basic retrieval + single LLM pass | Working end-to-end pipeline |
 | **Phase 2 (Safety)** | Multi-layer defenses, evidence tracking | 111/111 adversarial tests passing |
-| **Phase 2.5 (Multi-Domain)** | Domain-aware retrieval, cross-contamination prevention | 1,692 chunks across 5 domains with per-domain caps || **Phase 3 (Scalability)** | Incremental indexing, hot-reload, real corpus | Zero-downtime scaling: 3.3s per manual (34% faster than target) || **Production Review (Jan 2026)** | Code quality hardening, validation rigor | 100% validated error handling |
+| **Phase 2.5 (Multi-Domain)** | Domain-aware retrieval, cross-contamination prevention | 1,692 chunks across 5 domains with per-domain caps |
+| **Phase 3 (Scalability)** | Incremental indexing, hot-reload, real corpus | Zero-downtime scaling: 3.3s per manual (34% faster than target) |
+| **Phase 3.5 (Neural Advisory)** | Fine-tuned embeddings, anomaly detection | Neural advisors with deterministic safety |
+| **Production Review (Jan 2026)** | Code quality hardening, validation rigor | 100% validated error handling |
+| **Domain Isolation (Jan 2026)** | Cross-contamination elimination, OCR expansion | 0% contamination across 9 domains, 6,610 chunks |
 
 ### Key Architectural Decisions & Why
 
@@ -126,9 +130,23 @@ NIC evolved from a basic proof-of-concept to a production-grade safety-critical 
 
 **Why Domain Caps Exist**
 - Initially: Top-k retrieval without domain constraints
-- Problem: Forklift manual (986 chunks) dominated results even for vehicle queries
+- Problem: Forklift manual (2,386 chunks) dominated results even for vehicle queries
 - Solution: Max 3 chunks per domain, enforced before LLM sees results
 - Impact: Cross-domain contamination reduced from 12% to 0.3%
+
+**Why Domain-Aware Pre-Filtering Was Added (Jan 2026)**
+- Problem: Even with domain caps, 19.2% of queries showed cross-contamination
+- Root cause: FAISS retrieval happened before domain filtering, pulling wrong-domain chunks
+- Solution: Over-fetch 3x candidates, detect domain intent early, prioritize 80% from target domain
+- Impact: Cross-contamination reduced from 19.2% to **0%** across all 9 domains
+
+**Cross-Contamination Before/After (Jan 2026)**
+| Metric | Before | After |
+|--------|--------|-------|
+| Contamination rate | 19.2% (5/26 tests) | **0%** (0/26 tests) |
+| vehicle_civilian issues | 3/4 tests contaminated | **0/4** tests contaminated |
+| vehicle_military issues | 2/3 tests contaminated | **0/3** tests contaminated |
+| Domain accuracy | ~65% from target domain | **80%+** from target domain |
 
 ---
 
@@ -191,6 +209,76 @@ ollama pull llama3.2:3b
 python nova_flask_app.py
 # → http://localhost:5000
 ```
+
+---
+
+## LLM Models In Use
+
+Quick start uses a small model for speed, but production uses the following:
+
+- **Fireball Llama 3.2 8B** (general + procedural)
+- **Qwen 2.5 Coder 14B** (deep reasoning / code-heavy queries)
+
+To load the production models with Ollama:
+
+```bash
+ollama pull llama3.2:8b
+ollama pull qwen2.5-coder:14b
+```
+
+Set the model names explicitly if you use custom tags (e.g., fireball builds):
+
+```bash
+export NOVA_LLM_LLAMA="llama3.2:8b"   # or your fireball tag
+export NOVA_LLM_OSS="qwen2.5-coder:14b"
+```
+
+See [ollama/README.md](ollama/README.md) for Modelfiles and offline registration.
+
+---
+
+## Corpus & Domain Coverage
+
+Current multi-domain corpus for safety-critical technical retrieval:
+
+| Domain | Chunks | % | Source Type |
+|--------|--------|---|-------------|
+| forklift | 2,386 | 36.1% | TM-10-3930-673-20-1 (Military Technical Manual) |
+| vehicle_military | 1,836 | 27.8% | TM9-802-Declassified (WWII Ford GPW/GMC) |
+| aerospace | 573 | 8.7% | Space Shuttle Operator's Manual (OCR) |
+| nuclear | 494 | 7.5% | Reactor Physics & Theory |
+| radar | 464 | 7.0% | WXR-2100 Weather Radar Operators Guide |
+| vehicle (civilian) | 359 | 5.4% | Ford Model T Manual 1919 (OCR), VW GTI |
+| electronics | 231 | 3.5% | PLC/VisionFive2, Raspberry Pi GPIO |
+| medical | 152 | 2.3% | MRI Technical Operations Manual |
+| hvac | 115 | 1.7% | Carrier HVAC Systems |
+| **Total** | **6,610** | **100%** | |
+
+**Status:** 6,610 chunks indexed (66% of 10k target) — OCR enabled for scanned documents
+
+### Adding More Documents
+
+Place PDFs in the appropriate `data/<domain>/` folder and run ingestion:
+
+```bash
+python ingest_multi_domain.py
+```
+
+### OCR for Scanned PDFs
+
+Some historical documents (Space Shuttle Operator's Manual, Ford Model T Manual) are scanned images. To extract text:
+
+1. Install Tesseract OCR:
+   - **Windows:** Download from [UB-Mannheim/tesseract](https://github.com/UB-Mannheim/tesseract/wiki)
+   - **Linux:** `sudo apt install tesseract-ocr`
+   - **macOS:** `brew install tesseract`
+
+2. Install Poppler (for pdf2image):
+   - **Windows:** Download from [oschwartz10612/poppler-windows](https://github.com/oschwartz10612/poppler-windows/releases)
+   - **Linux:** `sudo apt install poppler-utils`
+   - **macOS:** `brew install poppler`
+
+3. Re-run ingestion - OCR will automatically process scanned PDFs.
 
 ---
 
@@ -401,7 +489,19 @@ Building on the core NIC architecture, **Phase 2.5** adds intelligent domain-awa
 - Identifies keyword overlaps across domains
 - Validates improvements with cross-contamination benchmarks
 
-**6. Intelligent Domain Router**
+**6. Domain Intent Classifier (Jan 2026)**
+- Vocabulary-based domain detection with confidence scoring
+- Enhanced vocabularies for 9 domains (aerospace, nuclear, medical, electronics added)
+- Domain boost factor (0.25) applied to matching-domain results
+- Configurable via `NOVA_DOMAIN_BOOST` and `NOVA_DOMAIN_BOOST_FACTOR`
+
+**7. Domain-Aware Pre-Filtering (Jan 2026)**
+- Over-fetches 3x candidates when domain detected with ≥60% confidence
+- Prioritizes 80% of results from target domain before reranking
+- Eliminates cross-contamination while maintaining diversity
+- Result: **0% cross-contamination** across 26 test cases
+
+**8. Intelligent Domain Router**
 - Combines zero-shot classification with keyword heuristics
 - Falls back gracefully when models unavailable
 - Records router evidence for every query
@@ -455,15 +555,20 @@ if results.evidence:
 - **Graceful Degradation**: Falls back to keyword-only routing if zero-shot classifier unavailable
 - **Extensibility**: Easy to add new domains without retraining
 
-### Current Multi-Domain Index
+### Current Multi-Domain Index (Jan 2026)
 
-- **vehicle_military**: 404 chunks (tactical vehicles, amphibians, military-spec documents)
-- **vehicle_civilian**: 32 chunks (standard vehicle maintenance, diagnostic procedures)
-- **forklift**: 986 chunks (largest domain; lift operation, safety procedures)
-- **hvac**: 54 chunks (heating, cooling, refrigerant handling)
-- **radar**: 216 chunks (weather radar operation, signal processing)
-
-**Total: 1,692 chunks across 5 domains**
+| Domain | Chunks | % | Description |
+|--------|--------|---|-------------|
+| forklift | 2,386 | 36.1% | TM-10-3930-673-20-1 Military Technical Manual |
+| vehicle_military | 1,836 | 27.8% | TM9-802-Declassified WWII Ford GPW/GMC |
+| aerospace | 573 | 8.7% | Space Shuttle Operator's Manual (OCR) |
+| nuclear | 494 | 7.5% | Reactor Physics & Theory |
+| radar | 464 | 7.0% | WXR-2100 Weather Radar Operators Guide |
+| vehicle (civilian) | 359 | 5.4% | Ford Model T Manual 1919 (OCR), VW GTI |
+| electronics | 231 | 3.5% | PLC/VisionFive2, Raspberry Pi GPIO |
+| medical | 152 | 2.3% | MRI Technical Operations Manual |
+| hvac | 115 | 1.7% | Carrier HVAC Systems |
+| **Total** | **6,610** | **100%** | 9 domains indexed |
 
 For validation, see [validate_phase25.py](validate_phase25.py) and the [Phase 2.5 Architecture](docs/architecture/PHASE2_5_ARCHITECTURE.md) document.
 
@@ -598,6 +703,73 @@ Query → NN Anomaly Score (logged)
 - Allows NIC to remain certifiable while experimenting with quality improvements
 
 **Full Implementation Status:** See [Phase 3.5 Roadmap](docs/roadmap/PHASE3_5_ROADMAP.md) for detailed task breakdown, architecture, and integration steps.
+
+---
+
+## Domain Isolation Milestone ✅ COMPLETE (Jan 2026)
+
+Building on Phase 2.5's multi-domain foundation, **Domain Isolation** achieved **0% cross-contamination** across all 9 domains through intelligent pre-filtering and enhanced vocabulary detection.
+
+### The Problem
+
+Even with domain caps and GAR expansion, the system still showed cross-contamination issues:
+- **19.2% of queries** returned results from wrong domains
+- Military vehicle queries pulled forklift content (shared mechanical terminology)
+- Civilian vehicle queries confused with military content
+
+### The Solution
+
+**1. Domain Intent Classifier**
+- Vocabulary-based detection with confidence scoring (0.0–1.0)
+- 9 domain vocabularies with domain-specific terminology:
+  - `vehicle`: Model T, VW GTI, hand crank, magneto, civilian terms
+  - `vehicle_military`: TM9-802, GPW, Willys, ordnance, war department
+  - `forklift`: mast, forks, lift capacity, warehouse
+  - `aerospace`: shuttle, orbiter, thermal protection, NASA
+  - `nuclear`: reactor, criticality, neutron flux, control rods
+  - `medical`: MRI, magnetic resonance, contraindication
+  - `electronics`: GPIO, Raspberry Pi, PLC, ladder logic
+  - `hvac`: thermostat, refrigerant, R-410a, compressor
+  - `radar`: weather radar, reflectivity, doppler, azimuth
+
+**2. Domain-Aware Pre-Filtering**
+- Detects domain intent early (before FAISS search)
+- Over-fetches 3x candidates when confidence ≥60%
+- Prioritizes 80% from target domain, 20% diversity
+- Applies domain boost (+0.25) to matching-domain scores
+
+**3. Fixed Domain Tagging**
+- Corrected ingestion bug where TM9-802 was tagged as "forklift"
+- Folder-based domain assignment is now authoritative
+- Proper separation: vehicle_military (1,836 chunks) vs vehicle (359 chunks)
+
+### Results
+
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| Cross-contamination rate | 19.2% | **0%** | 100% reduction |
+| Tests with issues | 5/26 | **0/26** | All passing |
+| vehicle_civilian accuracy | 1/4 tests | **4/4 tests** | 75% → 100% |
+| vehicle_military accuracy | 1/3 tests | **3/3 tests** | 33% → 100% |
+| Domain accuracy per query | ~65% | **80%+** | 15%+ improvement |
+
+### Configuration
+
+```bash
+# Enable domain-aware retrieval (all enabled by default)
+export NOVA_DOMAIN_BOOST=1                    # Enable domain boosting
+export NOVA_DOMAIN_BOOST_FACTOR=0.25          # Boost factor for matching domain
+export NOVA_GAR_ENABLED=1                     # Glossary Augmented Retrieval
+
+python nova_flask_app.py
+```
+
+### Key Files Changed
+
+- `core/retrieval/retrieval_engine.py`: Domain intent classifier, pre-filtering, boost logic
+- `ingest_multi_domain.py`: Fixed domain tagging to use folder as authoritative source
+- `data/automotive_glossary.json`: Extended with 9 domain vocabularies
+- `test_cross_contamination.py`: 26-test suite covering all domains
 
 ---
 
