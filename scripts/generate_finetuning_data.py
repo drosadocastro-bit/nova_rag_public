@@ -83,7 +83,7 @@ class DocumentExtractor:
     @staticmethod
     def _extract_pdf(file_path: Path) -> Optional[str]:
         """Extract text from PDF using pdfplumber."""
-        if not PDF_SUPPORT:
+        if not PDF_SUPPORT or pdfplumber is None:
             return None
         
         try:
@@ -102,7 +102,7 @@ class DocumentExtractor:
     @staticmethod
     def _extract_html(file_path: Path) -> Optional[str]:
         """Extract text from HTML using BeautifulSoup."""
-        if not HTML_SUPPORT:
+        if not HTML_SUPPORT or BeautifulSoup is None:
             return None
         
         try:
@@ -365,7 +365,7 @@ class TrainingDataGenerator:
         output_file = self.output_dir / 'training_pairs.jsonl'
         self._save_jsonl(output_file, self.training_pairs)
         
-        logger.info(f"\n📊 Dataset Summary:")
+        logger.info("\n📊 Dataset Summary:")
         logger.info(f"   Total pairs: {len(self.training_pairs)}")
         for domain, count in self.domain_stats.items():
             logger.info(f"   - {domain}: {count} pairs")
