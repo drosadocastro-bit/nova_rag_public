@@ -1,6 +1,19 @@
 # NIC Test Suite
 
-Comprehensive unit tests for the NIC RAG system.
+Comprehensive test suite for the NIC RAG system covering unit tests, integration tests, and regression tests.
+
+## Quick Start
+
+```bash
+# Run all tests with coverage
+pytest
+
+# Run smoke tests only (fast)
+pytest -m smoke
+
+# Run with verbose output
+pytest -v
+```
 
 ## Running Tests
 
@@ -10,32 +23,44 @@ Comprehensive unit tests for the NIC RAG system.
 pytest
 ```
 
-### Run with Coverage
+Coverage is automatically enabled via `pyproject.toml` configuration.
+
+### Run with Coverage Report
 
 ```bash
-pytest --cov=. --cov-report=html --cov-report=term
-```
-
-View coverage report:
-```bash
-open htmlcov/index.html  # macOS
-xdg-open htmlcov/index.html  # Linux
+# HTML report (opens in browser)
+pytest --cov-report=html
 start htmlcov/index.html  # Windows
+open htmlcov/index.html   # macOS
+xdg-open htmlcov/index.html  # Linux
+
+# Terminal report with missing lines
+pytest --cov-report=term-missing
 ```
 
-### Run Specific Test Files
+### Run Specific Test Categories
 
 ```bash
-pytest tests/test_cache_utils.py
-pytest tests/test_session_store.py
-pytest tests/test_flask_app.py
+# Unit tests only
+pytest tests/unit/
+
+# Regression tests
+pytest tests/test_regression.py
+
+# Specific test file
+pytest tests/unit/test_cache_utils.py
+pytest tests/unit/test_agent_router.py
+pytest tests/unit/test_health_endpoints.py
+pytest tests/unit/test_session_store.py
 ```
 
 ### Run Tests by Marker
 
 ```bash
-pytest -m unit           # Run only unit tests
-pytest -m integration    # Run only integration tests  
+pytest -m unit           # Unit tests (fast, no dependencies)
+pytest -m integration    # Integration tests (require services)
+pytest -m smoke          # Quick smoke tests
+pytest -m regression     # Regression tests
 pytest -m "not slow"     # Skip slow tests
 ```
 

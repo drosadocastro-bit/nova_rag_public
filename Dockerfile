@@ -53,13 +53,16 @@ ENV PATH=/home/appuser/.local/bin:$PATH
 ENV NOVA_FORCE_OFFLINE=0
 ENV HF_HOME=/app/models
 ENV TRANSFORMERS_CACHE=/app/models
+ENV PYTHONUNBUFFERED=1
+ENV NOVA_LOG_FORMAT=json
+ENV NOVA_ENV=production
 
 # Expose Flask port
 EXPOSE 5000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:5000/api/status || exit 1
+# Health check using Python script for comprehensive validation
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python /app/scripts/docker_healthcheck.py || exit 1
 
 # Run with waitress for production
 CMD ["python", "nova_flask_app.py"]

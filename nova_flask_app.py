@@ -16,6 +16,26 @@ from pathlib import Path
 import time
 from collections import OrderedDict
 from core.safety import risk_assessment as safety_metrics
+from core.monitoring import (
+    record_query,
+    observe_query_latency,
+    set_retrieval_confidence,
+    record_hallucination_prevention,
+    set_active_sessions,
+    record_cache_hit,
+    record_cache_miss,
+)
+from core.monitoring.prometheus_metrics import generate_metrics, get_content_type
+from core.monitoring.logger_config import (
+    get_logger,
+    QueryContext,
+    log_query,
+    log_safety_event,
+    log_startup_config,
+)
+
+# Initialize structured logger
+logger = get_logger("nova_flask_app")
 
 # Lightweight in-process retrieval cache to replace legacy cache_utils
 _RETRIEVAL_CACHE_ENABLED = os.environ.get("NOVA_ENABLE_RETRIEVAL_CACHE", "0") == "1"
@@ -35,8 +55,10 @@ def _cached_retrieve(query: str, k: int = 12, top_n: int = 6, **kwargs):
 
     if key in _retrieval_cache_store:
         _retrieval_cache_store.move_to_end(key)
+        record_cache_hit()  # Prometheus metric
         return _retrieval_cache_store[key]
 
+    record_cache_miss()  # Prometheus metric
     result = _retrieve_uncached(query, k=k, top_n=top_n, **kwargs)
     _retrieval_cache_store[key] = result
     if len(_retrieval_cache_store) > max(1, _RETRIEVAL_CACHE_SIZE):
@@ -48,15 +70,20 @@ retrieve = _cached_retrieve
 
 import os
 
-print("\n" + "=" * 70)
-print("Using Ollama for local LLM inference (ensure service is running at http://127.0.0.1:11434)")
-print("=" * 70 + "\n")
+# Log startup configuration
+log_startup_config()
+logger.info("Nova NIC starting", extra={
+    "ollama_url": "http://127.0.0.1:11434",
+    "cache_enabled": _RETRIEVAL_CACHE_ENABLED,
+    "cache_size": _RETRIEVAL_CACHE_SIZE,
+})
 
 if os.environ.get("NOVA_WARMUP_ON_START", "0") == "1":
     try:
         import warmup_backend  # type: ignore[import-not-found]  # Optional module
+        logger.info("Backend warmup complete")
     except Exception as e:
-        print(f"[WARMUP] Skipped: {e}")
+        logger.warning("Backend warmup skipped", extra={"reason": str(e)})
 
 # Use relative paths for Flask template and static folders
 BASE_DIR = Path(__file__).parent.resolve()
@@ -78,7 +105,10 @@ if RATE_LIMIT_ENABLED:
         storage_uri="memory://",
         strategy="fixed-window",
     )
-    print(f"[RateLimit] Enabled: {RATE_LIMIT_PER_HOUR}/hour, {RATE_LIMIT_PER_MINUTE}/minute for API")
+    logger.info("Rate limiting enabled", extra={
+        "per_hour": RATE_LIMIT_PER_HOUR,
+        "per_minute": RATE_LIMIT_PER_MINUTE,
+    })
 else:
     # Create a no-op limiter when disabled
     limiter = Limiter(
@@ -86,6 +116,7 @@ else:
         app=app,
         enabled=False,
     )
+    logger.info("Rate limiting disabled")
     print("[RateLimit] Disabled")
 
 @app.route("/", methods=["GET"])
@@ -142,7 +173,11 @@ def _check_auth():
 @app.route("/api/ask", methods=["POST"])
 @limiter.limit(f"{RATE_LIMIT_PER_MINUTE} per minute")
 def api_ask():
+    import uuid
+    query_id = str(uuid.uuid4())
+    
     if not _check_auth():
+        logger.warning("Unauthorized API access attempt", extra={"query_id": query_id})
         return jsonify({"error": "Unauthorized"}), 403
     
     start_time = time.time()
@@ -152,6 +187,13 @@ def api_ask():
     fallback = data.get("fallback")  # e.g., "retrieval-only"
     
     user_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    
+    # Log query start with structured data
+    logger.info("Query received", extra={
+        "query_id": query_id,
+        "query": question[:200] if question else "",
+        "mode": mode,
+    })
 
     def _refuse_input(reason: str, message: str, http_status: int = 200):
         # Keep response JSON shape consistent: answer is a structured object.
@@ -270,10 +312,58 @@ def api_ask():
             heuristic_triggers=session_state.get("last_heuristic_triggers"),
         )
         
+        # Record Prometheus metrics
+        # Determine domain from traced sources or default to "unknown"
+        domain = "unknown"
+        if traced_sources:
+            first_source = traced_sources[0].get("source", "")
+            if "vehicle" in first_source.lower():
+                domain = "vehicle"
+            elif "medical" in first_source.lower():
+                domain = "medical"
+            elif "aerospace" in first_source.lower():
+                domain = "aerospace"
+            elif "nuclear" in first_source.lower():
+                domain = "nuclear"
+            elif "electronics" in first_source.lower():
+                domain = "electronics"
+        
+        safety_passed = not safety_meta.get("heuristic_triggers")
+        record_query(domain=domain, safety_check_passed=safety_passed)
+        observe_query_latency(stage="total", duration_seconds=response_time_ms / 1000.0)
+        set_retrieval_confidence(retrieval_score)
+        
+        # Record hallucination prevention if safety triggered
+        for trigger in (safety_meta.get("heuristic_triggers") or []):
+            record_hallucination_prevention(reason=trigger)
+        
+        # Structured logging for query completion
+        safety_checks_performed = ["input_validation", "injection_detection"]
+        if safety_meta.get("heuristic_triggers"):
+            safety_checks_performed.extend(safety_meta["heuristic_triggers"])
+        
+        log_query(
+            logger,
+            "Query completed",
+            query=question[:200] if question else "",
+            domain=domain,
+            confidence_score=confidence_pct,
+            latency_ms=response_time_ms,
+            safety_checks=safety_checks_performed,
+            query_id=query_id,
+            model_used=response_data["model_used"],
+            num_sources=len(traced_sources),
+        )
+        
         return jsonify(response_data)
     except Exception as e:
         # Avoid returning 500 on encoding issues (e.g., emojis); respond gracefully
         msg = str(e)
+        logger.error("Query failed", extra={
+            "query_id": query_id,
+            "error": msg[:200],
+            "latency_ms": int((time.time() - start_time) * 1000),
+        })
         if "encoding" in msg.lower() or "codec" in msg.lower():
             return jsonify({"error": "Server encoding error"}), 400
         return jsonify({"error": msg}), 500
@@ -310,33 +400,103 @@ def api_retrieve():
 @app.route("/metrics", methods=["GET"])
 @limiter.limit("120 per minute")
 def metrics():
-    """Prometheus-compatible metrics endpoint."""
-    import time
+    """
+    Prometheus-compatible metrics endpoint.
     
-    # Get cache stats from lightweight retrieval cache
-    cache_stats = {
-        "total_queries": 0,
-        "avg_response_time_ms": 0,
-        "avg_retrieval_confidence": 0,
-        "audit_status_breakdown": {},
+    Returns metrics in Prometheus text exposition format.
+    Designed for scraping by Prometheus, Grafana Agent, or similar tools.
+    
+    Example output:
+        # HELP nova_queries_total Total number of queries processed
+        # TYPE nova_queries_total counter
+        nova_queries_total{domain="vehicle",safety_check_passed="true"} 42.0
+    """
+    from flask import Response
+    return Response(generate_metrics(), mimetype=get_content_type())
+
+
+# ==============================================================================
+# Health Check Endpoints
+# ==============================================================================
+
+@app.route("/health", methods=["GET"])
+@limiter.limit("60 per minute")
+def health():
+    """
+    Comprehensive health check endpoint.
+    
+    Returns detailed status of all system components:
+    - Database connectivity
+    - FAISS vector index
+    - BM25 lexical cache
+    - Ollama LLM service
+    - Disk space
+    - Memory usage
+    
+    Response format:
+    {
+        "status": "healthy" | "degraded" | "unhealthy",
+        "timestamp": "2026-01-25T10:30:00Z",
+        "version": "0.3.5",
+        "checks": { ... }
     }
+    """
+    from core.monitoring.health_checks import run_all_checks
     
-    # Basic metrics
-    metrics_data = {
-        "timestamp": time.time(),
-        "uptime_seconds": time.time() - app.config.get("start_time", time.time()),
-        "queries_total": cache_stats.get("total_queries", 0),
-        "avg_response_time_ms": cache_stats.get("avg_response_time_ms", 0),
-        "avg_retrieval_confidence": cache_stats.get("avg_retrieval_confidence", 0),
-        "audit_status_breakdown": cache_stats.get("audit_status_breakdown", {}),
-        "cache_enabled": os.environ.get("NOVA_ENABLE_RETRIEVAL_CACHE", "0") == "1",
-        "cache_size": len(_retrieval_cache_store),
-        "rate_limit_enabled": RATE_LIMIT_ENABLED,
-        "hybrid_search_enabled": os.environ.get("NOVA_HYBRID_SEARCH", "1") == "1",
-        "safety_heuristic_triggers": safety_metrics.get_trigger_counts(),
-    }
+    report = run_all_checks()
+    report_dict = report.to_dict()
     
-    return jsonify(metrics_data)
+    # Map internal status to user-friendly names
+    status_map = {"pass": "healthy", "warn": "degraded", "fail": "unhealthy"}
+    report_dict["status"] = status_map.get(report_dict["status"], report_dict["status"])
+    
+    # HTTP status: 200 for pass/warn, 503 for fail
+    http_status = 200 if report.status != "fail" else 503
+    
+    return jsonify(report_dict), http_status
+
+
+@app.route("/health/ready", methods=["GET"])
+@limiter.limit("120 per minute")
+def health_ready():
+    """
+    Kubernetes readiness probe endpoint.
+    
+    Indicates whether the service is ready to accept traffic.
+    Checks database, FAISS index, and Ollama connectivity.
+    
+    Returns:
+        200: Ready to serve traffic
+        503: Not ready (startup in progress or dependency failure)
+    """
+    from core.monitoring.health_checks import run_readiness_checks
+    
+    is_ready, details = run_readiness_checks()
+    http_status = 200 if is_ready else 503
+    
+    return jsonify(details), http_status
+
+
+@app.route("/health/live", methods=["GET"])
+@limiter.limit("300 per minute")
+def health_live():
+    """
+    Kubernetes liveness probe endpoint.
+    
+    Indicates whether the service process is alive and not deadlocked.
+    Lightweight check that doesn't test external dependencies.
+    
+    Returns:
+        200: Process is alive
+        503: Process may be deadlocked (restart recommended)
+    """
+    from core.monitoring.health_checks import run_liveness_checks
+    
+    is_alive, details = run_liveness_checks()
+    http_status = 200 if is_alive else 503
+    
+    return jsonify(details), http_status
+
 
 @app.route("/api/analytics", methods=["GET"])
 @limiter.limit("30 per minute")
