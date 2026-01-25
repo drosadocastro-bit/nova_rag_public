@@ -83,7 +83,7 @@ class DocumentExtractorFast:
     @staticmethod
     def _extract_pdf(file_path: Path) -> Optional[str]:
         """Extract from PDF with page sampling and robust error handling."""
-        if not PDF_SUPPORT:
+        if not PDF_SUPPORT or pdfplumber is None:
             return None
         
         try:
@@ -105,7 +105,7 @@ class DocumentExtractorFast:
                         text = page.extract_text()
                         if text and len(text.strip()) > 50:
                             text_parts.append(f"--- Page {page_num + 1} ---\n{text}")
-                    except Exception as e:
+                    except Exception:
                         # Skip problematic pages gracefully
                         failed_pages += 1
                         if failed_pages > 10:
@@ -123,7 +123,7 @@ class DocumentExtractorFast:
     @staticmethod
     def _extract_html(file_path: Path) -> Optional[str]:
         """Extract from HTML with smart sampling."""
-        if not HTML_SUPPORT:
+        if not HTML_SUPPORT or BeautifulSoup is None:
             return None
         
         try:
@@ -306,9 +306,9 @@ class TrainingDataGenerator:
         output_file = self.output_dir / 'training_pairs.jsonl'
         self._save_jsonl(output_file, self.training_pairs)
         
-        logger.info(f"\n{'=' * 60}")
-        logger.info(f"DATASET SUMMARY")
-        logger.info(f"{'=' * 60}")
+        logger.info("\n%s", "=" * 60)
+        logger.info("DATASET SUMMARY")
+        logger.info("%s", "=" * 60)
         logger.info(f"Total pairs: {len(self.training_pairs)}")
         for domain, count in sorted(self.domain_stats.items()):
             pct = 100 * count / len(self.training_pairs) if self.training_pairs else 0
