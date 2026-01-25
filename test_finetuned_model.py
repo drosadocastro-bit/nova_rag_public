@@ -3,6 +3,8 @@
 Test suite for the fine-tuned embedding model
 """
 
+from typing import Optional
+
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
@@ -13,6 +15,7 @@ print("=" * 70)
 
 # Load both models for comparison
 print("\n1. Loading models...")
+base_model: Optional[SentenceTransformer] = None
 try:
     base_model = SentenceTransformer('C:/nova_rag_public/models/all-MiniLM-L6-v2')
     print("   ✓ Base model loaded")
@@ -54,31 +57,34 @@ for query, domain in test_queries:
 print(f"   Result: {success_count}/{len(test_queries)} queries encoded successfully")
 
 print("\n4. Semantic similarity test (domain alignment)...")
-queries = [
-    "How to fix hydraulic leaks?",
-    "Hydraulic system troubleshooting", 
-    "Check tire pressure"
-]
+if base_model is None:
+    print("   ⚠ Base model unavailable; skipping similarity comparison")
+else:
+    queries = [
+        "How to fix hydraulic leaks?",
+        "Hydraulic system troubleshooting",
+        "Check tire pressure"
+    ]
 
-base_embs = base_model.encode(queries)
-ft_embs = finetuned_model.encode(queries)
+    base_embs = base_model.encode(queries)
+    ft_embs = finetuned_model.encode(queries)
 
-# Calculate similarities
-base_sim = cosine_similarity([base_embs[0]], [base_embs[1], base_embs[2]])[0]
-ft_sim = cosine_similarity([ft_embs[0]], [ft_embs[1], ft_embs[2]])[0]
+    # Calculate similarities
+    base_sim = cosine_similarity(np.array([base_embs[0]]), np.array([base_embs[1], base_embs[2]]))[0]
+    ft_sim = cosine_similarity(np.array([ft_embs[0]]), np.array([ft_embs[1], ft_embs[2]]))[0]
 
-print(f"   Query 1: '{queries[0]}'")
-print(f"   Query 2: '{queries[1]}' (SAME domain)")
-print(f"   Query 3: '{queries[2]}' (DIFFERENT domain)")
-print(f"\n   Base model similarities:")
-print(f"      Q1 <-> Q2: {base_sim[0]:.4f} (same domain)")
-print(f"      Q1 <-> Q3: {base_sim[1]:.4f} (diff domain)")
-print(f"\n   Fine-tuned model similarities:")
-print(f"      Q1 <-> Q2: {ft_sim[0]:.4f} (same domain) ← should be higher")
-print(f"      Q1 <-> Q3: {ft_sim[1]:.4f} (diff domain)")
+    print(f"   Query 1: '{queries[0]}'")
+    print(f"   Query 2: '{queries[1]}' (SAME domain)")
+    print(f"   Query 3: '{queries[2]}' (DIFFERENT domain)")
+    print("\n   Base model similarities:")
+    print(f"      Q1 <-> Q2: {base_sim[0]:.4f} (same domain)")
+    print(f"      Q1 <-> Q3: {base_sim[1]:.4f} (diff domain)")
+    print("\n   Fine-tuned model similarities:")
+    print(f"      Q1 <-> Q2: {ft_sim[0]:.4f} (same domain) ← should be higher")
+    print(f"      Q1 <-> Q3: {ft_sim[1]:.4f} (diff domain)")
 
-improvement_same = ft_sim[0] - base_sim[0]
-print(f"\n   ✓ Domain similarity improvement: {improvement_same:+.4f}")
+    improvement_same = ft_sim[0] - base_sim[0]
+    print(f"\n   ✓ Domain similarity improvement: {improvement_same:+.4f}")
 
 print("\n5. Batch encoding test...")
 batch_queries = [f"Query {i}: Technical documentation retrieval" for i in range(50)]
@@ -105,12 +111,12 @@ else:
     print("   ⚠ Warning: Unexpected numerical values")
 
 print("\n7. Model metadata...")
-print(f"   • Model base: sentence-transformers/all-MiniLM-L6-v2")
-print(f"   • Embedding dimension: 384")
-print(f"   • Training data: 4,010 triplet pairs")
-print(f"   • Fine-tuning epochs: 2")
-print(f"   • Final training loss: 1.2498")
-print(f"   • Loss improvement: From 1.027 (epoch 1) to 1.2498 (epoch 2)")
+print("   • Model base: sentence-transformers/all-MiniLM-L6-v2")
+print("   • Embedding dimension: 384")
+print("   • Training data: 4,010 triplet pairs")
+print("   • Fine-tuning epochs: 2")
+print("   • Final training loss: 1.2498")
+print("   • Loss improvement: From 1.027 (epoch 1) to 1.2498 (epoch 2)")
 
 print("\n8. Real-world query examples...")
 real_queries = [
