@@ -1,0 +1,11 @@
+{
+  "embedding_dim": 384,
+  "latent_dim": 64,
+  "threshold": 1.2460820471460465e-05,
+  "threshold_percentile": 95.0,
+  "training_queries": 2000,
+  "epochs": 50,
+  "best_val_loss": 6.082443308384557e-06,
+  "training_date": "2026-01-24T19:14:24.538733",
+  "embedding_model": "models/nic-embeddings-v1.0"
+}
