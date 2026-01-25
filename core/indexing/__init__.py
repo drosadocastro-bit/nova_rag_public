@@ -40,6 +40,18 @@ from .batch_ingestion import (
     stream_documents,
 )
 
+# Tantivy BM25 (optional - requires tantivy-py)
+try:
+    from .tantivy_bm25 import (
+        TantivyBM25Index,
+        TantivyDocument,
+        TantivySearchResult,
+        create_bm25_index,
+        TANTIVY_AVAILABLE,
+    )
+except ImportError:
+    TANTIVY_AVAILABLE = False
+
 __all__ = [
     "CorpusManifest",
     "FileMetadata",
@@ -64,3 +76,13 @@ __all__ = [
     "DocumentResult",
     "stream_documents",
 ]
+
+# Add Tantivy exports if available
+if TANTIVY_AVAILABLE:
+    __all__.extend([
+        "TantivyBM25Index",
+        "TantivyDocument",
+        "TantivySearchResult",
+        "create_bm25_index",
+        "TANTIVY_AVAILABLE",
+    ])
