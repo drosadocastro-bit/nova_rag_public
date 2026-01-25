@@ -1,0 +1,58 @@
+{
+  "timestamp": "2026-01-24T20:58:46.796087",
+  "total_tests": 26,
+  "total_contaminated": 9,
+  "contamination_rate": 0.34615384615384615,
+  "summary_by_domain": {
+    "vehicle_civilian": {
+      "total": 4,
+      "contaminated": 4,
+      "avg_contamination_ratio": 0.675
+    },
+    "vehicle_military": {
+      "total": 3,
+      "contaminated": 3,
+      "avg_contamination_ratio": 1.0
+    },
+    "forklift": {
+      "total": 3,
+      "contaminated": 0,
+      "avg_contamination_ratio": 0.03333333333333333
+    },
+    "hvac": {
+      "total": 2,
+      "contaminated": 0,
+      "avg_contamination_ratio": 0.3
+    },
+    "radar": {
+      "total": 2,
+      "contaminated": 0,
+      "avg_contamination_ratio": 0.0
+    },
+    "aerospace": {
+      "total": 3,
+      "contaminated": 0,
+      "avg_contamination_ratio": 0.0
+    },
+    "nuclear": {
+      "total": 3,
+      "contaminated": 0,
+      "avg_contamination_ratio": 0.03333333333333333
+    },
+    "medical": {
+      "total": 2,
+      "contaminated": 0,
+      "avg_contamination_ratio": 0.0
+    },
+    "electronics": {
+      "total": 2,
+      "contaminated": 0,
+      "avg_contamination_ratio": 0.1
+    },
+    "ambiguous": {
+      "total": 2,
+      "contaminated": 2,
+      "avg_contamination_ratio": 0.9
+    }
+  }
+}
