@@ -184,6 +184,10 @@ cython_debug/
 models/                    # Large embedding/LLM model files
 vector_db/*.pkl           # Cached vector indexes (regenerate from data/)
 vector_db/*.faiss         # FAISS index files
+
+# Data files - large binary assets (PDFs, HTMLs)
+*.pdf                     # PDF manuals (too large for git)
+*.html                    # HTML exports
 ragas_results/            # Evaluation output (regenerate via nic_ragas_eval.py)
 *_results.json            # Test result artifacts
 *_output.txt              # Test output artifacts
