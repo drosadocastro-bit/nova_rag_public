@@ -16,6 +16,16 @@ from pathlib import Path
 import time
 from collections import OrderedDict
 from core.safety import risk_assessment as safety_metrics
+from core.monitoring import (
+    record_query,
+    observe_query_latency,
+    set_retrieval_confidence,
+    record_hallucination_prevention,
+    set_active_sessions,
+    record_cache_hit,
+    record_cache_miss,
+)
+from core.monitoring.prometheus_metrics import generate_metrics, get_content_type
 
 # Lightweight in-process retrieval cache to replace legacy cache_utils
 _RETRIEVAL_CACHE_ENABLED = os.environ.get("NOVA_ENABLE_RETRIEVAL_CACHE", "0") == "1"
@@ -35,8 +45,10 @@ def _cached_retrieve(query: str, k: int = 12, top_n: int = 6, **kwargs):
 
     if key in _retrieval_cache_store:
         _retrieval_cache_store.move_to_end(key)
+        record_cache_hit()  # Prometheus metric
         return _retrieval_cache_store[key]
 
+    record_cache_miss()  # Prometheus metric
     result = _retrieve_uncached(query, k=k, top_n=top_n, **kwargs)
     _retrieval_cache_store[key] = result
     if len(_retrieval_cache_store) > max(1, _RETRIEVAL_CACHE_SIZE):
@@ -270,6 +282,31 @@ def api_ask():
             heuristic_triggers=session_state.get("last_heuristic_triggers"),
         )
         
+        # Record Prometheus metrics
+        # Determine domain from traced sources or default to "unknown"
+        domain = "unknown"
+        if traced_sources:
+            first_source = traced_sources[0].get("source", "")
+            if "vehicle" in first_source.lower():
+                domain = "vehicle"
+            elif "medical" in first_source.lower():
+                domain = "medical"
+            elif "aerospace" in first_source.lower():
+                domain = "aerospace"
+            elif "nuclear" in first_source.lower():
+                domain = "nuclear"
+            elif "electronics" in first_source.lower():
+                domain = "electronics"
+        
+        safety_passed = not safety_meta.get("heuristic_triggers")
+        record_query(domain=domain, safety_check_passed=safety_passed)
+        observe_query_latency(stage="total", duration_seconds=response_time_ms / 1000.0)
+        set_retrieval_confidence(retrieval_score)
+        
+        # Record hallucination prevention if safety triggered
+        for trigger in (safety_meta.get("heuristic_triggers") or []):
+            record_hallucination_prevention(reason=trigger)
+        
         return jsonify(response_data)
     except Exception as e:
         # Avoid returning 500 on encoding issues (e.g., emojis); respond gracefully
@@ -310,33 +347,19 @@ def api_retrieve():
 @app.route("/metrics", methods=["GET"])
 @limiter.limit("120 per minute")
 def metrics():
-    """Prometheus-compatible metrics endpoint."""
-    import time
+    """
+    Prometheus-compatible metrics endpoint.
     
-    # Get cache stats from lightweight retrieval cache
-    cache_stats = {
-        "total_queries": 0,
-        "avg_response_time_ms": 0,
-        "avg_retrieval_confidence": 0,
-        "audit_status_breakdown": {},
-    }
+    Returns metrics in Prometheus text exposition format.
+    Designed for scraping by Prometheus, Grafana Agent, or similar tools.
     
-    # Basic metrics
-    metrics_data = {
-        "timestamp": time.time(),
-        "uptime_seconds": time.time() - app.config.get("start_time", time.time()),
-        "queries_total": cache_stats.get("total_queries", 0),
-        "avg_response_time_ms": cache_stats.get("avg_response_time_ms", 0),
-        "avg_retrieval_confidence": cache_stats.get("avg_retrieval_confidence", 0),
-        "audit_status_breakdown": cache_stats.get("audit_status_breakdown", {}),
-        "cache_enabled": os.environ.get("NOVA_ENABLE_RETRIEVAL_CACHE", "0") == "1",
-        "cache_size": len(_retrieval_cache_store),
-        "rate_limit_enabled": RATE_LIMIT_ENABLED,
-        "hybrid_search_enabled": os.environ.get("NOVA_HYBRID_SEARCH", "1") == "1",
-        "safety_heuristic_triggers": safety_metrics.get_trigger_counts(),
-    }
-    
-    return jsonify(metrics_data)
+    Example output:
+        # HELP nova_queries_total Total number of queries processed
+        # TYPE nova_queries_total counter
+        nova_queries_total{domain="vehicle",safety_check_passed="true"} 42.0
+    """
+    from flask import Response
+    return Response(generate_metrics(), mimetype=get_content_type())
 
 @app.route("/api/analytics", methods=["GET"])
 @limiter.limit("30 per minute")
