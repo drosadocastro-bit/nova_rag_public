@@ -24,6 +24,10 @@ from core.utils.text_processing import (
     load_pdf_text_with_pages,
     split_text,
 )
+from core.monitoring.logger_config import get_logger, log_retrieval_event
+
+# Initialize structured logger
+logger = get_logger("core.retrieval.retrieval_engine")
 
 # Import secure pickle if available (used for BM25 cache)
 SECURE_CACHE_AVAILABLE = find_spec("secure_cache") is not None
@@ -33,11 +37,11 @@ try:
     from glossary_gar import expand_query as gar_expand_query
 
     GAR_ENABLED = os.environ.get("NOVA_GAR_ENABLED", "1") == "1"
-    print(f"[NovaRAG] Glossary Augmented Retrieval (GAR): {'enabled' if GAR_ENABLED else 'disabled'}")
+    logger.info("GAR module loaded", extra={"enabled": GAR_ENABLED})
 except ImportError:
     gar_expand_query = None
     GAR_ENABLED = False
-    print("[NovaRAG] GAR module not found, query expansion disabled")
+    logger.debug("GAR module not found, query expansion disabled")
 
 # =======================
 # PATHS / ENV
@@ -841,7 +845,10 @@ def retrieve(
     if use_gar and GAR_ENABLED and gar_expand_query is not None:
         query = gar_expand_query(query)
         if query != original_query:
-            print(f"[GAR] Expanded: '{original_query[:50]}...' -> '{query[:80]}...'")
+            logger.debug("GAR query expansion", extra={
+                "original_query": original_query[:50],
+                "expanded_query": query[:80],
+            })
 
     text_model = get_text_embed_model()
     # If embeddings or FAISS index are unavailable, rely on lexical/BM25 only.
@@ -885,7 +892,7 @@ def retrieve(
                     candidates.append(d_bm)
                     seen.add(key)
         except Exception as e:  # pragma: no cover
-            print(f"[NovaRAG] Hybrid BM25 union failed: {e}")
+            logger.warning("Hybrid BM25 union failed", extra={"error": str(e)[:100]})
     
     # Domain-aware pre-filtering: prioritize matching domain
     if early_domain and early_confidence >= 0.6 and len(candidates) > k:
@@ -1066,7 +1073,10 @@ def retrieve(
             sim_to_q = apply_domain_boost(
                 candidates, sim_to_q, detected_domain, DOMAIN_BOOST_FACTOR
             )
-            print(f"[Domain] Detected: {detected_domain} (confidence: {domain_confidence:.2f})")
+            logger.info("Domain boost applied", extra={
+                "domain": detected_domain,
+                "confidence": round(domain_confidence, 2),
+            })
 
     selected = []
     selected_embs = []

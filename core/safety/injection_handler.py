@@ -4,13 +4,13 @@ Hybrid injection and multi-query handling: judge by intent, not syntax.
 
 from __future__ import annotations
 
-import logging
 import re
 from typing import Any, Dict
 
 from .risk_assessment import RiskAssessment
+from core.monitoring.logger_config import get_logger, log_safety_event
 
-logger = logging.getLogger(__name__)
+logger = get_logger("core.safety.injection_handler")
 
 
 def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
@@ -33,9 +33,17 @@ def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
     # Step 1: Detect injection syntax (form only - don't decide safety yet)
     injection_meta = RiskAssessment.detect_injection_syntax(q_raw)
     if injection_meta.get("has_injection"):
-        print(f"[INJECTION] Syntax detected: {injection_meta.get('injection_markers', [])[:2]}")
-        print(f"[INJECTION] Original: {q_original[:80]}")
-        print(f"[INJECTION] Core extracted: {injection_meta['core_question'][:80]}")
+        log_safety_event(
+            logger,
+            "injection_detection",
+            check_name="injection_syntax",
+            passed=False,
+            details={
+                "markers": injection_meta.get("injection_markers", [])[:2],
+                "original_preview": q_original[:80],
+                "core_extracted": injection_meta["core_question"][:80],
+            },
+        )
 
     # Step 2: Extract core question(s) - strip wrapper BEFORE any decisions
     q_clean = injection_meta.get("core_question", q_raw).strip() if injection_meta.get("has_injection") else q_raw

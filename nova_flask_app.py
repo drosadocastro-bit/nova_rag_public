@@ -26,6 +26,16 @@ from core.monitoring import (
     record_cache_miss,
 )
 from core.monitoring.prometheus_metrics import generate_metrics, get_content_type
+from core.monitoring.logger_config import (
+    get_logger,
+    QueryContext,
+    log_query,
+    log_safety_event,
+    log_startup_config,
+)
+
+# Initialize structured logger
+logger = get_logger("nova_flask_app")
 
 # Lightweight in-process retrieval cache to replace legacy cache_utils
 _RETRIEVAL_CACHE_ENABLED = os.environ.get("NOVA_ENABLE_RETRIEVAL_CACHE", "0") == "1"
@@ -60,15 +70,20 @@ retrieve = _cached_retrieve
 
 import os
 
-print("\n" + "=" * 70)
-print("Using Ollama for local LLM inference (ensure service is running at http://127.0.0.1:11434)")
-print("=" * 70 + "\n")
+# Log startup configuration
+log_startup_config()
+logger.info("Nova NIC starting", extra={
+    "ollama_url": "http://127.0.0.1:11434",
+    "cache_enabled": _RETRIEVAL_CACHE_ENABLED,
+    "cache_size": _RETRIEVAL_CACHE_SIZE,
+})
 
 if os.environ.get("NOVA_WARMUP_ON_START", "0") == "1":
     try:
         import warmup_backend  # type: ignore[import-not-found]  # Optional module
+        logger.info("Backend warmup complete")
     except Exception as e:
-        print(f"[WARMUP] Skipped: {e}")
+        logger.warning("Backend warmup skipped", extra={"reason": str(e)})
 
 # Use relative paths for Flask template and static folders
 BASE_DIR = Path(__file__).parent.resolve()
@@ -90,7 +105,10 @@ if RATE_LIMIT_ENABLED:
         storage_uri="memory://",
         strategy="fixed-window",
     )
-    print(f"[RateLimit] Enabled: {RATE_LIMIT_PER_HOUR}/hour, {RATE_LIMIT_PER_MINUTE}/minute for API")
+    logger.info("Rate limiting enabled", extra={
+        "per_hour": RATE_LIMIT_PER_HOUR,
+        "per_minute": RATE_LIMIT_PER_MINUTE,
+    })
 else:
     # Create a no-op limiter when disabled
     limiter = Limiter(
@@ -98,6 +116,7 @@ else:
         app=app,
         enabled=False,
     )
+    logger.info("Rate limiting disabled")
     print("[RateLimit] Disabled")
 
 @app.route("/", methods=["GET"])
@@ -154,7 +173,11 @@ def _check_auth():
 @app.route("/api/ask", methods=["POST"])
 @limiter.limit(f"{RATE_LIMIT_PER_MINUTE} per minute")
 def api_ask():
+    import uuid
+    query_id = str(uuid.uuid4())
+    
     if not _check_auth():
+        logger.warning("Unauthorized API access attempt", extra={"query_id": query_id})
         return jsonify({"error": "Unauthorized"}), 403
     
     start_time = time.time()
@@ -164,6 +187,13 @@ def api_ask():
     fallback = data.get("fallback")  # e.g., "retrieval-only"
     
     user_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    
+    # Log query start with structured data
+    logger.info("Query received", extra={
+        "query_id": query_id,
+        "query": question[:200] if question else "",
+        "mode": mode,
+    })
 
     def _refuse_input(reason: str, message: str, http_status: int = 200):
         # Keep response JSON shape consistent: answer is a structured object.
@@ -307,10 +337,33 @@ def api_ask():
         for trigger in (safety_meta.get("heuristic_triggers") or []):
             record_hallucination_prevention(reason=trigger)
         
+        # Structured logging for query completion
+        safety_checks_performed = ["input_validation", "injection_detection"]
+        if safety_meta.get("heuristic_triggers"):
+            safety_checks_performed.extend(safety_meta["heuristic_triggers"])
+        
+        log_query(
+            logger,
+            "Query completed",
+            query=question[:200] if question else "",
+            domain=domain,
+            confidence_score=confidence_pct,
+            latency_ms=response_time_ms,
+            safety_checks=safety_checks_performed,
+            query_id=query_id,
+            model_used=response_data["model_used"],
+            num_sources=len(traced_sources),
+        )
+        
         return jsonify(response_data)
     except Exception as e:
         # Avoid returning 500 on encoding issues (e.g., emojis); respond gracefully
         msg = str(e)
+        logger.error("Query failed", extra={
+            "query_id": query_id,
+            "error": msg[:200],
+            "latency_ms": int((time.time() - start_time) * 1000),
+        })
         if "encoding" in msg.lower() or "codec" in msg.lower():
             return jsonify({"error": "Server encoding error"}), 400
         return jsonify({"error": msg}), 500

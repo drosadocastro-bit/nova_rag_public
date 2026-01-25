@@ -12,6 +12,9 @@ from enum import Enum
 
 from core.safety.multilingual import MultilingualSafetyDetector
 from core.safety.semantic_safety import SemanticSafetyDetector
+from core.monitoring.logger_config import get_logger, log_safety_event
+
+logger = get_logger("core.safety.risk_assessment")
 
 # Lazy load semantic detector
 _semantic_detector: Optional[SemanticSafetyDetector] = None
