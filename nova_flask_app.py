@@ -33,9 +33,20 @@ from core.monitoring.logger_config import (
     log_safety_event,
     log_startup_config,
 )
+from core.phase3_5.neural_advisory import get_neural_advisory_layer
 
 # Initialize structured logger
 logger = get_logger("nova_flask_app")
+
+advisory_layer = get_neural_advisory_layer()
+if advisory_layer:
+    logger.info(
+        "Neural Advisory Layer enabled",
+        extra={
+            "auto_reports": advisory_layer.config.auto_compliance_reports,
+            "report_formats": advisory_layer.config.report_formats,
+        },
+    )
 
 # Lightweight in-process retrieval cache to replace legacy cache_utils
 _RETRIEVAL_CACHE_ENABLED = os.environ.get("NOVA_ENABLE_RETRIEVAL_CACHE", "0") == "1"
@@ -354,6 +365,32 @@ def api_ask():
             model_used=response_data["model_used"],
             num_sources=len(traced_sources),
         )
+        
+        # Phase 3.5: Generate compliance reports if enabled
+        if advisory_layer:
+            try:
+                evidence_chain = advisory_layer.build_evidence_chain(
+                    query=question,
+                    domain=domain,
+                    intent=None,
+                    retrieved_documents=docs if docs else [],
+                    safety_meta=safety_meta,
+                    model_used=response_data["model_used"],
+                    decision_tag=session_state.get("last_decision_tag"),
+                    traced_sources=traced_sources,
+                    retrieval_time_ms=0.0,  # Not tracked separately yet
+                    total_time_ms=response_time_ms,
+                    session_id=session_state.get("session_id"),
+                )
+                report_paths = advisory_layer.maybe_generate_report(
+                    evidence_chain=evidence_chain,
+                    query=question,
+                    answer=answer,
+                )
+                if report_paths:
+                    logger.info("Compliance reports generated", extra={"paths": report_paths, "query_id": query_id})
+            except Exception as exc:  # pragma: no cover - defensive logging
+                logger.warning("Compliance report generation failed", extra={"error": str(exc), "query_id": query_id})
         
         return jsonify(response_data)
     except Exception as e:

@@ -741,7 +741,7 @@ For complete details, see [Phase 3 Completion Documentation](docs/roadmap/PHASE3
 
 ---
 
-## Phase 3.5: Neural Advisory Layer 🚀 IN PROGRESS
+## Phase 3.5: Neural Advisory Layer ✅ COMPLETE
 
 Phase 3.5 introduces **neural networks as advisors**, not decision-makers—improving quality without breaking determinism or safety guarantees. NNs suggest and enhance, but deterministic rules remain authoritative.
 
@@ -758,7 +758,7 @@ Phase 3.5 introduces **neural networks as advisors**, not decision-makers—impr
 | Task 7 | ✅ DONE | [Fine-tuning script](scripts/finetune_embeddings_v2.py) - **2 epochs trained, tested, production ready** |
 | Task 8 | ✅ DONE | [Anomaly detector](core/safety/anomaly_detector.py) - **Trained, validated, 0% FP rate** |
 | Task 9 | ✅ DONE | [Compliance reporter](core/compliance/report_generator.py) - **JSON/PDF, tamper detection, 23,793/sec** |
-| Task 10 | 🔄 NEXT | Integration & end-to-end validation |
+| Task 10 | ✅ DONE | [Integration & validation](governance/TASK10_INTEGRATION_SUMMARY.md) - **5/5 tests pass, graceful degradation verified** |
 
 **Task 6 Complete:** Generated 4,010 training pairs across 6 industrial domains (vehicle, forklift, radar, hvac, electronics, civilian). Multi-format support (TXT, PDF, HTML) with robust error handling. See [Task 6 Summary](docs/roadmap/TASK6_COMPLETION_SUMMARY.md).
 
@@ -767,6 +767,10 @@ Phase 3.5 introduces **neural networks as advisors**, not decision-makers—impr
 **Task 8 Complete:** Anomaly detector trained on 20,000 synthetic queries (75 epochs). Validation passed: **0.0% false positives**, **100.0% detection rate**, **1170x separation** between normal/anomalous queries. Threshold: 0.000009 (99.5th percentile). Model: QueryAutoencoder (384→128→64→128→384). Advisory mode (non-blocking). See [Task 8 Summary](governance/TASK8_ANOMALY_DETECTOR_SUMMARY.md).
 
 **Task 9 Complete:** Compliance reporter generates tamper-evident audit trails with SHA-256 verification. JSON generation: **0.04ms** (23,793/sec). PDF generation: **1.06s** (< 2s target). Batch processing: 10 reports in 12ms. Tamper detection: **100% accuracy**. Aggregate statistics: domain distribution, anomaly trends, performance metrics. See [Task 9 Summary](governance/TASK9_COMPLIANCE_REPORTER_SUMMARY.md).
+
+**Task 10 Complete:** End-to-end integration via NeuralAdvisoryLayer orchestrates all Phase 3.5 features. Finetuned embedding preference with baseline fallback. Evidence chain building from query metadata. Automatic compliance report generation. **5/5 validation tests passing** with graceful degradation verified across 4 failure scenarios. See [Task 10 Summary](governance/TASK10_INTEGRATION_SUMMARY.md).
+
+**Phase 3.5: 10/10 tasks complete (100%) ✅**
 
 ### Planned Features
 

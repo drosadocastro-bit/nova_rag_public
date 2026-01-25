@@ -52,7 +52,10 @@ DOCS_DIR = BASE_DIR / "data"
 INDEX_DIR = BASE_DIR / "vector_db"
 INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
-ANOMALY_DETECTOR_ENABLED = os.environ.get("NOVA_ANOMALY_DETECTOR", "0") == "1"
+ANOMALY_DETECTOR_ENABLED = (
+    os.environ.get("NOVA_ANOMALY_DETECTOR", "0") == "1"
+    or os.environ.get("NOVA_ENABLE_ANOMALY_DETECTION", "0") == "1"
+)
 ANOMALY_MODEL_PATH = Path(
     os.environ.get(
         "NOVA_ANOMALY_MODEL",
@@ -65,6 +68,15 @@ ANOMALY_CONFIG_PATH = Path(
         str(BASE_DIR / "models" / "anomaly_detector_v1.0_config.json"),
     )
 )
+
+USE_FINETUNED_EMBEDDINGS = os.environ.get("NOVA_USE_FINETUNED_EMBEDDINGS", "0") == "1"
+FINETUNED_MODEL_PATH = Path(
+    os.environ.get(
+        "NOVA_FINETUNED_MODEL_PATH",
+        str(BASE_DIR / "models" / "nic-embeddings-v1.0"),
+    )
+)
+BASE_EMBED_MODEL_PATH = BASE_DIR / "models" / "all-MiniLM-L6-v2"
 
 INDEX_PATH = INDEX_DIR / "vehicle_index.faiss"
 DOCS_PATH = INDEX_DIR / "vehicle_docs.jsonl"
@@ -114,23 +126,36 @@ def get_text_embed_model():
     try:
         from sentence_transformers import SentenceTransformer
 
-        local_path = BASE_DIR / "models" / "all-MiniLM-L6-v2"
-        print(f"[NovaRAG] Loading text embedding model from {local_path}...")
+        prefer_finetuned = USE_FINETUNED_EMBEDDINGS and FINETUNED_MODEL_PATH.exists()
+        preferred_path = FINETUNED_MODEL_PATH if prefer_finetuned else BASE_EMBED_MODEL_PATH
+        print(f"[NovaRAG] Loading text embedding model from {preferred_path}...")
 
-        if local_path.exists():
-            print("[NovaRAG]    Found local model, loading (local_files_only=True)...")
-            text_embed_model = SentenceTransformer(str(local_path), local_files_only=True)
-            print("[NovaRAG]    Local embedding model loaded")
-        elif FORCE_OFFLINE:
-            print(f"[NovaRAG]    ERROR: Offline mode enabled but local model not found at {local_path}")
+        if USE_FINETUNED_EMBEDDINGS and not FINETUNED_MODEL_PATH.exists():
+            print(
+                f"[NovaRAG]    Finetuned model requested at {FINETUNED_MODEL_PATH} but missing; falling back to baseline"
+            )
+
+        for candidate in (FINETUNED_MODEL_PATH if USE_FINETUNED_EMBEDDINGS else None, BASE_EMBED_MODEL_PATH):
+            if candidate is None:
+                continue
+            if candidate.exists():
+                print(f"[NovaRAG]    Loading embedding model from {candidate} (local_files_only=True)...")
+                text_embed_model = SentenceTransformer(str(candidate), local_files_only=True)
+                print("[NovaRAG]    Local embedding model loaded")
+                return text_embed_model
+
+        if FORCE_OFFLINE:
+            print(
+                f"[NovaRAG]    ERROR: Offline mode enabled but local model not found at {BASE_EMBED_MODEL_PATH}"
+            )
             print("[NovaRAG]    Cannot download models in offline mode. Please download manually.")
             text_embed_model_error = "Offline mode - no local model available"
             return None
-        else:
-            print(f"[NovaRAG]    Local model not found at {local_path}")
-            print("[NovaRAG]   Attempting to download from HuggingFace (this may hang)...")
-            text_embed_model = SentenceTransformer("all-MiniLM-L6-v2")
-            print("[NovaRAG]    Downloaded embedding model")
+
+        print(f"[NovaRAG]    Local model not found at {BASE_EMBED_MODEL_PATH}")
+        print("[NovaRAG]   Attempting to download from HuggingFace (this may hang)...")
+        text_embed_model = SentenceTransformer("all-MiniLM-L6-v2")
+        print("[NovaRAG]    Downloaded embedding model")
         return text_embed_model
     except Exception as e:  # pragma: no cover - handled at runtime
         text_embed_model_error = str(e)
