@@ -1,4 +1,6 @@
 import importlib
+from typing import Any
+
 import pytest
 import core.retrieval.retrieval_engine as retrieval_module
 
@@ -20,7 +22,7 @@ def test_retrieve_emits_anomaly_metadata(monkeypatch, query):
     monkeypatch.setenv("NOVA_ANOMALY_CONFIG", "models/anomaly_detector_v1.0_config.json")
 
     importlib.reload(retrieval_module)
-    engine = retrieval_module.RetrievalEngine()
+    engine: Any = retrieval_module.RetrievalEngine()  # type: ignore[attr-defined]
 
     text_model = engine.get_text_embed_model()
     if text_model is None:
