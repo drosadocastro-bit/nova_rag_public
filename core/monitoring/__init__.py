@@ -1,7 +1,8 @@
 """
 Nova NIC Monitoring Module.
 
-Provides Prometheus metrics for observability and production monitoring.
+Provides Prometheus metrics, analytics dashboard, anomaly detection,
+and compliance reporting for observability and production monitoring.
 """
 
 from .prometheus_metrics import (
@@ -24,7 +25,39 @@ from .prometheus_metrics import (
     observe_index_build_time,
 )
 
+from .analytics_dashboard import (
+    get_dashboard_summary,
+    get_latency_breakdown,
+    get_domain_analytics,
+    get_real_time_stats,
+    DashboardSummary,
+    QueryMetrics,
+    DomainMetrics,
+    ModelMetrics,
+)
+
+from .operational_anomaly import (
+    OperationalAnomalyDetector,
+    AnomalyThresholds,
+    AnomalyEvent,
+    AnomalyReport,
+    AnomalySeverity,
+    get_anomaly_report,
+    observe_request,
+)
+
+from .compliance_reporting import (
+    ComplianceReporter,
+    generate_sla_report,
+    generate_safety_audit,
+    generate_full_report,
+    SLAMetrics,
+    SafetyAuditReport,
+    ComplianceReport,
+)
+
 __all__ = [
+    # Prometheus metrics
     "get_metrics_registry",
     "get_metrics_wsgi_app",
     "record_query",
@@ -35,4 +68,29 @@ __all__ = [
     "record_cache_hit",
     "record_cache_miss",
     "observe_index_build_time",
+    # Analytics dashboard
+    "get_dashboard_summary",
+    "get_latency_breakdown",
+    "get_domain_analytics",
+    "get_real_time_stats",
+    "DashboardSummary",
+    "QueryMetrics",
+    "DomainMetrics",
+    "ModelMetrics",
+    # Anomaly detection
+    "OperationalAnomalyDetector",
+    "AnomalyThresholds",
+    "AnomalyEvent",
+    "AnomalyReport",
+    "AnomalySeverity",
+    "get_anomaly_report",
+    "observe_request",
+    # Compliance reporting
+    "ComplianceReporter",
+    "generate_sla_report",
+    "generate_safety_audit",
+    "generate_full_report",
+    "SLAMetrics",
+    "SafetyAuditReport",
+    "ComplianceReport",
 ]
