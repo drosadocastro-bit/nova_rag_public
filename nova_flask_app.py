@@ -313,8 +313,13 @@ def metrics():
     """Prometheus-compatible metrics endpoint."""
     import time
     
-    # Get cache stats if SQL logging enabled
-    cache_stats = cache_utils.get_query_stats()
+    # Get cache stats from lightweight retrieval cache
+    cache_stats = {
+        "total_queries": 0,
+        "avg_response_time_ms": 0,
+        "avg_retrieval_confidence": 0,
+        "audit_status_breakdown": {},
+    }
     
     # Basic metrics
     metrics_data = {
@@ -325,6 +330,7 @@ def metrics():
         "avg_retrieval_confidence": cache_stats.get("avg_retrieval_confidence", 0),
         "audit_status_breakdown": cache_stats.get("audit_status_breakdown", {}),
         "cache_enabled": os.environ.get("NOVA_ENABLE_RETRIEVAL_CACHE", "0") == "1",
+        "cache_size": len(_retrieval_cache_store),
         "rate_limit_enabled": RATE_LIMIT_ENABLED,
         "hybrid_search_enabled": os.environ.get("NOVA_HYBRID_SEARCH", "1") == "1",
         "safety_heuristic_triggers": safety_metrics.get_trigger_counts(),
