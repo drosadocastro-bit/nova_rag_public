@@ -320,16 +320,6 @@ pip install -r requirements.txt
 
 See [PHASE2_IMPLEMENTATION.md](PHASE2_IMPLEMENTATION.md) for complete architecture details and deployment guides.
 
-### Governance Verification (Phase 4)
-
-End-to-end governance checks cover the model registry, use-case registry, access control, compliance reporting, and SLA manager. Run the automated verifier (works offline; skips Ollama if `NOVA_FORCE_OFFLINE=1`):
-
-```bash
-python verify_phase4_0_v2.py
-```
-
-Artifacts (SQLite DBs and reports) are written under `governance/` and are safe to rerun.
-
 ### Phase 3.5 Performance Benchmark
 
 Measure latency overhead of finetuned embeddings, anomaly detection, and compliance reporting against the `/api/ask` endpoint (default `NIC_API_URL=http://localhost:5000/api/ask`).
@@ -343,6 +333,16 @@ python scripts/benchmark_phase3_5_performance.py
 ```
 
 Optional: set `NOVA_API_TOKEN` for protected endpoints. Results are saved to `phase3_5_benchmark_results.json` with mean/median/p95/p99 latencies across 25 runs (5 warmups).
+
+### Governance Verification (Phase 4)
+
+End-to-end governance checks cover the model registry, use-case registry, access control, compliance reporting, and SLA manager. Run the automated verifier (works offline; skips Ollama if `NOVA_FORCE_OFFLINE=1`):
+
+```bash
+python verify_phase4_0_v2.py
+```
+
+Artifacts (SQLite DBs and reports) are written under `governance/` and are safe to rerun.
 
 ---
 
