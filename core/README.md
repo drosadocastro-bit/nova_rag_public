@@ -17,8 +17,8 @@
 - **Adversarial safety suite:** 111/111 passed
 - **Snapshot date:** Jan 26, 2026
 - **Notes:**
-   - Counts reflect last CI run (Linux/Ubuntu). Windows local runs may differ due to optional dependencies (e.g., `tantivy`) and SQLite file locks.
-   - Totals can vary with optional deps. See [tests/README.md](tests/README.md).
+  - Counts reflect last CI run (Linux/Ubuntu). Windows local runs may differ due to optional dependencies (e.g., `tantivy`) and SQLite file locks.
+  - Totals can vary with optional deps. See [tests/README.md](tests/README.md).
 
 ## 🎯 **Why NIC?**
 
