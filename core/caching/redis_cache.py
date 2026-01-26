@@ -20,7 +20,7 @@ import time
 import zlib
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +146,7 @@ class RedisDistributedCache:
             decode_responses=False,  # We handle serialization
         )
         
-        self._client = redis.Redis(connection_pool=self._pool)  # type: ignore
+        self._client: redis.Redis = redis.Redis(connection_pool=self._pool)  # type: ignore
         
         # Pub/sub for invalidations
         self._pubsub: Optional[redis.client.PubSub] = None  # type: ignore
@@ -252,7 +252,7 @@ class RedisDistributedCache:
         full_key = self._make_key(key)
         
         try:
-            data = self._client.get(full_key)
+            data = cast(Optional[bytes], self._client.get(full_key))
             
             if data is None:
                 self._misses += 1
@@ -322,7 +322,7 @@ class RedisDistributedCache:
         full_key = self._make_key(key)
         
         try:
-            return self._client.delete(full_key) > 0
+            return cast(int, self._client.delete(full_key)) > 0
         except Exception as e:
             logger.error(f"Cache delete error: {e}")
             return False
@@ -341,14 +341,14 @@ class RedisDistributedCache:
         
         try:
             # Get all keys in domain
-            keys = self._client.smembers(domain_key)
+            keys = cast(Set[bytes], self._client.smembers(domain_key))
             
             if not keys:
                 return 0
             
             # Delete all keys
             full_keys = [self._make_key(k.decode()) for k in keys]
-            deleted = self._client.delete(*full_keys)
+            deleted = cast(int, self._client.delete(*full_keys))
             
             # Delete domain set
             self._client.delete(domain_key)
@@ -379,13 +379,13 @@ class RedisDistributedCache:
         tag_key = f"{self.config.key_prefix}tag:{tag}"
         
         try:
-            keys = self._client.smembers(tag_key)
+            keys = cast(Set[bytes], self._client.smembers(tag_key))
             
             if not keys:
                 return 0
             
             full_keys = [self._make_key(k.decode()) for k in keys]
-            deleted = self._client.delete(*full_keys)
+            deleted = cast(int, self._client.delete(*full_keys))
             
             self._client.delete(tag_key)
             self._invalidations += deleted
@@ -419,7 +419,7 @@ class RedisDistributedCache:
         """Check if key exists."""
         full_key = self._make_key(key)
         try:
-            return self._client.exists(full_key) > 0
+            return cast(int, self._client.exists(full_key)) > 0
         except Exception:
             return False
     
@@ -427,7 +427,7 @@ class RedisDistributedCache:
         """Get remaining TTL for key."""
         full_key = self._make_key(key)
         try:
-            return self._client.ttl(full_key)
+            return cast(int, self._client.ttl(full_key))
         except Exception:
             return -2
     
@@ -436,7 +436,7 @@ class RedisDistributedCache:
         full_keys = [self._make_key(k) for k in keys]
         
         try:
-            values = self._client.mget(full_keys)
+            values = cast(List[Optional[bytes]], self._client.mget(full_keys))
             result = {}
             
             for key, value in zip(keys, values):
@@ -487,9 +487,9 @@ class RedisDistributedCache:
             deleted = 0
             
             while True:
-                cursor, keys = self._client.scan(cursor, match=pattern, count=100)
+                cursor, keys = cast(Tuple[int, List[bytes]], self._client.scan(cursor, match=pattern, count=100))
                 if keys:
-                    deleted += self._client.delete(*keys)
+                    deleted += cast(int, self._client.delete(*keys))
                 if cursor == 0:
                     break
             
@@ -502,7 +502,7 @@ class RedisDistributedCache:
     def get_stats(self) -> Dict[str, Any]:
         """Get cache statistics."""
         try:
-            info = self._client.info("memory")
+            info = cast(Dict[str, Any], self._client.info("memory"))
             memory_used = info.get("used_memory_human", "unknown")
         except Exception:
             memory_used = "unknown"
@@ -563,7 +563,8 @@ class AsyncRedisCache:
         )
         if self._client is None:
             raise RuntimeError("Failed to create Redis client")
-        await self._client.ping()
+        # Cast to Any to avoid type stub issues with async ping()
+        await cast(Any, self._client.ping())
         logger.info(f"AsyncRedisCache connected to {self.config.host}:{self.config.port}")
     
     async def get(self, key: str, default: Any = None) -> Any:

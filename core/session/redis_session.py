@@ -18,7 +18,7 @@ import uuid
 import zlib
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple, cast
 
 logger = logging.getLogger(__name__)
 
@@ -300,7 +300,7 @@ class RedisSessionStore:
         key = self._make_key(session_id)
         
         try:
-            data = self._client.get(key)
+            data = cast(Optional[bytes], self._client.get(key))
             
             if data is None:
                 return None
@@ -350,7 +350,7 @@ class RedisSessionStore:
         key = self._make_key(session_id)
         
         try:
-            return self._client.delete(key) > 0
+            return cast(int, self._client.delete(key)) > 0
         except Exception as e:
             logger.error(f"Failed to delete session: {e}")
             return False
@@ -359,7 +359,7 @@ class RedisSessionStore:
         """Check if session exists."""
         key = self._make_key(session_id)
         try:
-            return self._client.exists(key) > 0
+            return cast(int, self._client.exists(key)) > 0
         except Exception:
             return False
     
@@ -408,7 +408,7 @@ class RedisSessionStore:
         lock_key = self._make_lock_key(session_id)
         
         try:
-            return self._client.delete(lock_key) > 0
+            return cast(int, self._client.delete(lock_key)) > 0
         except Exception as e:
             logger.error(f"Failed to release lock: {e}")
             return False
@@ -425,13 +425,13 @@ class RedisSessionStore:
         try:
             cursor = 0
             while True:
-                cursor, keys = self._client.scan(cursor, match=pattern, count=100)
+                cursor, keys = cast(Tuple[int, List[bytes]], self._client.scan(cursor, match=pattern, count=100))
                 
                 for key in keys:
                     if b"lock:" in key:
                         continue
                     
-                    data = self._client.get(key)
+                    data = cast(Optional[bytes], self._client.get(key))
                     if data:
                         session = self._deserialize(data)
                         if session.user_id == user_id and not session.is_expired:
@@ -457,7 +457,7 @@ class RedisSessionStore:
     def get_stats(self) -> Dict[str, Any]:
         """Get session store statistics."""
         try:
-            info = self._client.info("keyspace")
+            info = cast(Dict[str, Any], self._client.info("keyspace"))
             db_info = info.get(f"db{self.config.db}", {})
             keys = db_info.get("keys", 0)
         except Exception:
