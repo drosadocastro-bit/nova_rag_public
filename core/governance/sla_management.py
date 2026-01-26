@@ -261,7 +261,11 @@ class SLAManager:
         """Get SLA target for a resource."""
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute("""
-                SELECT * FROM sla_targets
+                SELECT resource_id, resource_type, response_time_p95, response_time_p99,
+                       availability_target, max_downtime_hours, error_rate_target,
+                       incident_response_minutes, incident_resolution_hours,
+                       created_at, updated_at, updated_by, metadata
+                FROM sla_targets
                 WHERE resource_id = ? AND resource_type = ?
             """, (resource_id, resource_type)).fetchone()
         
@@ -269,7 +273,10 @@ class SLAManager:
             return None
         
         (res_id, res_type, p95, p99, avail_target, max_downtime,
-         error_target, incident_resp, incident_res, created, updated, updated_by) = row
+         error_target, incident_resp, incident_res, created, updated, updated_by, metadata_json) = row
+        
+        import json
+        metadata = json.loads(metadata_json) if metadata_json else {}
         
         return SLATarget(
             resource_id=res_id,
@@ -278,6 +285,7 @@ class SLAManager:
             response_time_p99_target=p99,
             availability_target=avail_target,
             error_rate_target=error_target,
+            metadata=metadata,
             critical_incident_response_minutes=incident_resp,
             critical_incident_resolution_hours=incident_res,
             created_at=created,
