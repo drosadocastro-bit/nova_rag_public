@@ -35,14 +35,14 @@ class QueryPriority(str, Enum):
 class QueryStatus(str, Enum):
     """Query execution status."""
     
-    PENDING = "pending"
-    EMBEDDING = "embedding"
-    RETRIEVING = "retrieving"
-    GENERATING = "generating"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    TIMEOUT = "timeout"
-    CACHED = "cached"
+    PENDING = "PENDING"
+    EMBEDDING = "EMBEDDING"
+    RETRIEVING = "RETRIEVING"
+    GENERATING = "GENERATING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    TIMEOUT = "TIMEOUT"
+    CACHED = "CACHED"
 
 
 @dataclass

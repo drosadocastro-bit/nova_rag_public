@@ -32,7 +32,7 @@ class TestResult:
     duration_seconds: float
     memory_delta_mb: float
     error: Optional[str] = None
-    metadata: dict = None
+    metadata: Optional[dict] = None
 
 
 class PotatoHardwareTestSuite:
@@ -315,8 +315,7 @@ class PotatoHardwareTestSuite:
             )
             
             texts = ["test 1", "test 2", "test 3", "test 4", "test 5"]
-            embeddings = processor.encode_batch(texts)
-            
+            embeddings: np.ndarray = np.asarray(processor.encode_batch(texts))
             assert embeddings.shape == (5, 384)
             return True
         except ImportError:
@@ -444,8 +443,7 @@ class PotatoHardwareTestSuite:
         )
         
         texts = ["test1", "test2", "test3"]
-        embeddings = processor.encode_batch(texts)
-        
+        embeddings: np.ndarray = np.asarray(processor.encode_batch(texts))
         assert embeddings.shape == (3, 384)
         return True
     

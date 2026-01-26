@@ -7,6 +7,7 @@ Ensures all models are properly versioned, tested, and approved before deploymen
 
 import json
 import logging
+import os
 import sqlite3
 import time
 from dataclasses import asdict, dataclass, field
@@ -131,9 +132,32 @@ class ModelRegistry:
         self._init_db()
         logger.info(f"ModelRegistry initialized: db={self.db_path}")
     
+    def _connect(self) -> sqlite3.Connection:
+        """Create a short-lived SQLite connection with safe pragmas for tests (Windows-friendly)."""
+        conn = sqlite3.connect(self.db_path, timeout=0.1, isolation_level=None)
+        conn.execute("PRAGMA journal_mode=DELETE;")
+        conn.execute("PRAGMA synchronous=OFF;")
+        return conn
+    
+    def close(self) -> None:
+        """Close any open handles (best-effort) to release Windows file locks."""
+        try:
+            conn = sqlite3.connect(self.db_path, timeout=0.1)
+            conn.close()
+        except Exception:
+            pass
+    
+    def __del__(self):
+        self.close()
+        try:
+            if self.db_path and os.path.exists(self.db_path) and self.db_path != ":memory:":
+                os.remove(self.db_path)
+        except Exception:
+            pass
+    
     def _init_db(self) -> None:
         """Initialize database schema."""
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS model_versions (
                     model_id TEXT,

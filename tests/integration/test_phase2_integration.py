@@ -28,16 +28,20 @@ class TestAsyncQueryPipelineIntegration:
     def mock_retriever(self):
         """Create mock retriever."""
         retriever = Mock()
-        retriever.return_value = [
-            {"id": "doc1", "text": "Test content", "score": 0.9}
-        ]
+        retriever.return_value = {
+            "chunks": [
+                {"id": "doc1", "text": "Test content", "score": 0.9}
+            ],
+            "domain": "test_domain",
+            "confidence": 0.9
+        }
         return retriever
     
     @pytest.fixture
     def mock_generator(self):
         """Create mock generator."""
-        async def gen(prompt):
-            return "This is the answer based on the manual."
+        def gen(prompt, chunks):
+            return {"answer": "This is the answer based on the manual."}
         return gen
     
     @pytest.mark.asyncio

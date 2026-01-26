@@ -140,13 +140,13 @@ def get_anomalies():
         "total_anomalies": len(anomalies),
         "anomalies": [
             {
-                "timestamp": a.timestamp,
-                "metric": a.metric_name,
+                "timestamp": a.detected_at,
+                "metric": a.details.get("metric") if hasattr(a, "details") else None,
                 "anomaly_type": a.anomaly_type.value,
-                "value": a.actual_value,
-                "expected": a.baseline_value,
-                "deviation": a.deviation_percent,
-                "z_score": a.z_score,
+                "value": getattr(a, "metric_value", None),
+                "expected": getattr(a, "expected_value", None),
+                "deviation": getattr(a, "deviation", a.details.get("deviation") if hasattr(a, "details") else None),
+                "z_score": a.details.get("z_score") if hasattr(a, "details") else None,
                 "severity": a.severity,
             }
             for a in anomalies
@@ -183,11 +183,9 @@ def get_performance_metrics():
                 "timestamp": t.timestamp,
                 "count": t.count,
                 "mean": t.mean_value,
-                "min": t.min_value,
-                "max": t.max_value,
-                "p50": t.p50,
-                "p95": t.p95,
-                "p99": t.p99,
+                "p50": t.p50_value,
+                "p95": t.p95_value,
+                "p99": t.p99_value,
             }
             for t in perf_analytics.get_trend(metric)
         ],
@@ -272,20 +270,21 @@ def get_forecasts():
     if not forecast:
         return jsonify({"error": f"No forecast available for {metric}"}), 404
     
+    forecast_dict = forecast.to_dict()
     response = {
         "status": "success",
         "metric": metric,
-        "current_value": forecast.current_value,
-        "baseline_value": forecast.baseline_value,
-        "forecast_1h": forecast.forecast_1h,
-        "forecast_1d": forecast.forecast_1d,
-        "forecast_1w": forecast.forecast_1w,
+        "current_value": forecast_dict["current"],
+        "baseline_value": forecast_dict["baseline"],
+        "forecast_1h": forecast_dict["forecasts"]["1h"],
+        "forecast_1d": forecast_dict["forecasts"]["1d"],
+        "forecast_1w": forecast_dict["forecasts"]["1w"],
     }
     
     if include_confidence:
-        response["confidence_1h"] = forecast.confidence_1h
-        response["confidence_1d"] = forecast.confidence_1d
-        response["confidence_1w"] = forecast.confidence_1w
+        response["confidence"] = forecast_dict.get("confidence")
+        response["direction"] = forecast_dict.get("direction")
+        response["change_percent"] = forecast_dict.get("change_percent")
     
     return jsonify(response), 200
 
@@ -419,9 +418,8 @@ def register_analytics_blueprint(app):
 
 
 if __name__ == "__main__":
-    from nova_flask_app import create_app
+    from nova_flask_app import app
     
-    app = create_app()
     register_analytics_blueprint(app)
     
     with app.test_client() as client:

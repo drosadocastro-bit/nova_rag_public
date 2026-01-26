@@ -305,7 +305,7 @@ class ComplianceReporter:
                 title=title,
                 description=description,
                 reported_at=reported_at,
-                resource=resource,
+                resource=resource or "",
                 affected_count=affected_count,
                 resolved_at=resolved_at,
                 resolution=resolution,

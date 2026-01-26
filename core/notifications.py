@@ -28,7 +28,7 @@ class NotificationConfig:
     smtp_server: str = "localhost"
     smtp_port: int = 587
     email_from: str = "noreply@nova-nic.local"
-    email_recipients: List[str] = None
+    email_recipients: Optional[List[str]] = None
     
     # Webhook
     webhook_enabled: bool = False
@@ -145,7 +145,12 @@ class WebhookNotifier:
                     ).hexdigest()
                     headers["X-Signature"] = signature
                 
-                async with session.post(url, json=payload, headers=headers, timeout=10) as resp:
+                async with session.post(
+                    url,
+                    json=payload,
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=10),
+                ) as resp:
                     if resp.status < 400:
                         logger.info(f"Webhook notification sent: {event_type}")
                         return True

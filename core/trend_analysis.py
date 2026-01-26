@@ -19,6 +19,8 @@ from statistics import mean, stdev
 
 logger = logging.getLogger(__name__)
 
+_performance_predictor: Optional["PerformancePredictor"] = None
+
 
 class TrendDirection(str, Enum):
     """Trend direction classification."""
@@ -181,11 +183,11 @@ class TrendAnalyzer:
         # Determine direction
         if volatility_ratio > 0.3:
             return TrendDirection.VOLATILE, 0.5
-        elif normalized_slope > 5:
-            confidence = min(1.0, abs(normalized_slope) / 20)
+        elif normalized_slope > 2.0:
+            confidence = min(1.0, abs(normalized_slope) / 15)
             return TrendDirection.INCREASING, confidence
-        elif normalized_slope < -5:
-            confidence = min(1.0, abs(normalized_slope) / 20)
+        elif normalized_slope < -2.0:
+            confidence = min(1.0, abs(normalized_slope) / 15)
             return TrendDirection.DECREASING, confidence
         else:
             return TrendDirection.STABLE, 1.0
@@ -413,7 +415,12 @@ class PerformancePredictor:
         }
     
     def get_summary(self) -> Dict[str, Any]:
-        """Get forecasting summary."""
+        """Get forecasting summary.
+        Auto-generates forecasts for any metric with sufficient data if not already cached."""
+        for metric_name, values in self.historical_data.items():
+            if len(values) >= 10 and metric_name not in self.forecasts:
+                self.forecast_metric(metric_name)
+        
         return {
             "forecasts": {
                 name: forecast.to_dict()
@@ -425,6 +432,7 @@ class PerformancePredictor:
 
 def get_performance_predictor() -> PerformancePredictor:
     """Get global performance predictor instance."""
-    if not hasattr(get_performance_predictor, '_instance'):
-        get_performance_predictor._instance = PerformancePredictor()
-    return get_performance_predictor._instance
+    global _performance_predictor
+    if _performance_predictor is None:
+        _performance_predictor = PerformancePredictor()
+    return _performance_predictor

@@ -44,18 +44,21 @@ def test_model_registry():
     
     print("✓ Registering model version...")
     model = registry.register_version("test_model", "1.0.0", description="Test model")
+    assert model is not None
     assert model.status.value == "registered"
     print(f"  Status: {model.status.value}")
     
     print("✓ Approving model version...")
     registry.approve_version("test_model", "1.0.0", "reviewer_1")
     model = registry.get_version("test_model", "1.0.0")
+    assert model is not None
     assert model.approval_status.value == "approved"
     print(f"  Approved by: {model.approved_by}")
     
     print("✓ Deploying model version...")
     registry.deploy_version("test_model", "1.0.0", "deploy_1", "production")
     model = registry.get_version("test_model", "1.0.0")
+    assert model is not None
     assert model.status.value == "deployed_production"
     
     print("✓ Updating performance metrics...")
@@ -73,17 +76,20 @@ def test_usecase_registry():
     
     print("✓ Creating use-case...")
     usecase = registry.create_usecase("uc_1", "Use Case 1", "Test use-case", "owner_1")
+    assert usecase is not None
     assert usecase.status.value == "draft"
     
     print("✓ Approving use-case...")
     registry.submit_for_approval("uc_1")
     registry.approve_usecase("uc_1", "approver_1")
     usecase = registry.get_usecase("uc_1")
+    assert usecase is not None
     assert usecase.status.value == "approved"
     
     print("✓ Deploying use-case...")
     registry.deploy_usecase("uc_1", "deploy_1")
     usecase = registry.get_usecase("uc_1")
+    assert usecase is not None
     assert usecase.status.value == "deployed"
     
     print("\n✓ Use-Case Registry: OPERATIONAL")
@@ -111,6 +117,7 @@ def test_access_control():
     request_id = ac.request_approval(ApprovalAction.MODEL_DEPLOY_PRODUCTION, "user_1", {})
     ac.approve_request(request_id, "user_1", "approved")
     req = ac.get_approval_request(request_id)
+    assert req is not None
     assert req["status"] == "approved"
     
     print("\n✓ Access Control: OPERATIONAL")
@@ -202,6 +209,7 @@ def test_integration():
     model = models.get_deployed_version("classifier")
     usecase = usecases.get_usecase("detection")
     assert model is not None
+    assert usecase is not None
     assert usecase.status.value == "deployed"
     
     print("  ✓ Model deployed and monitored")

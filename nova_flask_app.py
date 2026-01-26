@@ -261,6 +261,7 @@ def api_ask():
     try:
         # First, retrieve source documents for transparency metadata
         traced_sources = []
+        docs = []
         try:
             docs = retrieve(question, k=12, top_n=6)
             for d in docs:
@@ -598,19 +599,22 @@ def run_startup_validation():
     
     # 2. Check Ollama connectivity
     print("\n[2/5] Checking Ollama connectivity...")
-    try:
-        ollama_ok, ollama_detail = check_ollama_connection()
-        if ollama_ok:
-            print("  [OK] Ollama connection successful")
-            print(f"    {ollama_detail.strip()}")
-        else:
-            print(f"  [FAIL] Ollama connection failed: {ollama_detail}")
-            print("    -> Start Ollama: 'ollama serve'")
-            print("    -> Verify model: 'ollama pull llama3.2:8b'")
+    if os.environ.get("NOVA_FORCE_OFFLINE", "0") == "1":
+        print("  [OK] Offline mode enabled (NOVA_FORCE_OFFLINE=1) - skipping Ollama check")
+    else:
+        try:
+            ollama_ok, ollama_detail = check_ollama_connection()
+            if ollama_ok:
+                print("  [OK] Ollama connection successful")
+                print(f"    {ollama_detail.strip()}")
+            else:
+                print(f"  [FAIL] Ollama connection failed: {ollama_detail}")
+                print("    -> Start Ollama: 'ollama serve'")
+                print("    -> Verify model: 'ollama pull llama3.2:8b'")
+                all_checks_passed = False
+        except Exception as e:
+            print(f"  [FAIL] Ollama check error: {e}")
             all_checks_passed = False
-    except Exception as e:
-        print(f"  [FAIL] Ollama check error: {e}")
-        all_checks_passed = False
     
     # 3. Check FAISS index existence and integrity
     print("\n[3/5] Checking FAISS index...")

@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from core.governance.model_registry import ModelRegistry, PerformanceMetrics
 from core.governance.use_case_registry import UseCaseRegistry, ImpactLevel
-from core.governance.access_control import AccessControl, Role, Permission
+from core.governance.access_control import AccessControl, Role, Permission, ApprovalAction
 from core.governance.compliance_reporting import ComplianceReporter, IncidentCategory, IncidentSeverity
 from core.governance.sla_management import SLAManager, SLAMetrics
 
@@ -41,6 +41,7 @@ def test_model_registry():
         description="Test model",
         hyperparameters={"lr": 0.001}
     )
+    assert model is not None
     assert model.model_id == "test_model"
     assert model.status.value == "registered"
     print(f"  Status: {model.status.value}, Approval: {model.approval_status.value}")
@@ -49,6 +50,7 @@ def test_model_registry():
     print("✓ Approving model version...")
     registry.approve_version("test_model", "1.0.0", "reviewer_1")
     model = registry.get_version("test_model", "1.0.0")
+    assert model is not None
     assert model.approval_status.value == "approved"
     print(f"  Approved by: {model.approved_by}")
     
@@ -56,6 +58,7 @@ def test_model_registry():
     print("✓ Deploying model version...")
     registry.deploy_version("test_model", "1.0.0", "deploy_1", "production")
     model = registry.get_version("test_model", "1.0.0")
+    assert model is not None
     assert model.status.value == "deployed_production"
     print(f"  Deployed to: {model.status.value}")
     
@@ -64,6 +67,7 @@ def test_model_registry():
     metrics = PerformanceMetrics(accuracy=0.95, latency_ms=50.0)
     registry.update_metrics("test_model", "1.0.0", metrics)
     model = registry.get_version("test_model", "1.0.0")
+    assert model is not None
     print(f"  Accuracy: {model.metrics.accuracy}, Latency: {model.metrics.latency_ms}ms")
     
     print("\n✓ Model Registry: OPERATIONAL")
@@ -82,6 +86,7 @@ def test_usecase_registry():
             "uc_1", "Use Case 1", "Test use-case",
             "owner_1", impact_level=ImpactLevel.HIGH
         )
+        assert usecase is not None
         assert usecase.status.value == "draft"
         print(f"  Status: {usecase.status.value}, Impact: {usecase.impact_level.value}")
         
@@ -90,6 +95,7 @@ def test_usecase_registry():
         registry.submit_for_approval("uc_1")
         registry.approve_usecase("uc_1", "approver_1")
         usecase = registry.get_usecase("uc_1")
+        assert usecase is not None
         assert usecase.status.value == "approved"
         print(f"  Approved by: {usecase.approved_by}")
         
@@ -97,6 +103,7 @@ def test_usecase_registry():
         print("✓ Deploying use-case...")
         registry.deploy_usecase("uc_1", "deploy_1")
         usecase = registry.get_usecase("uc_1")
+        assert usecase is not None
         assert usecase.status.value == "deployed"
         print(f"  Status: {usecase.status.value}")
         
@@ -133,11 +140,12 @@ def test_access_control():
         # Approval request
         print("✓ Testing approval workflow...")
         request_id = ac.request_approval(
-            "model_deploy_production", "user_1",
+            ApprovalAction.MODEL_DEPLOY_PRODUCTION, "user_1",
             {"model_id": "m1", "version": "1.0.0"}
         )
         ac.approve_request(request_id, "user_1", "approved")
         req = ac.get_approval_request(request_id)
+        assert req is not None
         assert req["status"] == "approved"
         print(f"  Request: {request_id}, Status: {req['status']}")
         
@@ -162,12 +170,14 @@ def test_compliance_reporting():
             affected_count=100
         )
         incident = reporter.get_incident(incident_id)
+        assert incident is not None
         print(f"  Incident ID: {incident_id}, Severity: {incident.severity.value}")
         
         # Resolve incident
         print("✓ Resolving incident...")
         reporter.resolve_incident(incident_id, "Fixed connection pool")
         incident = reporter.get_incident(incident_id)
+        assert incident is not None
         assert incident.resolved_at is not None
         print(f"  Resolved at: {incident.resolved_at}")
         
@@ -269,6 +279,7 @@ def test_integration():
         sla_target = sla.get_sla_target("classifier", "model")
         
         assert model is not None
+        assert usecase is not None
         assert usecase.status.value == "deployed"
         assert sla_target is not None
         

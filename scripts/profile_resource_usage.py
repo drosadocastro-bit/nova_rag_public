@@ -15,6 +15,7 @@ import json
 import time
 import psutil
 import tracemalloc
+import traceback
 from pathlib import Path
 from dataclasses import dataclass, asdict
 from typing import Dict, Any, Optional, List
@@ -347,7 +348,7 @@ def profile_anomaly_detector(profiler: ResourceProfiler):
     def load_anomaly():
         os.environ["NOVA_ANOMALY_DETECTOR"] = "1"
         try:
-            from core.phase3_5.anomaly_detector import AnomalyDetector
+            from core.phase3_5.anomaly_detector import AnomalyDetector  # type: ignore[import-not-found]
             detector = AnomalyDetector()
             return detector
         except Exception as e:
@@ -361,7 +362,7 @@ def profile_compliance_reporter(profiler: ResourceProfiler):
     """Profile compliance reporter."""
     def load_compliance():
         try:
-            from core.phase3_5.compliance_reporter import ComplianceReporter
+            from core.phase3_5.compliance_reporter import ComplianceReporter  # type: ignore[import-not-found]
             reporter = ComplianceReporter()
             return reporter
         except Exception as e:

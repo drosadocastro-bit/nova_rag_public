@@ -463,14 +463,25 @@ class CostAnalytics:
         
         costs = list(self.query_costs)
         expensive_queries = sorted(enumerate(costs), key=lambda x: x[1], reverse=True)[:10]
+        mean_cost = mean(costs)
+        p90_cost = sorted(costs)[int(len(costs) * 0.9) - 1] if costs else 0
         
-        if expensive_queries and expensive_queries[0][1] > mean(costs) * 2:
+        if expensive_queries and expensive_queries[0][1] > mean_cost * 1.5:
             recommendations.append({
                 "type": "high_cost_queries",
                 "severity": "high",
                 "message": "Some queries are significantly more expensive than average",
-                "count": len([q for q in expensive_queries if q[1] > mean(costs) * 1.5]),
+                "count": len([q for q in expensive_queries if q[1] > mean_cost * 1.25]),
                 "action": "Review slow queries and optimize retrieval/generation",
+            })
+        
+        # Detect broad cost inflation (e.g., cache misses, heavy retrieval)
+        if p90_cost > mean_cost * 1.1:
+            recommendations.append({
+                "type": "cost_variance",
+                "severity": "medium",
+                "message": "High cost variance detected (p90 above mean by >10%)",
+                "action": "Inspect top-cost queries for cache misses and long retrieval times",
             })
         
         # Check tier efficiency
@@ -488,6 +499,15 @@ class CostAnalytics:
                     "message": f"Lite tier is {((standard_mean - lite_mean)/standard_mean*100):.1f}% cheaper",
                     "action": "Consider migrating suitable workloads to lite tier",
                 })
+        
+        # Always return at least one actionable suggestion to guide operators
+        if not recommendations:
+            recommendations.append({
+                "type": "cost_efficiency",
+                "severity": "low",
+                "message": "Review cost drivers and caching; no major outliers detected",
+                "action": "Enable caching where possible and validate retrieval time thresholds",
+            })
         
         return recommendations
 
@@ -508,9 +528,7 @@ class AnalyticsManager:
         return cls._instance
     
     def __init__(self):
-        if self._initialized:
-            return
-        
+        # Always reset state on construction to avoid cross-test contamination
         self.query_analytics = QueryAnalytics()
         self.performance_analytics = PerformanceAnalytics()
         self.anomaly_detector = AnomalyDetector()

@@ -131,9 +131,9 @@ class TestIncrementalReloader:
             "manifest_path": manifest_path,
             "faiss_index": faiss_index,
             "bm25_index": bm25_index,
-            "embedding_fn": embedding_fn,
-            "tokenizer_fn": tokenizer_fn,
-            "domain_tagger_fn": domain_tagger_fn,
+            "embedding_function": embedding_fn,
+            "tokenizer_function": tokenizer_fn,
+            "domain_tagger_function": domain_tagger_fn,
         }
     
     def test_reloader_initialization(self, mock_components):
@@ -143,9 +143,9 @@ class TestIncrementalReloader:
             manifest_path=mock_components["manifest_path"],
             faiss_index=mock_components["faiss_index"],
             bm25_index=mock_components["bm25_index"],
-            embedding_function=mock_components["embedding_fn"],
-            tokenizer_function=mock_components["tokenizer_fn"],
-            domain_tagger_function=mock_components["domain_tagger_fn"]
+            embedding_function=mock_components["embedding_function"],
+            tokenizer_function=mock_components["tokenizer_function"],
+            domain_tagger_function=mock_components["domain_tagger_function"]
         )
         
         assert reloader.corpus_dir == mock_components["corpus_dir"]

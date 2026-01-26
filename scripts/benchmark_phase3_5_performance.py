@@ -77,7 +77,7 @@ def run_benchmark(query: str, enabled_features: Dict[str, bool], iterations: int
     
     for i in range(iterations):
         try:
-            payload = {
+            payload: Dict[str, object] = {
                 "query": query,
                 "session_id": f"bench_{int(time.time() * 1000)}_{i}",
             }
@@ -163,6 +163,8 @@ print()
 # Calculate overall statistics
 baseline_means = [r.get("mean_ms", 0) for r in baseline_results.values() if "error" not in r]
 phase3_5_means = [r.get("mean_ms", 0) for r in phase3_5_results.values() if "error" not in r]
+overhead_ms = 0.0
+overhead_pct = 0.0
 
 if baseline_means and phase3_5_means:
     baseline_avg = statistics.mean(baseline_means)

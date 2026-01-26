@@ -10,7 +10,9 @@ Provides REST API endpoints for:
 """
 
 from flask import Blueprint, jsonify, request
+from flask.typing import ResponseReturnValue
 import logging
+import time
 from typing import Any, Dict, Optional
 
 from core.governance.access_control import AccessControl, Permission, Role
@@ -57,7 +59,7 @@ def create_governance_blueprint(
     # ==================
     
     @bp.route('/models/register', methods=['POST'])
-    def register_model() -> tuple[Dict[str, Any], int]:
+    def register_model() -> ResponseReturnValue:
         """Register a new model version."""
         try:
             data = request.get_json() or {}
@@ -80,7 +82,7 @@ def create_governance_blueprint(
             return jsonify({"error": str(e)}), 400
     
     @bp.route('/models/<model_id>/versions', methods=['GET'])
-    def list_model_versions(model_id: str) -> tuple[Dict[str, Any], int]:
+    def list_model_versions(model_id: str) -> ResponseReturnValue:
         """List model versions."""
         try:
             versions = _model_registry.list_versions(model_id)
@@ -94,7 +96,7 @@ def create_governance_blueprint(
             return jsonify({"error": str(e)}), 400
     
     @bp.route('/models/<model_id>/versions/<version>/approve', methods=['POST'])
-    def approve_model_version(model_id: str, version: str) -> tuple[Dict[str, Any], int]:
+    def approve_model_version(model_id: str, version: str) -> ResponseReturnValue:
         """Approve a model version."""
         try:
             data = request.get_json() or {}
@@ -107,6 +109,8 @@ def create_governance_blueprint(
             
             if result:
                 model = _model_registry.get_version(model_id, version)
+                if not model:
+                    return jsonify({"error": "Model not found"}), 404
                 return jsonify(model.to_dict()), 200
             else:
                 return jsonify({"error": "Model not found"}), 404
@@ -115,7 +119,7 @@ def create_governance_blueprint(
             return jsonify({"error": str(e)}), 400
     
     @bp.route('/models/<model_id>/versions/<version>/deploy', methods=['POST'])
-    def deploy_model_version(model_id: str, version: str) -> tuple[Dict[str, Any], int]:
+    def deploy_model_version(model_id: str, version: str) -> ResponseReturnValue:
         """Deploy a model version."""
         try:
             data = request.get_json() or {}
@@ -129,6 +133,8 @@ def create_governance_blueprint(
             
             if result:
                 model = _model_registry.get_version(model_id, version)
+                if not model:
+                    return jsonify({"error": "Model not found or not approved"}), 400
                 return jsonify(model.to_dict()), 200
             else:
                 return jsonify({"error": "Model not found or not approved"}), 400
@@ -141,7 +147,7 @@ def create_governance_blueprint(
     # ==================
     
     @bp.route('/usecases/create', methods=['POST'])
-    def create_usecase() -> tuple[Dict[str, Any], int]:
+    def create_usecase() -> ResponseReturnValue:
         """Create a new use-case."""
         try:
             data = request.get_json() or {}
@@ -165,7 +171,7 @@ def create_governance_blueprint(
             return jsonify({"error": str(e)}), 400
     
     @bp.route('/usecases/<usecase_id>', methods=['GET'])
-    def get_usecase(usecase_id: str) -> tuple[Dict[str, Any], int]:
+    def get_usecase(usecase_id: str) -> ResponseReturnValue:
         """Get use-case details."""
         try:
             usecase = _usecase_registry.get_usecase(usecase_id)
@@ -178,7 +184,7 @@ def create_governance_blueprint(
             return jsonify({"error": str(e)}), 400
     
     @bp.route('/usecases/<usecase_id>/approve', methods=['POST'])
-    def approve_usecase(usecase_id: str) -> tuple[Dict[str, Any], int]:
+    def approve_usecase(usecase_id: str) -> ResponseReturnValue:
         """Approve a use-case."""
         try:
             data = request.get_json() or {}
@@ -189,6 +195,8 @@ def create_governance_blueprint(
             
             if result:
                 usecase = _usecase_registry.get_usecase(usecase_id)
+                if not usecase:
+                    return jsonify({"error": "Use-case not found"}), 404
                 return jsonify(usecase.to_dict()), 200
             else:
                 return jsonify({"error": "Use-case not found"}), 404
@@ -201,7 +209,7 @@ def create_governance_blueprint(
     # ==================
     
     @bp.route('/users/create', methods=['POST'])
-    def create_user() -> tuple[Dict[str, Any], int]:
+    def create_user() -> ResponseReturnValue:
         """Create a new user."""
         try:
             data = request.get_json() or {}
@@ -221,7 +229,7 @@ def create_governance_blueprint(
             return jsonify({"error": str(e)}), 400
     
     @bp.route('/users/<user_id>/roles', methods=['GET'])
-    def get_user_roles(user_id: str) -> tuple[Dict[str, Any], int]:
+    def get_user_roles(user_id: str) -> ResponseReturnValue:
         """Get user roles."""
         try:
             roles = _access_control.get_user_roles(user_id)
@@ -234,7 +242,7 @@ def create_governance_blueprint(
             return jsonify({"error": str(e)}), 400
     
     @bp.route('/users/<user_id>/roles/<role>/assign', methods=['POST'])
-    def assign_user_role(user_id: str, role: str) -> tuple[Dict[str, Any], int]:
+    def assign_user_role(user_id: str, role: str) -> ResponseReturnValue:
         """Assign role to user."""
         try:
             data = request.get_json() or {}
@@ -253,7 +261,7 @@ def create_governance_blueprint(
             return jsonify({"error": str(e)}), 400
     
     @bp.route('/users/<user_id>/permissions/<permission>', methods=['GET'])
-    def check_permission(user_id: str, permission: str) -> tuple[Dict[str, Any], int]:
+    def check_permission(user_id: str, permission: str) -> ResponseReturnValue:
         """Check if user has permission."""
         try:
             has_perm = _access_control.has_permission(
@@ -274,7 +282,7 @@ def create_governance_blueprint(
     # ==================
     
     @bp.route('/incidents/report', methods=['POST'])
-    def report_incident() -> tuple[Dict[str, Any], int]:
+    def report_incident() -> ResponseReturnValue:
         """Report an incident."""
         try:
             data = request.get_json() or {}
@@ -295,7 +303,7 @@ def create_governance_blueprint(
             return jsonify({"error": str(e)}), 400
     
     @bp.route('/incidents', methods=['GET'])
-    def list_incidents() -> tuple[Dict[str, Any], int]:
+    def list_incidents() -> ResponseReturnValue:
         """List incidents."""
         try:
             severity = request.args.get('severity')
@@ -316,7 +324,7 @@ def create_governance_blueprint(
             return jsonify({"error": str(e)}), 400
     
     @bp.route('/compliance/report', methods=['GET'])
-    def get_compliance_report() -> tuple[Dict[str, Any], int]:
+    def get_compliance_report() -> ResponseReturnValue:
         """Get compliance report."""
         try:
             period_days = request.args.get('period_days', 30, type=int)
@@ -332,7 +340,7 @@ def create_governance_blueprint(
             return jsonify({"error": str(e)}), 400
     
     @bp.route('/audit-log', methods=['GET'])
-    def get_audit_log() -> tuple[Dict[str, Any], int]:
+    def get_audit_log() -> ResponseReturnValue:
         """Get audit log."""
         try:
             user_id = request.args.get('user_id')
@@ -356,7 +364,7 @@ def create_governance_blueprint(
     # ==================
     
     @bp.route('/sla/<resource_type>/<resource_id>/define', methods=['POST'])
-    def define_sla(resource_type: str, resource_id: str) -> tuple[Dict[str, Any], int]:
+    def define_sla(resource_type: str, resource_id: str) -> ResponseReturnValue:
         """Define SLA for a resource."""
         try:
             data = request.get_json() or {}
@@ -387,7 +395,7 @@ def create_governance_blueprint(
             return jsonify({"error": str(e)}), 400
     
     @bp.route('/sla/<resource_type>/<resource_id>/status', methods=['GET'])
-    def get_sla_status(resource_type: str, resource_id: str) -> tuple[Dict[str, Any], int]:
+    def get_sla_status(resource_type: str, resource_id: str) -> ResponseReturnValue:
         """Get SLA status."""
         try:
             hours = request.args.get('hours', 24, type=int)
@@ -405,7 +413,7 @@ def create_governance_blueprint(
             return jsonify({"error": str(e)}), 400
     
     @bp.route('/sla/<resource_type>/<resource_id>/violations', methods=['GET'])
-    def get_sla_violations(resource_type: str, resource_id: str) -> tuple[Dict[str, Any], int]:
+    def get_sla_violations(resource_type: str, resource_id: str) -> ResponseReturnValue:
         """Get SLA violations."""
         try:
             hours = request.args.get('hours', 24, type=int)
@@ -429,7 +437,7 @@ def create_governance_blueprint(
     # ==================
     
     @bp.route('/health', methods=['GET'])
-    def governance_health() -> tuple[Dict[str, Any], int]:
+    def governance_health() -> ResponseReturnValue:
         """Health check for governance system."""
         return jsonify({
             "status": "healthy",
@@ -459,4 +467,3 @@ def register_governance_api(app, **kwargs) -> None:
     logger.info("Governance API registered")
 
 
-import time

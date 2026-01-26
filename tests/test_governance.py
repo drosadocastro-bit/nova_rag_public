@@ -45,7 +45,9 @@ class TestModelRegistry:
         """Create temporary model registry."""
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = os.path.join(tmpdir, "models.db")
-            yield ModelRegistry(db_path)
+            reg = ModelRegistry(db_path)
+            yield reg
+            reg.close()  # Release file locks before tempdir cleanup
     
     def test_register_model_version(self, registry):
         """Test registering a model version."""
