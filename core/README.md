@@ -11,6 +11,15 @@
 
 ---
 
+## 📈 **Test Coverage Snapshot**
+
+- **Total tests passing:** 858 (unit + integration)
+- **Adversarial safety suite:** 111/111 passed
+- **Snapshot date:** Jan 26, 2026
+- **Notes:**
+   - Counts reflect last CI run (Linux/Ubuntu). Windows local runs may differ due to optional dependencies (e.g., `tantivy`) and SQLite file locks.
+   - Totals can vary with optional deps. See [tests/README.md](tests/README.md).
+
 ## 🎯 **Why NIC?**
 
 **Problem:** You're troubleshooting a critical system at 2 AM. The 800-page manual is open, but you can't find the diagnostic procedure. ChatGPT would help, but:
@@ -34,7 +43,7 @@ curl -X POST http://localhost:5000/api/ask \
   "source": "WSR-88D Maintenance Manual, Section 4.2.1, Page 147"
 }
 ```
-**3 seconds. Cited answer. Zero internet. Zero hallucinations.**
+**3 seconds. Cited answer. Zero internet. Hallucination mitigation via confidence gating.**
 
 ---
 
@@ -294,7 +303,7 @@ Phase 2 added **345+ new tests** across 13 test files:
 - **Safety & Agents:** `test_injection_handler.py` (22), `test_procedure_agent.py` (21), `test_troubleshoot_agent.py` (29)
 - **Integration:** `test_phase2_integration.py` (25)
 
-**Total: 604 tests passing** (100% Phase 2 coverage, including optional dependency scenarios)
+**Total: 858 tests passing** — full unit+integration suite (as of Jan 26, 2026). **Adversarial safety suite:** 111/111 passed.
 
 ### Optional Dependencies
 
