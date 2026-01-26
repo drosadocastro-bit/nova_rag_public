@@ -11,6 +11,15 @@
 
 ---
 
+## 📈 **Test Coverage Snapshot**
+
+- **Total tests passing:** 858 (unit + integration)
+- **Adversarial safety suite:** 111/111 passed
+- **Snapshot date:** Jan 26, 2026
+- **Notes:**
+   - Counts reflect last CI run (Linux/Ubuntu). Windows local runs may differ due to optional dependencies (e.g., `tantivy`) and SQLite file locks.
+   - Totals can vary with optional deps. See [tests/README.md](tests/README.md).
+
 ## 🎯 **Why NIC?**
 
 **Problem:** You're troubleshooting a critical system at 2 AM. The 800-page manual is open, but you can't find the diagnostic procedure. ChatGPT would help, but:
@@ -34,7 +43,7 @@ curl -X POST http://localhost:5000/api/ask \
   "source": "WSR-88D Maintenance Manual, Section 4.2.1, Page 147"
 }
 ```
-**3 seconds. Cited answer. Zero internet. Zero hallucinations.**
+**3 seconds. Cited answer. Zero internet. Hallucination mitigation via confidence gating.**
 
 ---
 
@@ -82,7 +91,7 @@ This is not a product—it's a **reference architecture** showing that safety-aw
 | **Air-gap compatible** | ❌ No | ⚠️ Maybe | ✅ Yes |
 | **Regulatory compliance** | ⚠️ Limited | ❌ None | ✅ Built-in |
 
-**Bottom line:** NIC is the ONLY option when hallucinations can cause harm and internet isn't available.
+**Bottom line:** NIC is well-suited for safety-critical, offline environments where hallucinations can cause harm.
 
 ---
 
@@ -141,7 +150,7 @@ NIC evolved from a basic proof-of-concept to a production-grade safety-critical 
 | **Phase 2.5 (Multi-Domain)** | Domain-aware retrieval, cross-contamination prevention | 1,692 chunks across 5 domains with per-domain caps |
 | **Phase 3 (Scalability)** | Incremental indexing, hot-reload, real corpus | Zero-downtime scaling: 3.3s per manual (34% faster than target) |
 | **Phase 3.5 (Neural Advisory)** | Fine-tuned embeddings, anomaly detection | Neural advisors with deterministic safety |
-| **Production Review (Jan 2026)** | Code quality hardening, validation rigor | 100% validated error handling |
+| **Production Review (Jan 2026)** | Code quality hardening, validation rigor | Comprehensive error handling validation |
 | **Domain Isolation (Jan 2026)** | Cross-contamination elimination, OCR expansion | 0% contamination across 9 domains, 6,610 chunks |
 | **Phase 2: Production Scaling (Jan 2026)** | Async pipeline, distributed caching, disk-based indexing | 345+ tests, 10M+ doc capacity, production-ready infrastructure |
 
@@ -294,7 +303,7 @@ Phase 2 added **345+ new tests** across 13 test files:
 - **Safety & Agents:** `test_injection_handler.py` (22), `test_procedure_agent.py` (21), `test_troubleshoot_agent.py` (29)
 - **Integration:** `test_phase2_integration.py` (25)
 
-**Total: 604 tests passing** (100% Phase 2 coverage, including optional dependency scenarios)
+**Total: 858 tests passing** — full unit+integration suite (as of Jan 26, 2026). **Adversarial safety suite:** 111/111 passed.
 
 ### Optional Dependencies
 
@@ -520,11 +529,10 @@ NIC has been tested and validated across multiple safety-critical scenarios:
 | **Query latency (P95)** | 38ms (<100ms target) |
 | **Concurrent users tested** | 20 users, zero degradation |
 | **Uptime (30-day pilot)** | 99.97% (12 min downtime) |
-| **Manual search time saved** | ~25 minutes per query |
 | **False positive rate** | 0% (anomaly detection) |
-| **Cost vs. cloud RAG** | $60,048/year savings |
+| **Cost vs. cloud RAG** | $0/month (local hardware) |
 
-**Translation:** Production-ready, not a prototype. See [Evaluation Summary](docs/evaluation/EVALUATION_SUMMARY.md) for full details.
+**Translation:** Production-grade reference implementation with validated performance. See [Evaluation Summary](docs/evaluation/EVALUATION_SUMMARY.md) for full details.
 
 ---
 
