@@ -220,8 +220,8 @@ LOW      | Dashboard | Log + monitor | <1week
 ## 6. Compliance Evidence
 
 ### Policy Alignment
-- ✅ FAA AI Safety Assurance Roadmap (7/7 principles)
-- ✅ FAA AI Strategy (4/4 goals)
+- ✅ Industry AI Safety Assurance Guidelines (7/7 principles)
+- ✅ Industry AI Strategy & Best Practices (4/4 goals)
 - ✅ NIST AI RMF (4/4 functions)
 - ✅ America's AI Action Plan (6/6 directives)
 - ✅ Executive Order 14179 (3/3 mandates)
@@ -257,10 +257,10 @@ LOW      | Dashboard | Log + monitor | <1week
 4. Document domain adaptation playbook
 
 ### Strategic (H2 2026)
-1. Pursue FAA formal validation opportunity
-2. Develop transferability to other domains (FDA, DoD)
+1. Pursue formal validation opportunity with industry partners
+2. Develop transferability to other domains (healthcare, automotive, aerospace)
 3. Establish community governance model
-4. Create certification pathway
+4. Create industry certification pathway
 
 ---
 

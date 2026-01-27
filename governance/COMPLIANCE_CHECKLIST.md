@@ -10,15 +10,15 @@
 ## Overview
 
 This checklist maps NIC's implemented features and capabilities against requirements from:
-1. FAA AI Safety Assurance Roadmap (2024)
-2. FAA AI Strategy (March 2025)
+1. Industry AI Safety Assurance Guidelines (General)
+2. Industry AI Strategy & Best Practices (General)
 3. America's AI Action Plan (July 2025)
 4. NIST AI Risk Management Framework
 5. Executive Order 14179
 
 ---
 
-## Section 1: FAA AI Safety Assurance Roadmap Alignment
+## Section 1: Industry AI Safety Assurance Guidelines Alignment
 
 ### 1.1 Guiding Principles (7 Principles)
 
@@ -95,68 +95,68 @@ This checklist maps NIC's implemented features and capabilities against requirem
 - [x] Blocks out-of-domain queries
 - [x] Returns "Query outside corpus" message
 - [x] Configurable keyword list
-- **FAA Requirement:** "Out-of-domain query → Refuse"
+- **Industry Requirement:** "Out-of-domain query → Refuse"
 - **Status:** IMPLEMENTED
 
 #### Layer 2: RAG Retrieval ✅
 - [x] Semantic similarity search
 - [x] Multi-document retrieval
 - [x] Relevance scoring
-- **FAA Requirement:** "Retrieval-only pipeline"
+- **Industry Requirement:** "Retrieval-only pipeline"
 - **Status:** IMPLEMENTED
 
 #### Layer 3: Citation Tracing ✅
 - [x] Source attribution on every claim
 - [x] Page references included
 - [x] Verifiable against original documents
-- **FAA Requirement:** "Designer must provide assurance"
+- **Industry Requirement:** "Designer must provide assurance"
 - **Status:** IMPLEMENTED
 
 #### Layer 4: Confidence Threshold ✅
 - [x] Quality gate at 0.75 threshold
 - [x] Rejects low-confidence results
-- **FAA Requirement:** "Low confidence → Extractive fallback"
+- **Industry Requirement:** "Low confidence → Extractive fallback"
 - **Status:** IMPLEMENTED
 
 #### Layer 5: Abstractive Generation ✅
 - [x] LLM synthesis only for high confidence
 - [x] Constrained by retrieval context
 - [x] Not free-form generation
-- **FAA Requirement:** "Generation constrained by context"
+- **Industry Requirement:** "Generation constrained by context"
 - **Status:** IMPLEMENTED
 
 #### Layer 6: Extractive Fallback ✅
 - [x] Returns raw source text when uncertain
 - [x] Preserves original phrasing
 - [x] Marks as extractive (not synthesized)
-- **FAA Requirement:** "Deterministic fallbacks"
+- **Industry Requirement:** "Deterministic fallbacks"
 - **Status:** IMPLEMENTED
 
 #### Layer 7: Citation Auditing ✅
 - [x] Post-generation validation
 - [x] Checks claims against sources
 - [x] Flags mismatches for human review
-- **FAA Requirement:** "Post-generation validation"
+- **Industry Requirement:** "Post-generation validation"
 - **Status:** IMPLEMENTED
 
 #### Layer 8: Self-Refinement ✅
 - [x] Iterative improvement
 - [x] Borderline case optimization
 - [x] Learning from experience
-- **FAA Requirement:** "Incremental approach"
+- **Industry Requirement:** "Incremental approach"
 - **Status:** IMPLEMENTED
 
 **Safety Model Score: 8/8 Layers ✅ 100% Compliance**
 
 ---
 
-## Section 2: FAA AI Strategy Alignment
+## Section 2: Industry AI Strategy & Best Practices Alignment
 
 ### 2.1 Four Strategic Goals
 
 #### Goal 1: Adopt and Promote AI ✅
 - [x] Open source on GitHub
-- [x] Available for FAA adoption
+- [x] Available for industry adoption
 - [x] Demonstrates practical maintenance AI
 - [x] Ready for implementation
 - **Status:** ALIGNED
@@ -183,7 +183,7 @@ This checklist maps NIC's implemented features and capabilities against requirem
 - [x] MIT license for flexibility
 - **Status:** ALIGNED
 
-**FAA Strategy Score: 4/4 Goals ✅ 100% Compliance**
+**Industry Strategy Score: 4/4 Goals ✅ 100% Compliance**
 
 ### 2.2 NIST AI Risk Management Framework (5-point scale)
 
@@ -276,7 +276,7 @@ This checklist maps NIC's implemented features and capabilities against requirem
 - **Status:** FULLY ALIGNED
 
 #### Promote AI Adoption Across Government ✅
-- [x] Designed with FAA in mind
+- [x] Designed with safety-critical operations in mind
 - [x] Transferable architecture
 - [x] Domain adaptation documented
 - **Status:** READY
@@ -356,8 +356,8 @@ This checklist maps NIC's implemented features and capabilities against requirem
 ### Quarterly Compliance Review
 
 #### Policy Alignment
-- [ ] FAA Roadmap (7/7 principles)
-- [ ] FAA Strategy (4/4 goals)
+- [ ] Industry Guidelines (7/7 principles)
+- [ ] Industry Strategy (4/4 goals)
 - [ ] NIST RMF (4/4 functions)
 - [ ] White House Plan (6/6 directives)
 - [ ] EO 14179 (3/3 mandates)
@@ -414,8 +414,8 @@ This checklist maps NIC's implemented features and capabilities against requirem
 
 | Framework | Requirements | Aligned | Score |
 |-----------|-------------|---------|-------|
-| **FAA Roadmap** | 7 principles | 7 | 100% |
-| **FAA Strategy** | 4 goals + NIST RMF | 12 | 100% |
+| **Industry Guidelines** | 7 principles | 7 | 100% |
+| **Industry Strategy** | 4 goals + NIST RMF | 12 | 100% |
 | **White House Plan** | 6 directives | 6 | 100% |
 | **EO 14179** | 3 mandates | 3 | 100% |
 | **Safety Model** | 8 defense layers | 8 | 100% |
@@ -434,14 +434,14 @@ This checklist maps NIC's implemented features and capabilities against requirem
 
 ### Near-term (Q2 2026)
 - [ ] Expand adversarial test suite to 150+
-- [ ] Pursue FAA formal validation opportunity
+- [ ] Pursue formal validation opportunity with industry partners
 - [ ] Develop domain adaptation playbook
 - [ ] Establish user feedback loop
 
 ### Strategic (H2 2026)
-- [ ] Domain expansion (FDA, DoD, medical)
+- [ ] Domain expansion (healthcare, automotive, aerospace)
 - [ ] Community governance model
-- [ ] Formal certification pathway
+- [ ] Industry certification pathway
 - [ ] Sustainability planning
 
 ---
