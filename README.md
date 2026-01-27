@@ -1534,10 +1534,7 @@ curl -X POST http://localhost:5000/api/ask \
 #   "confidence": 0.92,
 #   "sources": ["TM-9-803: Vehicle Maintenance Manual, Page 47"]
 # }
-```
-
-### 🎉 **Celebrate!**
-You now have a working offline RAG system with safety controls. Proceed to [Production Deployment](#production-deployment) for scaling to your corpus.
+...
 
 ---
 
