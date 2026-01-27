@@ -1,4 +1,4 @@
-# NIC FAA Certification Roadmap
+# NIC Certification Roadmap
 
 ## Current State (January 2026)
 
@@ -8,24 +8,24 @@ NIC Development Status
 ├── Phase 4.2: Hardware Optimization ✅ COMPLETE
 ├── Phase 4.3: Advanced Analytics    ✅ COMPLETE
 ├── Phase 4.0: Deployment & DevOps   ⏳ PLANNED (2-3 weeks)
-├── Phase 5.0: FAA Certification     ⏳ PLANNED (2-3 months)
+├── Phase 5.0: Certification     ⏳ PLANNED (2-3 months)
 └── Phase 6.0: Regulatory Deployment ⏳ PLANNED (1-2 months)
 
-FAA Readiness
+  Readiness
 ├── Safety Architecture              ✅ 95% READY
 ├── Audit & Compliance               ✅ 85% READY
 ├── Technical Foundation             ✅ 90% READY
 ├── Governance Framework             ⚠️  65% READY (gaps identified)
-└── Overall FAA Alignment            🎯 80% READY
+└── Overall     Alignment            🎯 80% READY
 ```
 
 ---
 
-## Timeline to FAA Certification
+## Timeline to Certification
 
 ### Phase 4.0: Governance Infrastructure (2-3 months)
 
-**What**: Add governance and registry systems needed for FAA compliance
+**What**: Add governance and registry systems needed for compliance
 
 **Tasks**:
 ```
@@ -76,9 +76,9 @@ Week 7: SLA & Documentation
 
 ---
 
-### Phase 5.0: FAA Certification Preparation (2-3 months)
+### Phase 5.0: Certification Preparation (2-3 months)
 
-**What**: Formal documentation and validation for FAA review
+**What**: Formal documentation and validation for review
 
 **Tasks**:
 ```
@@ -96,7 +96,7 @@ Month 2: Certification Evidence
   □ Defect tracking and resolution
   □ Performance validation
 
-Month 3: FAA Submission Package
+Month 3: Submission Package
   □ Safety case documentation
   □ Architecture & design docs
   □ Test results & evidence
@@ -113,7 +113,7 @@ Month 3: FAA Submission Package
 - Certification Package
 
 **Regulatory Alignment**:
-- ✅ FAA AI Strategy (4 goals)
+- ✅ AI Strategy (4 goals)
 - ✅ AI Safety Assurance Roadmap (guiding principles)
 - ✅ DO-254 (Design Assurance)
 - ✅ DO-178C equivalent (Software Assurance)
@@ -123,7 +123,7 @@ Month 3: FAA Submission Package
 
 ### Phase 6.0: Regulatory Deployment (1-2 months)
 
-**What**: Staged rollout with FAA oversight
+**What**: Staged rollout with oversight
 
 **Tasks**:
 ```
@@ -134,7 +134,7 @@ Phase 1: Internal Testing (2 weeks)
   □ Incident response drills
   
 Phase 2: Limited Deployment (1 month)
-  □ Deploy to FAA staging
+  □ Deploy to staging
   □ Monitor 24/7 for 2 weeks
   □ Verify compliance automation
   □ Test incident response
@@ -155,11 +155,11 @@ Phase 3: Full Deployment (1-2 weeks)
 
 ---
 
-## FAA Certification Gaps & Solutions
+## Certification Gaps & Solutions
 
 ### Gap 1: Model Version Registry
 
-**FAA Requirement**: Track and manage all AI models
+**Requirement**: Track and manage all AI models
 
 **Current State**: ❌ Not implemented
 **Effort**: 1-2 weeks
@@ -203,7 +203,7 @@ GET    /api/models/{id}/deployments # Deployment history
 
 ### Gap 2: Use-Case Registry
 
-**FAA Requirement**: Document all use-cases and their safety classification
+**Requirement**: Document all use-cases and their safety classification
 
 **Current State**: ⚠️ Implicit (8 query categories exist)
 **Effort**: 1 week
@@ -237,7 +237,7 @@ class UseCase Registry:
 
 ### Gap 3: Access Control & Approval Workflows
 
-**FAA Requirement**: Governance and segregation of duties
+** Requirement**: Governance and segregation of duties
 
 **Current State**: ❌ Not implemented
 **Effort**: 2 weeks
@@ -279,7 +279,7 @@ Auditor verifies in deployment tracking
 
 ### Gap 4: Compliance Reporting
 
-**FAA Requirement**: Automated regulatory reporting
+**Requirement**: Automated regulatory reporting
 
 **Current State**: ❌ Not implemented
 **Effort**: 1-2 weeks
@@ -314,7 +314,7 @@ def get_incident_details(incident_id: str) -> IncidentDetails
 
 ### Gap 5: SLA Documentation
 
-**FAA Requirement**: Define service level objectives
+**Requirement**: Define service level objectives
 
 **Current State**: ❌ Not documented
 **Effort**: 1 week
@@ -344,7 +344,7 @@ Compliance:
 
 ---
 
-## Current NIC Capabilities (vs FAA Needs)
+## Current NIC Capabilities (vs Others Needs)
 
 ### What NIC Already Has ✅
 
@@ -420,11 +420,11 @@ Compliance:
 - ✅ Threat model completed
 - ✅ Test plan 100% executed
 - ✅ All defects resolved
-- ✅ FAA submission package prepared
+- ✅ submission package prepared
 
 ### Phase 6.0 Success
 - ✅ Internal testing passed
-- ✅ FAA staging deployment successful
+- ✅ staging deployment successful
 - ✅ Full production deployment approved
 - ✅ Zero critical incidents in first month
 - ✅ All SLAs met consistently
@@ -439,15 +439,15 @@ Compliance:
 - **Testing**: 1-2 weeks
 - **Documentation**: 1 week
 - **Total Effort**: 8-12 weeks (2 FTE)
-- **Cost**: ~$40K-60K (if external, higher)
+- **Cost**: TBD (if external, higher)
 
 ### Phase 5.0: Certification (2-3 months)
 - **Safety Documentation**: 3-4 weeks
 - **Threat Modeling**: 2-3 weeks
 - **Testing & Validation**: 3-4 weeks
-- **FAA Package**: 1-2 weeks
+- **Package**: 1-2 weeks
 - **Total Effort**: 9-13 weeks (1.5 FTE)
-- **Cost**: ~$30K-40K
+- **Cost**: TBD
 
 ### Phase 6.0: Deployment (1-2 months)
 - **Testing & Validation**: 2-3 weeks
@@ -455,11 +455,11 @@ Compliance:
 - **Production Deployment**: 1 week
 - **Monitoring & Support**: 2-4 weeks
 - **Total Effort**: 6-10 weeks (1 FTE)
-- **Cost**: ~$20K-30K
+- **Cost**: TBD
 
-**Total Investment**: ~$90K-130K
+**Total Investment**: TBD
 **Timeline**: 5-8 months
-**ROI**: FAA certification enabling aviation market deployment
+**ROI**: Certification enabling market deployment
 
 ---
 
@@ -474,13 +474,13 @@ Compliance:
 - ✅ Documentation complete
 
 **Phase 5.0 → Phase 6.0**:
-- ✅ FAA submission package approved internally
+- ✅ submission package approved internally
 - ✅ All test objectives met
 - ✅ Safety case validated
 - ✅ Risk assessment completed
 
 **Phase 6.0 → Production**:
-- ✅ FAA formal approval received
+- ✅ formal approval received
 - ✅ All deployment checklists passed
 - ✅ Monitoring and alerting verified
 - ✅ Support procedures documented
@@ -489,14 +489,14 @@ Compliance:
 
 ## Conclusion
 
-NIC is **80% ready for FAA certification today**. With Phase 4.0 (2-3 months) and Phase 5.0 (2-3 months), it will be **fully certification-ready** for formal FAA review.
+NIC is **80% ready for certification today**. With Phase 4.0 (2-3 months) and Phase 5.0 (2-3 months), it will be **fully certification-ready** for formal review.
 
-The system is architecturally sound for aviation use with excellent safety foundations. The remaining work is governance infrastructure to satisfy regulatory requirements, not technical capability improvements.
+The system is architecturally sound for use with excellent safety foundations. The remaining work is governance infrastructure to satisfy regulatory requirements, not technical capability improvements.
 
 **Recommendation**: Proceed with Phase 4.0 implementation.
 
 ---
 
-**Document**: NIC FAA Certification Roadmap
+**Document**: NIC Certification Roadmap
 **Date**: January 25, 2026
 **Status**: Ready for Phase 4.0 Planning
