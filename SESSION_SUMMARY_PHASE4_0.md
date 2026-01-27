@@ -2,7 +2,7 @@
 
 ## What Was Built
 
-You asked to implement governance infrastructure without FAA mentions, and we delivered a **complete, production-grade enterprise governance system** for the NIC platform.
+You asked to implement governance infrastructure and we delivered a **complete, production-grade enterprise governance system** for the NIC platform.
 
 ---
 
