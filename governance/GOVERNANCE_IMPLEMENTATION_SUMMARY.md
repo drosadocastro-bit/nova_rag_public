@@ -41,8 +41,8 @@
 
 ### 4. **Compliance Checklist** (`COMPLIANCE_CHECKLIST.md`)
 - Verifiable mapping to all policy frameworks:
-  - FAA AI Safety Assurance Roadmap (7/7 principles)
-  - FAA AI Strategy (4/4 goals + NIST RMF)
+  - Industry AI Safety Assurance Roadmap (7/7 principles)
+  - Industry AI Strategy (4/4 goals + NIST RMF)
   - America's AI Action Plan (6/6 directives)
   - Executive Order 14179 (3/3 mandates)
 - Per-requirement verification checkpoints
@@ -167,7 +167,7 @@ governance/
 
 ### Phase 6: External Validation
 1. **Security audit** of governance system
-2. **FAA preliminary review** of compliance evidence
+2. **preliminary review** of compliance evidence
 3. **Legal review** of policies
 4. **Stakeholder briefing** on governance framework
 
