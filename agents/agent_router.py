@@ -1109,8 +1109,18 @@ def nic_act(query: str, plan: dict, context_docs: list[dict], llm_call_fn, inten
         context = "\n\n".join(
             f"[{d.get('source', 'unknown')}]\n{(d.get('text') or d.get('snippet') or '')}" for d in context_docs
         )
-        citations = [d.get("source", "unknown") for d in context_docs]
+        # Extract sources with proper fallback handling for different retrieval pathways
+        citations = []
+        for d in context_docs:
+            # Try multiple field names used by different retrieval modules
+            source = (d.get("source") or d.get("filename") or d.get("doc_name") or 
+                      d.get("doc_id") or d.get("file") or "unknown")
+            page = d.get("page") or d.get("page_num") or d.get("page_number")
+            if page is not None:
+                source = f"{source} p{page}"
+            citations.append(source)
         baseline_conf = sum(d.get("confidence", 0.5) for d in context_docs) / len(context_docs)
+        logger.info(f"[NIC-ACT-DEBUG] Extracted citations: {citations}")
         logger.info(f"[NIC-ACT-DEBUG] Calculated baseline_conf: {baseline_conf:.2%}")
     else:
         context = "(No manual context available)"
@@ -1133,6 +1143,17 @@ REQUIREMENTS:
 - Be concise, structured, and technically accurate.
 {citation_req}
 - If uncertain, state limitations clearly.
+- IMPORTANT: Include 'sources' array in your JSON response with document names and page numbers.
+
+RESPONSE FORMAT (always use this JSON structure):
+{{
+    "answer": "Your detailed response here",
+    "sources": [
+        {{"source": "DocumentName_or_TM_number", "page": 12, "confidence": 0.95}}
+    ],
+    "warnings": ["Any safety warnings"],
+    "verification": ["How to verify the solution"]
+}}
 
 Respond with structured JSON following the appropriate format for this query type."""
 

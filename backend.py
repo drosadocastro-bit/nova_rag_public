@@ -450,7 +450,18 @@ Give the next 1-3 steps and keep it practical.
         llm_call_fn=llm_dispatch,
     )
 
-    answer_normalized = normalize_response(answer)
+    # Extract source names from context docs for fallback to normalizer
+    context_sources = []
+    if context_docs:
+        for d in context_docs:
+            source = (d.get("source") or d.get("filename") or d.get("doc_name") or 
+                      d.get("doc_id") or "unknown")
+            page = d.get("page") or d.get("page_num")
+            if page is not None:
+                source = f"{source} p{page}"
+            context_sources.append(source)
+    
+    answer_normalized = normalize_response(answer, context_sources=context_sources)
     used = last_resolved_model or model_name
     return answer_normalized, f"{used} | {decision} | Confidence: {avg_confidence:.2%}"
 

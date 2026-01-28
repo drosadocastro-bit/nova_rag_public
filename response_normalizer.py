@@ -9,38 +9,48 @@ Converts JSON-formatted responses to the canonical format.
 
 import json
 import re
-from typing import Any
+from typing import Any, Optional
 
-def normalize_response(answer: Any) -> str:
+def normalize_response(answer: Any, context_sources: Optional[list] = None) -> str:
     """
     Normalize LLM output to consistent WARNINGS/STEPS/VERIFY format.
     
     Args:
         answer: Raw LLM response (str or dict)
+        context_sources: Fallback source list if LLM doesn't provide sources
         
     Returns:
         Normalized prose-format string
     """
-    # If already prose (contains WARNINGS: or STEPS:), pass through
+    # If already prose (contains WARNINGS: or STEPS:), pass through but append sources
     if isinstance(answer, str):
         if "WARNINGS:" in answer or "STEPS:" in answer or "VERIFY:" in answer:
+            # Append context sources if not already present
+            if context_sources and "📚 Sources" not in answer and "Sources:" not in answer:
+                answer += "\n\n📚 Sources Used:\n" + "\n".join(f"- {s}" for s in context_sources)
             return answer
         # Try parsing as JSON
         try:
             answer = json.loads(answer)
         except (json.JSONDecodeError, ValueError):
-            # Not JSON, just clean whitespace
-            return answer.strip()
+            # Not JSON, just clean whitespace + append sources
+            result = answer.strip()
+            if context_sources and "📚 Sources" not in result:
+                result += "\n\n📚 Sources Used:\n" + "\n".join(f"- {s}" for s in context_sources)
+            return result
     
     # Handle dict responses
     if isinstance(answer, dict):
-        return _dict_to_prose(answer)
+        return _dict_to_prose(answer, context_sources=context_sources)
     
-    return str(answer).strip()
+    result = str(answer).strip()
+    if context_sources and "📚 Sources" not in result:
+        result += "\n\n📚 Sources Used:\n" + "\n".join(f"- {s}" for s in context_sources)
+    return result
 
 
-def _dict_to_prose(data: dict) -> str:
-    """Convert JSON dict to WARNINGS/STEPS/VERIFY prose format."""
+def _dict_to_prose(data: dict, context_sources: Optional[list] = None) -> str:
+    """Convert JSON dict to WARNINGS/STEPS/VERIFY prose format with sources."""
     parts = []
     
     # Extract warnings/cautions/safety
@@ -103,19 +113,35 @@ def _dict_to_prose(data: dict) -> str:
             if key in data and data[key]:
                 val = data[key]
                 if isinstance(val, str):
-                    return val
+                    parts.append(val)
+                    break
                 elif isinstance(val, dict):
-                    return _dict_to_prose(val)
-                return str(val)
+                    return _dict_to_prose(val, context_sources=context_sources)
     
-    # Add sources/citations
-    sources = data.get("sources") or data.get("source") or data.get("citations") or data.get("citation")
-    if sources:
-        if isinstance(sources, list):
-            sources_text = ", ".join(str(s) for s in sources if s)
+    # Extract sources from LLM response (preferred over context sources)
+    llm_sources = data.get("sources") or data.get("source") or data.get("citations") or data.get("citation")
+    if llm_sources:
+        sources_list = []
+        if isinstance(llm_sources, list):
+            for src in llm_sources:
+                if isinstance(src, dict):
+                    source_str = src.get("source", src.get("filename", "unknown"))
+                    page = src.get("page")
+                    if page:
+                        source_str += f" p{page}"
+                    sources_list.append(source_str)
+                else:
+                    sources_list.append(str(src))
         else:
-            sources_text = str(sources)
-        parts.append(f"[Sources: {sources_text}]")
+            sources_list = [str(llm_sources)]
+        
+        sources_text = ", ".join(sources_list) if sources_list else ""
+        if sources_text:
+            parts.append(f"📚 Sources: {sources_text}")
+    elif context_sources:
+        # Fallback to context sources if LLM didn't provide them
+        sources_text = ", ".join(context_sources)
+        parts.append(f"📚 Sources: {sources_text}")
     
     return " | ".join(parts) if parts else json.dumps(data, indent=2)
 
