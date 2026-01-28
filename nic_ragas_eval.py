@@ -180,7 +180,7 @@ def run_ragas_evaluation(max_samples: Optional[int] = 20, prose_mode: bool = Fal
     print("[1/5] Checking prerequisites...")
     if not check_server_ready():
         print("ERROR: NIC Flask server not running at", NIC_API_BASE)
-        print("       Start it with: python nova_flask_app.py")
+        print("       Start it with: .\\start_fastapi_qwen4b.ps1")
         return None
     print("      NIC server: OK")
     

@@ -474,7 +474,7 @@ def run_stress_test() -> Dict:
 
     if not _ensure_server_ready():
         raise RuntimeError(
-            f"API server not reachable. Start nova_flask_app.py and ensure {NIC_STATUS_URL} is reachable. "
+            f"API server not reachable. Start FastAPI server (.\\start_fastapi_qwen4b.ps1) and ensure {NIC_STATUS_URL} is reachable. "
             f"(You can override the target with NIC_API_URL env var.)"
         )
     

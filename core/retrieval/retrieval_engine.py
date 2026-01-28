@@ -376,7 +376,8 @@ def _fallback_docs() -> list[dict]:
 
 
 def build_index():
-    pdfs = sorted(DOCS_DIR.glob("*.pdf"))
+    # Search recursively for PDFs in data/ and all subdirectories
+    pdfs = sorted(DOCS_DIR.rglob("*.pdf"))
     if not pdfs:
         print(f"[NovaRAG] No PDFs found in {DOCS_DIR}; using fallback docs and lexical/BM25 only.")
         fallback = _fallback_docs()
@@ -386,17 +387,19 @@ def build_index():
         # No FAISS index in fallback mode; retrieval will use lexical/BM25 paths.
         return None, fallback
 
-    print(f"[NovaRAG] Building index from {len(pdfs)} PDFs...")
+    print(f"[NovaRAG] Building index from {len(pdfs)} PDFs (searching recursively)...")
 
     all_chunks = []
     texts: list[str] = []
 
     for pdf_path in pdfs:
-        print(f" - Reading {pdf_path.name}")
+        # Show relative path from DOCS_DIR for clarity
+        rel_path = pdf_path.relative_to(DOCS_DIR)
+        print(f" - Reading {rel_path}")
         pages_data = load_pdf_text_with_pages(pdf_path)
 
         if not pages_data:
-            print(f"   [!] {pdf_path.name} returned empty text.")
+            print(f"   [!] {rel_path} returned empty text.")
             continue
 
         for page_text, page_num in pages_data:
@@ -406,6 +409,7 @@ def build_index():
             chunks = split_text(page_text)
 
             for i, chunk in enumerate(chunks):
+                # Use relative path as source for cleaner display
                 doc = {
                     "id": f"{pdf_path.name}_p{page_num}_chunk_{i}",
                     "source": pdf_path.name,

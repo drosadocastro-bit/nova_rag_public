@@ -171,7 +171,7 @@ def main():
     except Exception as e:
         print(f"[FAIL] Server not reachable: {e}")
         print("  Start server with:")
-        print("    python nova_flask_app.py")
+        print("    .\\start_fastapi_qwen4b.ps1")
         return
     
     # Run tests

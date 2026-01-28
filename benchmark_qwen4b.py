@@ -235,11 +235,11 @@ def main():
         response = requests.get(f"{BASE_URL}/health", timeout=5)
         if response.status_code != 200:
             print(f"[ERROR] Server not responding properly at {BASE_URL}")
-            print("   Make sure Flask app is running: python nova_flask_app.py")
+            print("   Make sure FastAPI server is running: .\\start_fastapi_qwen4b.ps1")
             return
     except:
         print(f"[ERROR] Cannot connect to {BASE_URL}")
-        print("   Make sure Flask app is running: python nova_flask_app.py")
+        print("   Make sure FastAPI server is running: .\\start_fastapi_qwen4b.ps1")
         return
     
     # Run all tiers
