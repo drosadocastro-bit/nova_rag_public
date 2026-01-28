@@ -1,0 +1,219 @@
+{
+  "metadata": {
+    "model": "qwen3:4b",
+    "timestamp": "2026-01-28T12:32:01.665796",
+    "total_questions": 15,
+    "server_url": "http://localhost:5678"
+  },
+  "summary": {
+    "total_questions": 15,
+    "successful": 15,
+    "avg_latency_ms": 12455.733333333334,
+    "min_latency_ms": 2043,
+    "max_latency_ms": 33902,
+    "citation_rate": 0.0,
+    "unknown_rate": 0.9333333333333333,
+    "viable": false
+  },
+  "tier1_results": [
+    {
+      "question_id": "T1-Q01",
+      "question": "How do I check the alternator voltage?",
+      "domain": "automotive",
+      "timestamp": "2026-01-28T12:29:21.205113",
+      "latency_ms": 33902,
+      "model_used": "qwen3:4b | Auto: procedure keywords detected  LLAMA | Confidence: 66.55%",
+      "response_text": "\n\n\ud83d\udcda Sources Used:\n- unknown\n- unknown\n- unknown",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    },
+    {
+      "question_id": "T1-Q02",
+      "question": "What's the battery specification for this vehicle?",
+      "domain": "automotive",
+      "timestamp": "2026-01-28T12:29:27.831231",
+      "latency_ms": 6125,
+      "model_used": "qwen3:4b | Auto: fallback  GPT-OSS | Confidence: 67.46%",
+      "response_text": "\n\n\ud83d\udcda Sources Used:\n- unknown\n- unknown\n- unknown\n- unknown\n- unknown\n- unknown",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    },
+    {
+      "question_id": "T1-Q03",
+      "question": "How do I diagnose a starter motor problem?",
+      "domain": "automotive",
+      "timestamp": "2026-01-28T12:29:38.379879",
+      "latency_ms": 10047,
+      "model_used": "qwen3:4b | Auto: procedure keywords detected  LLAMA | Confidence: 87.97%",
+      "response_text": "\ud83d\udcda Sources: unknown, unknown, unknown, unknown, unknown, unknown",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    },
+    {
+      "question_id": "T1-Q04",
+      "question": "What's the tire pressure specification?",
+      "domain": "automotive",
+      "timestamp": "2026-01-28T12:29:45.544365",
+      "latency_ms": 6662,
+      "model_used": "qwen3:4b | Auto: fallback  GPT-OSS | Confidence: 82.31%",
+      "response_text": "\n\n\ud83d\udcda Sources Used:\n- unknown\n- unknown\n- unknown\n- unknown\n- unknown\n- unknown",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    },
+    {
+      "question_id": "T1-Q05",
+      "question": "How do I check the engine oil level?",
+      "domain": "automotive",
+      "timestamp": "2026-01-28T12:29:59.857721",
+      "latency_ms": 13812,
+      "model_used": "qwen3:4b | Auto: procedure keywords detected  LLAMA | Confidence: 86.98%",
+      "response_text": "\n\n\ud83d\udcda Sources Used:\n- unknown\n- unknown\n- unknown\n- unknown\n- unknown\n- unknown",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    }
+  ],
+  "tier2_results": [
+    {
+      "question_id": "T2-Q01",
+      "question": "How do I check the compressor pressure?",
+      "domain": "hvac",
+      "timestamp": "2026-01-28T12:30:14.275227",
+      "latency_ms": 13915,
+      "model_used": "qwen3:4b | Auto: procedure keywords detected  LLAMA | Confidence: 92.50%",
+      "response_text": "\n\n\ud83d\udcda Sources Used:\n- unknown\n- unknown\n- unknown\n- unknown\n- unknown\n- unknown",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    },
+    {
+      "question_id": "T2-Q02",
+      "question": "What's the indoor unit temperature specification?",
+      "domain": "hvac",
+      "timestamp": "2026-01-28T12:30:16.820154",
+      "latency_ms": 2043,
+      "model_used": "refusal | out_of_scope",
+      "response_text": "",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    },
+    {
+      "question_id": "T2-Q03",
+      "question": "How do I check the device calibration?",
+      "domain": "medical",
+      "timestamp": "2026-01-28T12:30:43.387315",
+      "latency_ms": 26066,
+      "model_used": "qwen3:4b | Auto: procedure keywords detected  LLAMA | Confidence: 70.68%",
+      "response_text": "\n\n\ud83d\udcda Sources Used:\n- unknown\n- unknown\n- unknown\n- unknown\n- unknown\n- unknown",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    },
+    {
+      "question_id": "T2-Q04",
+      "question": "What's the sensor accuracy specification?",
+      "domain": "medical",
+      "timestamp": "2026-01-28T12:30:50.966416",
+      "latency_ms": 7077,
+      "model_used": "qwen3:4b | Auto: fallback  GPT-OSS | Confidence: 77.50%",
+      "response_text": "\n\n\ud83d\udcda Sources Used:\n- unknown\n- unknown\n- unknown\n- unknown\n- unknown\n- unknown",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    },
+    {
+      "question_id": "T2-Q05",
+      "question": "How do I check the power supply voltage?",
+      "domain": "electronics",
+      "timestamp": "2026-01-28T12:31:16.095963",
+      "latency_ms": 24628,
+      "model_used": "qwen3:4b | Auto: procedure keywords detected  LLAMA | Confidence: 70.68%",
+      "response_text": "\n\n\ud83d\udcda Sources Used:\n- unknown\n- unknown\n- unknown\n- unknown",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    }
+  ],
+  "tier3_results": [
+    {
+      "question_id": "T3-Q01",
+      "question": "How do I interpret system error codes?",
+      "domain": "universal",
+      "timestamp": "2026-01-28T12:31:26.781282",
+      "latency_ms": 10183,
+      "model_used": "qwen3:4b | Auto: procedure keywords detected  LLAMA | Session: 45c92094 | Confidence: 77.50%",
+      "response_text": "",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    },
+    {
+      "question_id": "T3-Q02",
+      "question": "What's the procedure for documenting maintenance activities?",
+      "domain": "universal",
+      "timestamp": "2026-01-28T12:31:37.382180",
+      "latency_ms": 10099,
+      "model_used": "qwen3:4b | Auto: procedure keywords detected  LLAMA",
+      "response_text": "",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    },
+    {
+      "question_id": "T3-Q03",
+      "question": "How do I schedule preventive maintenance?",
+      "domain": "universal",
+      "timestamp": "2026-01-28T12:31:48.023600",
+      "latency_ms": 10140,
+      "model_used": "qwen3:4b | Auto: procedure keywords detected  LLAMA",
+      "response_text": "",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    },
+    {
+      "question_id": "T3-Q04",
+      "question": "What are the safety precautions for this system?",
+      "domain": "universal",
+      "timestamp": "2026-01-28T12:31:50.569097",
+      "latency_ms": 2044,
+      "model_used": "risk_override | HIGH",
+      "response_text": "\u26a0\ufe0f **Risk Assessment: HIGH** - Query semantically similar to unsafe intent: 'disable safety systems' (unsafe: 66.3%, safe: 43.6%)\n\n\u26a0\ufe0f **Unsafe Request Detected (Semantic Analysis)**\n\nYour request appears to involve disabling or bypassing safety systems.\n\n**Why this was blocked:**\n- Semantic similarity to unsafe intent: 66%\n- Matched pattern: \"disable safety systems\"\n- Query semantically similar to unsafe intent: 'disable safety systems' (unsafe: 66.3%, safe: 43.6%)\n\n**What to do instead:**\n- Ask",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": false,
+      "status": "success"
+    },
+    {
+      "question_id": "T3-Q05",
+      "question": "How do I create a maintenance report?",
+      "domain": "universal",
+      "timestamp": "2026-01-28T12:32:01.163397",
+      "latency_ms": 10093,
+      "model_used": "qwen3:4b | Auto: procedure keywords detected  LLAMA",
+      "response_text": "",
+      "sources_found": [],
+      "has_citations": false,
+      "has_unknown_sources": true,
+      "status": "success"
+    }
+  ]
+}

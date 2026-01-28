@@ -83,7 +83,7 @@ def test_question(question: str, domain: str, question_id: str):
             }
             
     except requests.exceptions.Timeout:
-        print(f"  ⏱️ Timeout (>30s)")
+        print(f"  ⏱️ Timeout (>180s)")
         return {
             "question_id": question_id,
             "question": question,

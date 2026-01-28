@@ -218,12 +218,13 @@ def call_llm(prompt: str, model_name: str, fallback_on_timeout: bool = True) -> 
     )
 
     model_key = "llama" if "llama" in model_name.lower() or "8b" in model_name.lower() else "qwen"
+    max_tokens = get_max_tokens(model_name)
 
     if USE_NATIVE_ENGINE and native_call_llm is not None:
         try:
             full_prompt = f"{system_instructions}\n\nUser question:\n{prompt}"
-            print(f"[DEBUG] Calling native engine with model_key={model_key}")
-            response = native_call_llm(full_prompt, model=model_key)
+            print(f"[DEBUG] Calling native engine with model_key={model_key}, max_tokens={max_tokens}")
+            response = native_call_llm(full_prompt, model=model_key, max_tokens=max_tokens)
             print(f"[DEBUG] Native engine returned successfully, length={len(response)}")
             return response.strip()
         except Exception as e:  # pragma: no cover

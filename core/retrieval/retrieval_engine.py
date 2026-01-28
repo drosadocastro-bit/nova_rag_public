@@ -78,8 +78,8 @@ FINETUNED_MODEL_PATH = Path(
 )
 BASE_EMBED_MODEL_PATH = BASE_DIR / "models" / "all-MiniLM-L6-v2"
 
-INDEX_PATH = INDEX_DIR / "vehicle_index.faiss"
-DOCS_PATH = INDEX_DIR / "vehicle_docs.jsonl"
+INDEX_PATH = INDEX_DIR / "nic_index.faiss"
+DOCS_PATH = INDEX_DIR / "nic_docs.jsonl"
 SEARCH_HISTORY_PATH = INDEX_DIR / "search_history.pkl"
 FAVORITES_PATH = INDEX_DIR / "favorites.json"
 
