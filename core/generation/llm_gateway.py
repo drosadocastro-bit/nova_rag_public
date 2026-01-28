@@ -131,7 +131,16 @@ FAST_KEYWORDS = [
 
 
 def get_max_tokens(model_name: str) -> int:
-    return MAX_TOKENS_LLAMA if model_name == LLM_LLAMA else MAX_TOKENS_OSS
+    """Get max tokens based on model size - smaller models need tighter limits."""
+    # Check if it's a 4B model (more verbose, needs strict limits)
+    if "4b" in model_name.lower() or "3b" in model_name.lower():
+        return min(int(os.environ.get("NOVA_MAX_TOKENS_OSS", "128")), 256)
+    # 8B models (balanced)
+    elif "8b" in model_name.lower() or "llama" in model_name.lower():
+        return MAX_TOKENS_LLAMA
+    # 14B+ models (larger context, can handle more tokens)
+    else:
+        return MAX_TOKENS_OSS
 
 
 def ensure_model_loaded(model_name: str, max_tokens: int | None = None) -> None:

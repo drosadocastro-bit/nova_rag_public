@@ -346,14 +346,6 @@ def api_ask():
                     detected_domain = domain
                     break
             domain = detected_domain
-            elif "medical" in first_source.lower():
-                domain = "medical"
-            elif "aerospace" in first_source.lower():
-                domain = "aerospace"
-            elif "nuclear" in first_source.lower():
-                domain = "nuclear"
-            elif "electronics" in first_source.lower():
-                domain = "electronics"
         
         safety_passed = not safety_meta.get("heuristic_triggers")
         record_query(domain=domain, safety_check_passed=safety_passed)

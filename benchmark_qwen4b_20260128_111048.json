@@ -1,0 +1,120 @@
+{
+  "metadata": {
+    "model": "qwen3:4b",
+    "timestamp": "2026-01-28T11:11:28.406784",
+    "total_questions": 15,
+    "server_url": "http://localhost:5678"
+  },
+  "summary": null,
+  "tier1_results": [
+    {
+      "question_id": "T1-Q01",
+      "question": "How do I check the alternator voltage?",
+      "domain": "automotive",
+      "status": "http_error",
+      "error": "HTTP 500"
+    },
+    {
+      "question_id": "T1-Q02",
+      "question": "What's the battery specification for this vehicle?",
+      "domain": "automotive",
+      "status": "http_error",
+      "error": "HTTP 500"
+    },
+    {
+      "question_id": "T1-Q03",
+      "question": "How do I diagnose a starter motor problem?",
+      "domain": "automotive",
+      "status": "http_error",
+      "error": "HTTP 500"
+    },
+    {
+      "question_id": "T1-Q04",
+      "question": "What's the tire pressure specification?",
+      "domain": "automotive",
+      "status": "http_error",
+      "error": "HTTP 500"
+    },
+    {
+      "question_id": "T1-Q05",
+      "question": "How do I check the engine oil level?",
+      "domain": "automotive",
+      "status": "http_error",
+      "error": "HTTP 500"
+    }
+  ],
+  "tier2_results": [
+    {
+      "question_id": "T2-Q01",
+      "question": "How do I check the compressor pressure?",
+      "domain": "hvac",
+      "status": "http_error",
+      "error": "HTTP 500"
+    },
+    {
+      "question_id": "T2-Q02",
+      "question": "What's the indoor unit temperature specification?",
+      "domain": "hvac",
+      "status": "http_error",
+      "error": "HTTP 500"
+    },
+    {
+      "question_id": "T2-Q03",
+      "question": "How do I check the device calibration?",
+      "domain": "medical",
+      "status": "http_error",
+      "error": "HTTP 500"
+    },
+    {
+      "question_id": "T2-Q04",
+      "question": "What's the sensor accuracy specification?",
+      "domain": "medical",
+      "status": "http_error",
+      "error": "HTTP 500"
+    },
+    {
+      "question_id": "T2-Q05",
+      "question": "How do I check the power supply voltage?",
+      "domain": "electronics",
+      "status": "http_error",
+      "error": "HTTP 500"
+    }
+  ],
+  "tier3_results": [
+    {
+      "question_id": "T3-Q01",
+      "question": "How do I interpret system error codes?",
+      "domain": "universal",
+      "status": "http_error",
+      "error": "HTTP 500"
+    },
+    {
+      "question_id": "T3-Q02",
+      "question": "What's the procedure for documenting maintenance activities?",
+      "domain": "universal",
+      "status": "http_error",
+      "error": "HTTP 500"
+    },
+    {
+      "question_id": "T3-Q03",
+      "question": "How do I schedule preventive maintenance?",
+      "domain": "universal",
+      "status": "http_error",
+      "error": "HTTP 500"
+    },
+    {
+      "question_id": "T3-Q04",
+      "question": "What are the safety precautions for this system?",
+      "domain": "universal",
+      "status": "http_error",
+      "error": "HTTP 500"
+    },
+    {
+      "question_id": "T3-Q05",
+      "question": "How do I create a maintenance report?",
+      "domain": "universal",
+      "status": "http_error",
+      "error": "HTTP 500"
+    }
+  ]
+}
