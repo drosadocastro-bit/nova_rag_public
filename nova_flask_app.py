@@ -235,7 +235,7 @@ def api_ask():
     # Return a safe structured refusal (HTTP 200) so clients/tests treat it as handled.
     try:
         if not question:
-            return _refuse_input("invalid_format", "Empty question. Please provide a vehicle-maintenance question.")
+            return _refuse_input("invalid_format", "Empty question. Please provide a technical documentation query (diagnostics, specifications, procedures, maintenance).")
 
         if len(question) > 5000:
             return _refuse_input("too_long", "Input too long. Please shorten the question and try again.")
@@ -329,8 +329,23 @@ def api_ask():
         domain = "unknown"
         if traced_sources:
             first_source = traced_sources[0].get("source", "")
-            if "vehicle" in first_source.lower():
-                domain = "vehicle"
+            # Auto-detect domain from source path or filename
+            domain_map = {
+                "automotive": ["vehicle", "car", "truck", "automobile"],
+                "hvac": ["hvac", "cooling", "heating", "air condition"],
+                "aerospace": ["aircraft", "avionics", "flight"],
+                "medical": ["hospital", "medical", "device"],
+                "nuclear": ["reactor", "nuclear", "coolant"],
+                "electronics": ["circuit", "electronics", "electrical"],
+                "radar": ["radar", "signal", "antenna"],
+            }
+            detected_domain = "unknown"
+            source_lower = first_source.lower()
+            for domain, keywords in domain_map.items():
+                if any(kw in source_lower for kw in keywords):
+                    detected_domain = domain
+                    break
+            domain = detected_domain
             elif "medical" in first_source.lower():
                 domain = "medical"
             elif "aerospace" in first_source.lower():
@@ -447,7 +462,7 @@ def metrics():
     Example output:
         # HELP nova_queries_total Total number of queries processed
         # TYPE nova_queries_total counter
-        nova_queries_total{domain="vehicle",safety_check_passed="true"} 42.0
+        nova_queries_total{domain="auto-detected",safety_check_passed="true"} 42.0
     """
     from flask import Response
     return Response(generate_metrics(), mimetype=get_content_type())
@@ -620,8 +635,8 @@ def run_startup_validation():
     print("\n[3/5] Checking FAISS index...")
     try:
         from pathlib import Path
-        index_path = BASE_DIR / "vector_db" / "vehicle_index.faiss"
-        docs_path = BASE_DIR / "vector_db" / "vehicle_docs.jsonl"
+        index_path = BASE_DIR / "vector_db" / "nic_index.faiss"
+        docs_path = BASE_DIR / "vector_db" / "nic_docs.jsonl"
         
         if index_path.exists():
             print(f"  [OK] Index file found: {index_path}")
@@ -637,7 +652,7 @@ def run_startup_validation():
                 warnings.append("Documents metadata missing (may affect retrieval)")
         else:
             print(f"  [FAIL] Index file not found: {index_path}")
-            print("    -> Build index: 'python ingest_vehicle_manual.py'")
+            print("    -> Build index: 'python ingest_vehicle_manual.py' (or use your domain data)")
             all_checks_passed = False
     except Exception as e:
         print(f"  [FAIL] Index check error: {e}")

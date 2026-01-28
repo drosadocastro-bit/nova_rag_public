@@ -1,0 +1,215 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "created": "2026-01-28",
+    "purpose": "Multi-domain test questions for NIC generalization and Qwen 4B evaluation",
+    "total_questions": 127,
+    "domains": [
+      "automotive",
+      "hvac",
+      "aerospace",
+      "medical",
+      "nuclear",
+      "electronics",
+      "radar"
+    ]
+  },
+  "universal_diagnostic_patterns": [
+    "How do I diagnose a [COMPONENT] failure?",
+    "What are the normal specifications for [SUBSYSTEM]?",
+    "How do I check if [COMPONENT] is functioning correctly?",
+    "What's the procedure to replace [COMPONENT]?",
+    "How do I perform routine maintenance on [SUBSYSTEM]?",
+    "What are the safety precautions for working with [COMPONENT]?",
+    "How do I test [SUBSYSTEM] performance?"
+  ],
+  "automotive": {
+    "count": 20,
+    "questions": [
+      "How do I check the alternator voltage?",
+      "What's the battery specification for this vehicle?",
+      "How do I diagnose a starter motor problem?",
+      "What's the tire pressure specification?",
+      "How do I check the engine oil level?",
+      "What are the spark plug specifications?",
+      "How do I diagnose a transmission problem?",
+      "What's the brake fluid specification?",
+      "How do I check the brake pad thickness?",
+      "What's the coolant capacity and type?",
+      "How do I diagnose a cooling system leak?",
+      "What's the fuel filter replacement interval?",
+      "How do I check the air filter condition?",
+      "What's the serpentine belt tension specification?",
+      "How do I diagnose an electrical system problem?",
+      "What's the charging voltage range?",
+      "How do I perform a wheel alignment?",
+      "What's the suspension component wear limit?",
+      "How do I diagnose an ABS system fault?",
+      "What's the power steering fluid specification?"
+    ]
+  },
+  "hvac": {
+    "count": 19,
+    "questions": [
+      "How do I check the compressor pressure?",
+      "What's the refrigerant specification?",
+      "How do I diagnose a thermostat problem?",
+      "What's the indoor unit temperature specification?",
+      "How do I clean the air filters?",
+      "What's the outdoor unit fan speed specification?",
+      "How do I diagnose a refrigerant leak?",
+      "What's the system charge pressure?",
+      "How do I check the condenser coil condition?",
+      "What's the evaporator coil cleaning procedure?",
+      "How do I diagnose a blower motor problem?",
+      "What's the normal compressor discharge temperature?",
+      "How do I perform routine maintenance?",
+      "What's the ductwork pressure loss specification?",
+      "How do I diagnose a control board failure?",
+      "What's the airflow CFM specification?",
+      "How do I check the humidity level?",
+      "What's the seasonal maintenance checklist?",
+      "How do I troubleshoot a no cooling problem?"
+    ]
+  },
+  "aerospace": {
+    "count": 18,
+    "questions": [
+      "How do I check the hydraulic pressure?",
+      "What's the avionics power specification?",
+      "How do I diagnose a landing gear problem?",
+      "What's the tire inflation pressure specification?",
+      "How do I perform pre-flight inspection?",
+      "What's the fuel system pressure specification?",
+      "How do I diagnose an engine problem?",
+      "What's the cabin pressure altitude specification?",
+      "How do I check the flight control surfaces?",
+      "What's the electrical system voltage specification?",
+      "How do I diagnose an autopilot malfunction?",
+      "What's the fire detection system test procedure?",
+      "How do I perform a structural inspection?",
+      "What's the airframe fatigue inspection interval?",
+      "How do I diagnose a navigation system error?",
+      "What's the emergency equipment inspection checklist?",
+      "How do I perform engine run-up tests?",
+      "What's the propeller pitch specification?"
+    ]
+  },
+  "medical": {
+    "count": 20,
+    "questions": [
+      "How do I check the device calibration?",
+      "What's the sensor accuracy specification?",
+      "How do I diagnose a sensor failure?",
+      "What's the battery life expectancy?",
+      "How do I clean the device properly?",
+      "What's the sterilization procedure?",
+      "How do I perform preventive maintenance?",
+      "What's the measurement range specification?",
+      "How do I diagnose a display problem?",
+      "What's the data memory capacity?",
+      "How do I perform a system self-test?",
+      "What's the sampling rate specification?",
+      "How do I troubleshoot connectivity issues?",
+      "What's the power consumption specification?",
+      "How do I perform regular calibration checks?",
+      "What's the component replacement interval?",
+      "How do I diagnose an error code?",
+      "What's the material compatibility information?",
+      "How do I backup patient data?",
+      "What's the warranty coverage period?"
+    ]
+  },
+  "nuclear": {
+    "count": 17,
+    "questions": [
+      "How do I check the coolant temperature?",
+      "What's the pressure vessel specification?",
+      "How do I diagnose a pump failure?",
+      "What's the reactor power level specification?",
+      "How do I perform emergency shutdown?",
+      "What's the containment system leak rate limit?",
+      "How do I check the radiation monitoring system?",
+      "What's the control rod insertion time specification?",
+      "How do I diagnose a cooling system blockage?",
+      "What's the neutron flux specification?",
+      "How do I perform routine system checks?",
+      "What's the backup power system status?",
+      "How do I diagnose a control system anomaly?",
+      "What's the safety system response time specification?",
+      "How do I perform decontamination procedures?",
+      "What's the environmental monitoring requirement?",
+      "How do I maintain system documentation?"
+    ]
+  },
+  "electronics": {
+    "count": 18,
+    "questions": [
+      "How do I check the power supply voltage?",
+      "What's the circuit board specification?",
+      "How do I diagnose a component failure?",
+      "What's the signal integrity specification?",
+      "How do I perform board-level testing?",
+      "What's the impedance specification?",
+      "How do I diagnose a short circuit?",
+      "What's the thermal dissipation requirement?",
+      "How do I check the connector contacts?",
+      "What's the frequency response specification?",
+      "How do I perform solder joint inspection?",
+      "What's the electrical noise specification?",
+      "How do I diagnose a capacitor failure?",
+      "What's the operating temperature specification?",
+      "How do I perform ESD protection procedures?",
+      "What's the component reliability rating?",
+      "How do I troubleshoot signal loss?",
+      "What's the PCB layer stack-up specification?"
+    ]
+  },
+  "radar": {
+    "count": 15,
+    "questions": [
+      "How do I check the transmitter power output?",
+      "What's the receiver sensitivity specification?",
+      "How do I diagnose antenna alignment?",
+      "What's the signal frequency specification?",
+      "How do I perform system calibration?",
+      "What's the detection range specification?",
+      "How do I diagnose a signal degradation?",
+      "What's the pulse repetition frequency specification?",
+      "How do I check the modulation quality?",
+      "What's the noise figure specification?",
+      "How do I perform receiver testing?",
+      "What's the beam width specification?",
+      "How do I diagnose a clutter rejection problem?",
+      "What's the target resolution specification?",
+      "How do I perform system alignment verification?"
+    ]
+  },
+  "cross_domain_edge_cases": {
+    "count": 10,
+    "questions": [
+      "How do I interpret system error codes?",
+      "What's the procedure for documenting maintenance activities?",
+      "How do I schedule preventive maintenance?",
+      "What are the safety precautions for this system?",
+      "How do I create a maintenance report?",
+      "What's the procedure for part replacement?",
+      "How do I verify system integrity after maintenance?",
+      "What documentation is required for this procedure?",
+      "How do I diagnose intermittent problems?",
+      "What's the escalation procedure for unresolved issues?"
+    ]
+  },
+  "evaluation_metrics": {
+    "description": "Use these questions to evaluate NIC across multiple dimensions",
+    "domains_per_batch": 3,
+    "questions_per_domain": 5,
+    "expected_metrics": {
+      "accuracy": "0.80-0.95 (domain-dependent)",
+      "latency": "2-5 seconds (model-dependent)",
+      "source_attribution": "100% (citations present)",
+      "hallucination_rate": "< 5%",
+      "coverage": "> 80% of questions answered"
+    }
+  }
+}
