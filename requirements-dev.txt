@@ -16,7 +16,7 @@ coverage[toml]==7.6.9
 
 # === Type Checking ===
 mypy==1.13.0
-types-requests==2.32.0.20241016
+types-requests==2.32.4.20260107
 
 # === Documentation ===
 mkdocs==1.6.1
