@@ -411,4 +411,4 @@ Unauthorized access     | Disable account  | Security   | 5 min
 **Document Classification:** INTERNAL USE ONLY  
 **Last Updated:** January 27, 2026  
 **Next Review:** April 27, 2026  
-**Contacts:** governance@nova-nic.local
+**Contacts:** drosadocastro@gmail.com
