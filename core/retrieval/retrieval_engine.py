@@ -14,6 +14,7 @@ from collections import defaultdict
 from importlib.util import find_spec
 from math import log
 from pathlib import Path
+from typing import Optional, Any
 
 import faiss
 import torch
@@ -25,6 +26,7 @@ from core.utils.text_processing import (
     split_text,
 )
 from core.monitoring.logger_config import get_logger, log_retrieval_event
+from core.async_wrapper import batch_encode_async  # Stage 2: ThreadPool for embeddings
 
 # Initialize structured logger
 logger = get_logger("core.retrieval.retrieval_engine")
@@ -53,8 +55,8 @@ INDEX_DIR = BASE_DIR / "vector_db"
 INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
 ANOMALY_DETECTOR_ENABLED = (
-    os.environ.get("NOVA_ANOMALY_DETECTOR", "0") == "1"
-    or os.environ.get("NOVA_ENABLE_ANOMALY_DETECTION", "0") == "1"
+    os.environ.get("NOVA_ANOMALY_DETECTOR", "1") == "1"
+    or os.environ.get("NOVA_ENABLE_ANOMALY_DETECTION", "1") == "1"
 )
 ANOMALY_MODEL_PATH = Path(
     os.environ.get(
@@ -78,10 +80,23 @@ FINETUNED_MODEL_PATH = Path(
 )
 BASE_EMBED_MODEL_PATH = BASE_DIR / "models" / "all-MiniLM-L6-v2"
 
-INDEX_PATH = INDEX_DIR / "nic_index.faiss"
-DOCS_PATH = INDEX_DIR / "nic_docs.jsonl"
+INDEX_DOMAIN = os.environ.get("NOVA_INDEX_DOMAIN", "").strip().lower()
+if INDEX_DOMAIN in {"", "all"}:
+    INDEX_DOMAIN = ""
+
+_INDEX_SUFFIX = f"_{INDEX_DOMAIN}" if INDEX_DOMAIN else ""
+INDEX_PATH = INDEX_DIR / f"nic_index{_INDEX_SUFFIX}.faiss"
+DOCS_PATH = INDEX_DIR / f"nic_docs{_INDEX_SUFFIX}.jsonl"
 SEARCH_HISTORY_PATH = INDEX_DIR / "search_history.pkl"
 FAVORITES_PATH = INDEX_DIR / "favorites.json"
+
+DIAGRAM_MANIFEST_PATH = Path(
+    os.environ.get(
+        "NOVA_DIAGRAM_MANIFEST_PATH",
+        str(DOCS_DIR / "diagrams" / "diagrams_manifest.jsonl"),
+    )
+)
+DIAGRAM_MANIFEST_ENABLED = os.environ.get("NOVA_ENABLE_DIAGRAM_MANIFEST", "1") == "1"
 
 VISION_EMB_PATH = INDEX_DIR / "vehicle_vision_embeddings.pt"
 DISABLE_VISION = os.environ.get("NOVA_DISABLE_VISION", "0") == "1"
@@ -113,6 +128,136 @@ text_embed_model_error: str | None = None
 
 anomaly_detector = None
 anomaly_detector_error: str | None = None
+
+diagram_page_index: dict[tuple[str, int], dict] | None = None
+
+
+def _load_diagram_manifest() -> dict[tuple[str, int], dict]:
+    """Load diagram manifest and index by (source, page)."""
+    global diagram_page_index
+    if diagram_page_index is not None:
+        return diagram_page_index
+    diagram_page_index = {}
+    if not DIAGRAM_MANIFEST_ENABLED or not DIAGRAM_MANIFEST_PATH.exists():
+        return diagram_page_index
+    try:
+        with open(DIAGRAM_MANIFEST_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                entry = json.loads(line)
+                source = str(entry.get("source_pdf") or entry.get("source") or "").lower()
+                page = entry.get("page") or entry.get("page_number")
+                if not source or page is None:
+                    continue
+                try:
+                    page_num = int(page)
+                except (TypeError, ValueError):
+                    continue
+                diagram_page_index[(source, page_num)] = entry
+    except Exception as e:  # pragma: no cover - defensive
+        logger.warning("Diagram manifest load failed", extra={"error": str(e)[:120]})
+        diagram_page_index = {}
+    return diagram_page_index
+
+
+def _apply_diagram_boost(candidates: list[dict], query: str) -> None:
+    """Boost candidates that have associated diagrams when query references diagrams/signal paths."""
+    if not DIAGRAM_MANIFEST_ENABLED or not candidates:
+        return
+    diagram_keywords = [
+        "diagram",
+        "schematic",
+        "block diagram",
+        "block",
+        "signal path",
+        "signal flow",
+        "signal-flow",
+        "signalpath",
+        "flowchart",
+        "wiring",
+        "circuit",
+        "chart",
+        "graph",
+        "visual",
+        "image",
+        "picture",
+    ]
+    query_lower = query.lower()
+    if not any(kw in query_lower for kw in diagram_keywords):
+        return
+
+    manifest = _load_diagram_manifest()
+    if not manifest:
+        return
+
+    signal_terms = set()
+    signal_map = {
+        "antenna": ["antenna", "feed", "radome"],
+        "duplexer": ["duplexer", "t/r", "tr", "circulator"],
+        "transmitter": ["transmitter", "tx", "magnetron", "klystron", "modulator"],
+        "receiver": ["receiver", "rx", "lna", "mixer", "if"],
+        "processor": ["processor", "signal processor", "dsp"],
+        "display": ["display", "ppi", "console"],
+        "power": ["power", "hv", "high voltage"],
+        "timing": ["timing", "sync", "trigger"],
+        "waveguide": ["waveguide", "rf path", "transmission line"],
+        "test_point": ["test point", "tp", "monitor"],
+    }
+    for comp, keys in signal_map.items():
+        if any(k in query_lower for k in keys):
+            signal_terms.add(comp)
+
+    for doc in candidates:
+        source = str(doc.get("source") or doc.get("filename") or "").lower()
+        page = doc.get("page") or doc.get("page_num")
+        if not source or page is None:
+            continue
+        try:
+            page_num = int(page)
+        except (TypeError, ValueError):
+            continue
+        entry = manifest.get((source, page_num))
+        if entry:
+            current = float(doc.get("confidence", 0.5))
+            doc["diagram_match"] = True
+            boost = 0.08
+            components = set((entry.get("components") or []))
+            if signal_terms and components and (signal_terms & components):
+                boost = 0.12
+                doc["diagram_component_match"] = True
+                doc["diagram_components"] = sorted(list(components & signal_terms))
+            doc["confidence"] = min(1.0, current + boost)
+
+        # Secondary boost: if doc text mentions signal-path terms explicitly
+        if signal_terms:
+            text = (doc.get("text") or "").lower()
+            if any(term in text for term in signal_terms):
+                current = float(doc.get("confidence", 0.5))
+                doc["confidence"] = min(1.0, current + 0.05)
+
+
+def cleanup_embedding_models():
+    """Release embedding models from memory to prevent leaks during tests."""
+    global text_embed_model, cross_encoder, vision_model, vision_embeddings
+    import gc
+    if text_embed_model is not None:
+        del text_embed_model
+        text_embed_model = None
+    if cross_encoder is not None:
+        del cross_encoder
+        cross_encoder = None
+    if vision_model is not None:
+        del vision_model
+        vision_model = None
+    if vision_embeddings is not None:
+        del vision_embeddings
+        vision_embeddings = None
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    print("[NovaRAG] Released embedding models from memory")
 
 
 def get_text_embed_model():
@@ -176,7 +321,15 @@ def get_cross_encoder():
         from sentence_transformers import CrossEncoder
 
         print("[NovaRAG] Loading cross-encoder for reranking...")
-        cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+        try:
+            # Try loading with local_files_only first (faster, no internet needed)
+            cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2", local_files_only=True)
+            print("[NovaRAG]    Using cached cross-encoder model (offline)")
+        except Exception:
+            # Fall back to downloading if not cached
+            print("[NovaRAG]    Downloading cross-encoder model (first time only)...")
+            cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+            print("[NovaRAG]    Cross-encoder cached for future offline use")
     return cross_encoder
 
 
@@ -410,26 +563,55 @@ def build_index():
 
             for i, chunk in enumerate(chunks):
                 # Use relative path as source for cleaner display
+                # Classify domain based on path (including directory) and content sample
+                domain_tag = classify_document_domain(str(rel_path), chunk[:500])
+
+                if INDEX_DOMAIN and domain_tag != INDEX_DOMAIN:
+                    continue
+                
                 doc = {
                     "id": f"{pdf_path.name}_p{page_num}_chunk_{i}",
                     "source": pdf_path.name,
                     "page": page_num,
                     "text": chunk,
                     "snippet": chunk[:200],
+                    "domain": domain_tag,
                 }
                 all_chunks.append(doc)
                 texts.append(chunk)
+
+    if not all_chunks:
+        print(
+            f"[NovaRAG] No chunks matched domain filter '{INDEX_DOMAIN or 'all'}'. "
+            "Index build skipped."
+        )
+        with DOCS_PATH.open("w", encoding="utf-8") as f:
+            f.write("")
+        return None, []
 
     print(f"[NovaRAG] Generating embeddings for {len(all_chunks)} chunks...")
     text_model = get_text_embed_model()
     if text_model is None:
         raise RuntimeError("Text embedding model not available. Cannot build index.")
-    embeddings = text_model.encode(
-        texts,
-        convert_to_numpy=True,
-        show_progress_bar=True,
-        batch_size=max(1, EMBED_BATCH_SIZE),
-    )
+    
+    # Stage 2: Use ThreadPool for embedding generation (parallelizes I/O+compute)
+    try:
+        embeddings = batch_encode_async(
+            texts,
+            text_model,
+            batch_size=32,
+            operation_name="build-index-embeddings"
+        )
+        import numpy as np
+        embeddings = np.array(embeddings)
+    except Exception as e:
+        logger.warning(f"ThreadPool encoding failed, falling back to sync: {e}")
+        embeddings = text_model.encode(
+            texts,
+            convert_to_numpy=True,
+            show_progress_bar=True,
+            batch_size=max(1, EMBED_BATCH_SIZE),
+        )
 
     dim = embeddings.shape[1]
     index = faiss.IndexFlatL2(dim)
@@ -461,7 +643,72 @@ def load_index():
     return build_index()
 
 
-index, docs = load_index()
+# =======================
+# LAZY INDEX INITIALIZATION (CRITICAL FOR STABILITY)
+# =======================
+# Do NOT initialize at import time; defer to first request
+# This prevents OOM crashes on low-RAM systems and race conditions in WSGI
+
+_index_cache: tuple[Optional[Any], Optional[list]] | None = None
+_index_initialized_flag: bool = False
+_index_error: str | None = None
+
+
+def ensure_index_loaded() -> tuple[Optional[Any], Optional[list]]:
+    """
+    Idempotent index initialization.
+    Safe to call multiple times; loads exactly once.
+    Returns (index, docs) or (None, None) if init failed.
+    """
+    global _index_cache, _index_initialized_flag, _index_error
+    
+    if _index_initialized_flag:
+        return _index_cache or (None, None)
+    
+    _index_initialized_flag = True  # Mark as attempted, even if fails
+    
+    try:
+        _index_cache = load_index()
+        return _index_cache
+    except Exception as e:
+        _index_error = str(e)
+        print(f"[NovaRAG] ERROR: Index initialization failed: {e}")
+        return None, None
+
+
+# Module-level references (will be populated on first use)
+# Stage 1: Now backed by NICAppState singleton for centralized state management
+index, docs = None, None
+
+
+def get_index() -> Optional[Any]:
+    """Get FAISS index, loading if necessary. Stage 1: Now uses NICAppState."""
+    global index
+    try:
+        from core.app_state import get_app_state
+        state = get_app_state()
+        state.ensure_initialized()
+        return state.index
+    except Exception:
+        # Fallback to module-level if app_state not available (e.g., during imports)
+        if index is None:
+            index, _ = ensure_index_loaded()
+        return index
+
+
+def get_docs() -> Optional[list]:
+    """Get document metadata list, loading if necessary. Stage 1: Now uses NICAppState."""
+    global docs
+    try:
+        from core.app_state import get_app_state
+        state = get_app_state()
+        state.ensure_initialized()
+        return state.docs
+    except Exception:
+        # Fallback to module-level if app_state not available
+        if docs is None:
+            _, docs = ensure_index_loaded()
+        return docs
 
 # =======================
 # ERROR CODE TABLE LOOKUP
@@ -472,9 +719,18 @@ ERROR_CODE_TO_DOCS: dict[str, list[dict]] = defaultdict(list)
 _ERROR_CODE_LINE_RE = re.compile(r"(?m)^\s*(\d{2,3})\s+[A-Z][A-Z0-9/()\-+\s]{3,120}$")
 
 
-def _init_error_code_index() -> None:
+def _ensure_error_code_index() -> None:
+    """Initialize error code lookup table from loaded docs (lazy)."""
+    global ERROR_CODE_TO_DOCS
+    if ERROR_CODE_TO_DOCS:
+        return  # Already initialized
+    
+    _docs = get_docs()  # Ensure docs are loaded
+    if not _docs:
+        return
+    
     try:
-        for d in docs:
+        for d in _docs:
             t = d.get("text") or ""
             if not t:
                 continue
@@ -494,7 +750,11 @@ def _init_error_code_index() -> None:
         print(f"[NovaRAG] Error-code index init failed: {e}")
 
 
-_init_error_code_index()
+_init_error_code_index = _ensure_error_code_index  # Rename for consistency
+
+
+# Lazy init: only call when first needed, not at import time
+# _init_error_code_index()  # REMOVED - now called lazily in _ensure_error_code_index()
 
 if USE_VISION_AWARE_RERANKER and bool(os.environ.get("NOVA_INIT_TFIDF_CACHE", "0") == "1"):
     init_tfidf_vectorizer()
@@ -521,7 +781,10 @@ def _tokenize(text: str) -> list[str]:
 
 def _compute_corpus_hash() -> str:
     hasher = hashlib.sha256()
-    for d in docs:
+    _docs = get_docs()
+    if not _docs:
+        return ""
+    for d in _docs:
         hasher.update(d.get("text", "").encode("utf-8"))
     return hasher.hexdigest()[:16]
 
@@ -564,7 +827,15 @@ def _load_bm25_index() -> bool:
             return False
         if SECURE_CACHE_AVAILABLE:
             from secure_cache import secure_pickle_load
-            data = secure_pickle_load(BM25_CACHE_PATH)
+            try:
+                data = secure_pickle_load(BM25_CACHE_PATH)
+            except ValueError as hmac_error:
+                # HMAC verification failed - cache key changed or file corrupted
+                # Delete invalid cache and rebuild
+                print(f"[NovaRAG] BM25 cache verification failed (key changed); deleting and rebuilding...")
+                BM25_CACHE_PATH.unlink(missing_ok=True)
+                BM25_CORPUS_HASH_PATH.unlink(missing_ok=True)
+                return False
         else:
             import pickle
 
@@ -581,6 +852,9 @@ def _load_bm25_index() -> bool:
         return True
     except Exception as e:  # pragma: no cover
         print(f"[NovaRAG] Failed to load BM25 cache: {e}; rebuilding...")
+        # Clean up corrupted cache files
+        BM25_CACHE_PATH.unlink(missing_ok=True)
+        BM25_CORPUS_HASH_PATH.unlink(missing_ok=True)
         return False
 
 
@@ -591,6 +865,8 @@ def _build_bm25_index():
     try:
         _BM25_INDEX = {}
         _BM25_DOC_LEN = []
+        if not docs:
+            return
         for i, d in enumerate(docs):
             tokens = _tokenize(d.get("text", ""))
             _BM25_DOC_LEN.append(len(tokens))
@@ -637,20 +913,23 @@ def bm25_retrieve(query: str, k: int = 12, top_n: int = 6) -> list[dict]:
     sorted_idxs = sorted(candidate_docs.items(), key=lambda x: x[1], reverse=True)
     top_idxs = [i for i, _ in sorted_idxs[: max(k, top_n)]]
     results: list[dict] = []
-    for idx in top_idxs:
-        if 0 <= idx < len(docs):
-            d = dict(docs[idx])
-            d["bm25_score"] = float(candidate_docs.get(idx, 0))
-            results.append(d)
+    _docs = get_docs()
+    if _docs:
+        for idx in top_idxs:
+            if 0 <= idx < len(_docs):
+                d = dict(_docs[idx])
+                d["bm25_score"] = float(candidate_docs.get(idx, 0))
+                results.append(d)
     return results
 
 
 def lexical_retrieve(query: str, k: int = 12, top_n: int = 6) -> list[dict]:
-    if not docs:
+    _docs = get_docs()
+    if not _docs:
         return []
     q_tokens = set(query.lower().split())
     scored = []
-    for doc in docs:
+    for doc in _docs:
         text = doc.get("text", "").lower()
         d_tokens = set(text.split())
         inter = len(q_tokens & d_tokens)
@@ -782,6 +1061,92 @@ _DOMAIN_VOCABULARY: dict[str, set[str]] = {
 }
 
 
+def classify_document_domain(source_filename: str, text_sample: str = "") -> str:
+    """
+    Classify document domain based on filename/path patterns and content.
+    
+    Args:
+        source_filename: PDF filename *or relative path* (e.g., "radar/nexrad/6-503.pdf")
+        text_sample: Optional text snippet from document for content-based classification
+        
+    Returns:
+        Domain tag string (vehicle, vehicle_military, forklift, radar, etc.)
+    """
+    fname_lower = source_filename.lower().replace("\\", "/")
+    text_lower = text_sample.lower() if text_sample else ""
+    
+    # -------------------------------------------------------------------
+    # 1. Directory-based classification (highest reliability)
+    #    If the relative path starts with a known domain directory, use it.
+    # -------------------------------------------------------------------
+    _DIR_TO_DOMAIN = {
+        "radar/": "radar",
+        "beacon/": "radar",
+        "nexrad/": "radar",
+        "asr-8/": "radar",
+        "asr8/": "radar",
+        "atcrb/": "radar",
+        "hvac/": "hvac",
+        "medical/": "medical",
+        "nuclear/": "nuclear",
+        "electronics/": "electronics",
+        "aerospace/": "aerospace",
+        "forklift/": "forklift",
+    }
+    for dir_prefix, domain in _DIR_TO_DOMAIN.items():
+        if dir_prefix in fname_lower:
+            return domain
+    
+    # -------------------------------------------------------------------
+    # 2. Filename keyword-based classification
+    # -------------------------------------------------------------------
+    if "tm-10-3930" in fname_lower or "tm10-3930" in fname_lower:
+        return "forklift"
+    if "tm9-802" in fname_lower or "tm-9-802" in fname_lower or "gpw" in fname_lower or "willys" in fname_lower:
+        return "vehicle_military"
+    if "ford" in fname_lower and "model" in fname_lower:
+        return "vehicle"
+    if "wxr" in fname_lower or ("weather" in fname_lower and "radar" in fname_lower):
+        return "radar"
+    if "nexrad" in fname_lower or "wsr" in fname_lower or "asr" in fname_lower or "atcrb" in fname_lower:
+        return "radar"
+    if "ehb6" in fname_lower or "6345" in fname_lower or "6360" in fname_lower or "6310" in fname_lower:
+        return "radar"
+    if "mri" in fname_lower or "magnetic resonance" in fname_lower:
+        return "medical"
+    if "nuclear" in fname_lower or "reactor" in fname_lower:
+        return "nuclear"
+    if "carrier" in fname_lower and "hvac" in fname_lower:
+        return "hvac"
+    if "raspberry" in fname_lower or "visionfive" in fname_lower or "gpio" in fname_lower:
+        return "electronics"
+    if "shuttle" in fname_lower or "orbiter" in fname_lower or "sts" in fname_lower:
+        return "aerospace"
+    
+    # -------------------------------------------------------------------
+    # 3. Content-based fallback for ambiguous filenames
+    # -------------------------------------------------------------------
+    if text_lower:
+        radar_terms = [
+            "radar", "nexrad", "wsr-88d", "wsr88d", "reflectivity", "dbz",
+            "doppler", "radome", "rda", "rpg", "antenna pedestal",
+            "azimuth", "elevation", "magnetron", "klystron", "waveguide",
+            "transmitter", "receiver", "duplexer", "rf", "asr-8", "asr8",
+            "atcrb", "beacon", "transponder", "interrogator", "sls",
+        ]
+        if any(term in text_lower for term in radar_terms):
+            return "radar"
+        if any(term in text_lower for term in ["forklift", "pallet", "fork tines", "lift capacity"]):
+            return "forklift"
+        if any(term in text_lower for term in ["jeep", "willys", "military", "army", "ordnance"]):
+            return "vehicle_military"
+        if any(term in text_lower for term in ["model t", "ford", "magneto", "hand crank"]):
+            return "vehicle"
+    
+    # Default to generic vehicle if unclear
+    return "vehicle"
+
+
 def detect_domain_intent(query: str) -> tuple[str | None, float]:
     """
     Detect the likely target domain based on query vocabulary.
@@ -880,7 +1245,6 @@ def retrieve(
             })
 
     text_model = get_text_embed_model()
-    # If embeddings or FAISS index are unavailable, rely on lexical/BM25 only.
     if text_model is None or index is None:
         bm25_docs = bm25_retrieve(query, k=k, top_n=top_n)
         if bm25_docs:
@@ -903,13 +1267,48 @@ def retrieve(
     # Over-fetch to allow domain filtering
     fetch_k = k * 3 if early_domain and early_confidence >= 0.6 else k
     
-    q_emb = text_model.encode([query], convert_to_numpy=True)
-    distances, indices = index.search(q_emb, fetch_k)  # type: ignore[call-arg]
+    # Stage 2: Use ThreadPool for query encoding
+    try:
+        q_emb = batch_encode_async(
+            [query],
+            text_model,
+            batch_size=1,
+            operation_name="query-encoding"
+        )[0:1]  # Keep as 2D array for FAISS
+    except Exception as e:
+        logger.warning(f"ThreadPool query encoding failed, falling back: {e}")
+        q_emb = text_model.encode([query], convert_to_numpy=True)
+    _index = get_index()
+    _docs = get_docs()
+    if _index is None or _docs is None:
+        return []  # Index not ready yet
+    
+    distances, indices = _index.search(q_emb, fetch_k)  # type: ignore[call-arg]
 
     candidates = []
     for idx in indices[0]:
-        if 0 <= idx < len(docs):
-            candidates.append(docs[idx])
+        if 0 <= idx < len(_docs):
+            candidates.append(_docs[idx])
+
+    # Hard domain filtering: exclude obviously incompatible domains
+    # If query is clearly about vehicles, exclude medical/nuclear/radar/hvac docs
+    INCOMPATIBLE_DOMAINS = {
+        "vehicle": {"medical", "nuclear", "radar", "hvac"},
+        "vehicle_military": {"medical", "nuclear", "radar", "hvac"},
+        "forklift": {"medical", "nuclear", "radar", "aerospace"},
+    }
+    
+    if early_domain and early_confidence >= 0.7:
+        excluded_domains = INCOMPATIBLE_DOMAINS.get(early_domain, set())
+        if excluded_domains:
+            pre_filter_count = len(candidates)
+            candidates = [c for c in candidates if c.get("domain") not in excluded_domains]
+            filtered_count = pre_filter_count - len(candidates)
+            if filtered_count > 0:
+                logger.debug(f"Filtered out {filtered_count} irrelevant docs", extra={
+                    "target_domain": early_domain,
+                    "excluded_domains": list(excluded_domains),
+                })
 
     if HYBRID_SEARCH_ENABLED:
         try:
@@ -938,11 +1337,20 @@ def retrieve(
     cand_texts = [c.get("text", "") for c in candidates]
     sim_to_q = [0.5] * len(candidates)
 
+    _apply_diagram_boost(candidates, original_query)
+
     diagram_keywords = [
         "diagram",
+        "block diagram",
+        "signal path",
+        "signal flow",
+        "signal-flow",
+        "signalpath",
         "flow",
         "block",
         "schematic",
+        "flowchart",
+        "wiring",
         "circuit",
         "chart",
         "graph",

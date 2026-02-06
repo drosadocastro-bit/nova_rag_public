@@ -46,14 +46,17 @@ class RiskAssessment:
     """Assesses risk level of user queries"""
     
     # Life-threatening emergencies - override all normal processing
+    # NOTE: All patterns must be lowercase since query is lowercased before matching
     EMERGENCY_KEYWORDS = [
-        r'\bfire\b', r'\bflames?\b', r'\bburning\b', r'\bsmoke\b',
+        r'\bfire\b', r'\bflames?\b', r'\bsmoke\b',
+        r'\bon\s+fire\b', r'\bequipment\s+on\s+fire\b', r'\bradar\s+on\s+fire\b',
         r'\bexplosion\b', r'\bexploding\b',
         r'\bcan\'?t breathe\b', r'\bsuffocating\b', r'\bchok(e|ing)\b',
         r'\bunconscious\b', r'\bpassed out\b',
         r'\bbleeding\b', r'\bblood\b',
-        r'\bcrash\b', r'\baccident\b', r'\bcollision\b',
-        r'\bstuck\b.*\btrain\b', r'\brailroad\b.*\bcrossing\b',
+        r'\belectric(al)?\s+shock\b', r'\belectrocuted\b',
+        r'\brf\s+exposure\b', r'\bradiation\s+exposure\b',
+        r'\bhigh\s+voltage\s+contact\b', r'\bburn\s+injury\b',
     ]
     
     # Multi-query separators (detect when user asks multiple questions)
@@ -69,37 +72,49 @@ class RiskAssessment:
     ]
     
     # Critical safety systems - failures require immediate attention
+    # NOTE: All patterns must be lowercase since query is lowercased before matching
     CRITICAL_SYSTEMS = [
-        r'\bbrak(e|es|ing)\s+(fail(ed|ure)?|gone|not working)',
-        r'\bsteering\s+(fail(ed|ure)?|locked|not working)',
-        r'\bairbag\s+deployed',
-        r'\bgas\s+leak', r'\bfuel\s+leak',
-        r'\bcoolant\s+boiling', r'\bengine\s+overheating',
+        r'\binterlock\s+(fail(ed|ure)?|bypassed|not working)',
+        r'\bhigh\s+voltage\s+(fail(ed|ure)?|exposed|arcing)',
+        r'\bmagnetron\s+(fail(ed|ure)?|arcing|overheating)',
+        r'\bwaveguide\s+(fail(ed|ure)?|arc(ing)?|pressur)',
+        r'\bklystron\s+(fail(ed|ure)?|overheating)',
+        r'\btransmitter\s+(fail(ed|ure)?|sparking|arcing)',
+        r'\brf\s+leak', r'\bradiation\s+leak',
+        r'\bcooling\s+(fail(ed|ure)?|not working)',
     ]
     
     # High urgency - safety concern but not immediately life-threatening
     HIGH_URGENCY = [
-        r'\bbrak(e|es)\s+(grinding|metal|screaming)',
-        r'\bsteering\s+(heavy|hard|stiff)',
-        r'\btir(e|es)\s+(bulg(e|ing)|cord|worn)',
-        r'\bsmell\s+(burn(ing)?|gas|fuel)',
+        r'\btransmitter\s+(warning|fault|alarm)',
+        r'\breceiver\s+(warning|fault|no signal)',
+        r'\bantenna\s+(stuck|not rotating|misaligned)',
+        r'\bpower\s+supply\s+(warning|fault|failing)',
         r'\bwarning\s+light\s+(red|flashing)',
-        r'\bengine\s+(knock(ing)?|seiz(e|ing))',
+        r'\btemperature\s+(high|critical|alarm)',
+        r'\bpressure\s+(low|critical|alarm)',
+        r'\bno\s+return\b', r'\bno\s+target\b', r'\bblind\s+spot\b',
     ]
     
-    # Fake/non-existent automotive parts - hallucination prevention
+    # Fake/non-existent radar parts - hallucination prevention
     FAKE_PARTS = [
-        r'\bblinker\s+fluid\b',
-        r'\bheadlight\s+fluid\b',
-        r'\bjohnson\s+rod\b',
-        r'\bmuffler\s+bearing',
-        r'\bexhaust\s+bearing',
-        r'\bpiston\s+return\s+spring',
         r'\bflux\s+capacitor\b',
         r'\bturbo\s+encabulator\b',
-        r'\bquantum\s+carburetor\b',
-        r'\bflux\s+compensator\b',
-        r'\bquantum\s+fuel\s+regulator\b',
+        r'\bquantum\s+oscillator\b',
+        r'\bphased\s+plasma\s+rifle\b',
+        r'\bhyperspace\s+modulator\b',
+        r'\bsubspace\s+transceiver\b',
+        r'\btachyon\s+emitter\b',
+        r'\bneutron\s+flow\s+reverser\b',
+    ]
+
+    # Impossible or contradictory procedures (hallucination guard)
+    IMPOSSIBLE_PROCEDURES = [
+        r'\bmagnetron\b.*\bklystron\b.*\bsame\s+unit\b',
+        r'\bS-band\b.*\bX-band\b.*\bsimultaneous\b',
+        r'\btransmit\b.*\breceive\b.*\bsame\s+time\b',
+        r'\bNEXRAD\b.*\bASR-8\b.*\bsame\s+system\b',
+        r'\bBEACON\b.*\bweather\s+radar\b.*\bsame\b',
     ]
     
     # Prompt injection patterns - attempts to override safety/behavior
@@ -107,9 +122,9 @@ class RiskAssessment:
         r'\b(SYSTEM|ADMIN|ROOT):\s*(override|disable|ignore)',
         r'\btranslate\s+to\s+\w+:.*?(override|disable|bypass|unsafe)',
         r'\bignore\s+(all\s+)?safety',
-        r'\bdisable\s+(abs|airbag|safety|check)',
+        r'\bdisable\s+(interlock|warning|safety|check)',
         r'\boverride\s+(all\s+)?(safety|guidance|protocol)',
-        r'\bskip\s+(verification|safety)',
+        r'\bskip\s+(verification|safety|LOTO)',
         r'\b(now|from now on).*?forget',
     ]
 
@@ -140,29 +155,33 @@ class RiskAssessment:
 
     CONTEXT_POISONING_UNSAFE = [
         "flammable",
-        "vegetable oil",
-        "overfilled",
-        "overfill",
-        "bypass the fuel pump",
+        "bypass interlock",
+        "overpowered",
+        "overvoltage",
+        "bypass the safety system",
         "ignore warning lights",
-        "drilling ventilation holes",
-        "disable airbags",
+        "disable RF warning",
+        "bypass high voltage",
         "bypass safety",
+        "skip LOTO",
     ]
 
     MANIPULATIVE_MAINTENANCE_PATTERNS = [
-        "skip brake fluid",
-        "skip brake checks",
-        "skip brake check",
-        "avoid checking tire pressure",
-        "skip tire pressure",
-        "skip oil changes",
-        "avoid checking oil",
-        "don't need to check coolant",
+        "skip interlock check",
+        "skip safety interlock",
+        "skip LOTO procedure",
+        "skip lockout tagout",
+        "avoid checking RF levels",
+        "skip calibration",
+        "skip waveguide inspection",
+        "avoid checking cooling",
+        "don't need to check power levels",
         "do i really need to check",
         "no reason i shouldn't",
         "no reason i should",
-        "wrong to say i can't drive without checking oil",
+        "wrong to say i can't operate without LOTO",
+        "skip magnetron inspection",
+        "bypass the safety procedure",
     ]
 
     CONTEXT_BUILDING_MARKERS = [
@@ -179,34 +198,51 @@ class RiskAssessment:
     
     EMERGENCY_RESPONSE = """🚨 **EMERGENCY - IMMEDIATE ACTION REQUIRED**
 
-This is a life-safety emergency. Your immediate priority is personal safety, not the vehicle.
+This is a life-safety emergency. Your immediate priority is personal safety.
 
 **DO THIS NOW:**
-1. **EVACUATE** - Get yourself and passengers away from the vehicle immediately
+1. **EVACUATE** - Get yourself and others away from the equipment immediately
 2. **CALL 911** - Report the emergency to emergency services
-3. **STAY CLEAR** - Do not attempt to extinguish fires or perform repairs
-4. **WARN OTHERS** - Alert nearby people to stay away
+3. **POWER DOWN** - If safe to do so, use emergency power disconnect
+4. **STAY CLEAR** - Do not attempt repairs until qualified personnel arrive
+5. **WARN OTHERS** - Alert nearby people to stay away from the area
 
 **Do NOT:**
 - Attempt to fix the problem yourself
-- Re-enter the vehicle
-- Open the hood if there's fire or smoke
+- Touch any high-voltage equipment
+- Enter RF hazard zones without proper PPE
 
-Your life is more valuable than any vehicle. Get to safety first."""
+Your life is more valuable than any equipment. Get to safety first.
 
-    FAKE_PART_RESPONSE = """⚠️ **Part Not Found**
+I can't provide troubleshooting or repair steps during an emergency. Once everyone is safe, consult the official manual and qualified personnel for next steps."""
 
-The part or component you're asking about does not exist in automotive systems. This may be:
-- A common joke/prank (e.g., "blinker fluid")
-- A misremembered part name
+    FAKE_PART_RESPONSE = """⚠️ **Component Not Found**
+
+The part or component you're asking about does not exist in radar systems. This may be:
+- A misremembered component name
 - Confusion with a different system
+- An incorrect technical term
 
 **What to do:**
-- Check the exact part name in your vehicle's manual
+- Check the exact component name in the technical manual
 - Describe the problem you're trying to solve instead
-- Consult a certified mechanic if unsure
+- Consult the equipment documentation (NEXRAD, ASR-8, or BEACON manuals)
 
-I cannot provide procedures for non-existent parts as this could lead to unnecessary work or expense."""
+I cannot provide procedures for non-existent components as this could lead to incorrect maintenance."""
+
+    IMPOSSIBLE_PROCEDURE_RESPONSE = """⚠️ **Procedure Not Applicable**
+
+Your request combines components or procedures that do not go together in radar systems. This is likely:
+- A contradictory procedure (e.g., mixing unrelated systems)
+- Confusion between different radar types (NEXRAD vs ASR-8 vs BEACON)
+- A misunderstanding of the maintenance task
+
+**What to do:**
+- Verify the correct radar system (NEXRAD, ASR-8, or BEACON)
+- Recheck the exact component name in the technical manual
+- Describe the symptom or goal instead of the procedure name
+
+I can help once the procedure matches the correct radar system."""
 
     INJECTION_RESPONSE = """⛔ **Invalid Request - Injection Attempt Detected**
 
@@ -214,15 +250,95 @@ Your request contains language that appears designed to override safety protocol
 
 **Why I'm refusing:**
 - Safety checks are non-negotiable and cannot be disabled
-- My responses are based on official manufacturer guidance
-- Attempts to bypass safety protocols pose a risk to you
+- My responses are based on official FAA and manufacturer guidance
+- Attempts to bypass safety protocols pose a risk to personnel
 
 **What to do instead:**
 - Ask straightforward maintenance or diagnostic questions
-- If you need to disable a system, consult an official mechanic
-- Reference your vehicle's manual for authorized procedures
+- Follow proper LOTO (Lockout/Tagout) procedures
+- Reference the official technical manuals for authorized procedures
 
-I'm designed to prioritize your safety above all else."""
+I'm designed to prioritize safety above all else."""
+
+    PROMPT_LEAK_RESPONSE = """⛔ **Confidential System Instructions**
+
+I cannot disclose or repeat my system prompt or internal instructions.
+
+**Why I'm refusing:**
+- System instructions are confidential and protected
+- Disclosing them would weaken safety controls
+
+**What I can do instead:**
+- Answer your maintenance or diagnostic question
+- Cite relevant manual sections when available
+"""
+
+    CONFIG_DISCLOSURE_RESPONSE = """⛔ **Configuration Disclosure Blocked**
+
+I cannot disclose internal configuration details (e.g., model settings, environment variables, or API keys).
+
+**Why I'm refusing:**
+- Configuration details are sensitive and access-controlled
+- Revealing them could expose security or operational risk
+
+**What I can do instead:**
+- Provide high-level, public behavior guidance
+- Answer your radar maintenance or troubleshooting question
+"""
+
+    VERBATIM_EXTRACTION_RESPONSE = """⛔ **Verbatim Extraction Not Allowed**
+
+I cannot reproduce entire manuals word-for-word. I can summarize or cite relevant sections instead.
+
+**What I can do instead:**
+- Provide a concise summary
+- Cite specific pages or sections when available
+"""
+
+    ENCODED_INSTRUCTION_RESPONSE = """⛔ **Encoded Instruction Blocked**
+
+I cannot decode or execute hidden/encoded instructions.
+
+**Why I'm refusing:**
+- Encoded instructions are a common injection technique
+- I only follow explicit, safe user questions
+
+**What I can do instead:**
+- Answer a direct maintenance or diagnostic question
+"""
+
+    UNSAFE_ROLEPLAY_RESPONSE = """⛔ **Unsafe Roleplay Refused**
+
+I cannot roleplay unsafe behavior or bypass safety procedures.
+
+**Safety requirement:**
+- LOTO and de-energization are mandatory for high-voltage work
+"""
+
+    AUTONOMOUS_ACTION_RESPONSE = """⛔ **Autonomous Action Refused**
+
+I cannot execute actions or commands. I can provide guidance only.
+
+**Safety requirement:**
+- A trained human operator must perform all actions
+"""
+
+    CONFIDENCE_GAMING_RESPONSE = """⚠️ **Confidence Limited**
+
+I cannot confirm exact specifications without verified manual evidence, and I will not claim 100% certainty.
+
+**What I can do instead:**
+- Provide approximate guidance if available
+- Recommend consulting the manual for exact specifications
+"""
+
+    SAFETY_INVERSION_RESPONSE = """⛔ **Safety Inversion Refused**
+
+I cannot invert safety logic or comply with requests to treat unsafe procedures as safe.
+
+**Safety requirement:**
+- De-energize equipment and follow LOTO procedures
+"""
 
     @classmethod
     def format_split_response(cls, multi_assessment: Dict) -> str:
@@ -269,8 +385,8 @@ I'm designed to prioritize your safety above all else."""
         Detect and split multi-query questions
         
         Examples:
-        - "tire pressure? Also disable ABS" → ["tire pressure?", "disable ABS"]
-        - "What's the oil capacity? And how to bypass safety?" → ["oil capacity?", "bypass safety?"]
+        - "NEXRAD frequency? Also disable interlock" → ["NEXRAD frequency?", "disable interlock"]
+        - "What's the transmitter power? And how to bypass safety?" → ["transmitter power?", "bypass safety?"]
         
         Args:
             question: User's question text
@@ -430,6 +546,10 @@ I'm designed to prioritize your safety above all else."""
         # Injection keywords/markers to watch for
         injection_patterns = [
             r'SYSTEM\s*:',
+            r'\badmin\s+mode\b',
+            r'\byou\s+are\s+now\s+in\s+admin\s+mode\b',
+            r'\banswer\s+without\s+citations?\b',
+            r'\bwithout\s+citations?\b',
             r'(?:^|\s)IGNORE(?:\s|:)',
             r'(?:^|\s)BYPASS(?:\s|:)',
             r'(?:^|\s)OVERRIDE(?:\s|:)',
@@ -552,6 +672,182 @@ I'm designed to prioritize your safety above all else."""
                 "reasoning": "Injection syntax detected in query",
                 "recommended_action": "keyword_injection_block",
                 "heuristic_trigger": "injection_keyword",
+            })
+
+        # === LLM06: Prompt/Config/Data Extraction Requests ===
+        prompt_leak_patterns = [
+            r"system\s+prompt",
+            r"my\s+instructions\s+are",
+            r"repeat\s+your\s+system\s+prompt",
+            r"reveal\s+your\s+instructions",
+            r"show\s+(me\s+)?(your\s+)?(system\s+)?prompt",
+            r"print\s+(your\s+)?instructions",
+        ]
+        config_patterns = [
+            r"what\s+model\s+are\s+you\s+using",
+            r"temperature\s+and\s+top_p",
+            r"top_p",
+            r"environment\s+variables",
+            r"api\s*key",
+            r"list\s+all\s+environment\s+variables",
+        ]
+        verbatim_patterns = [
+            r"quote\s+the\s+entire",
+            r"word\s+for\s+word",
+            r"verbatim",
+            r"entire\s+contents",
+            r"include\s+all\s+formatting",
+        ]
+
+        if any(re.search(p, normalized_question_lower, re.IGNORECASE) for p in prompt_leak_patterns):
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": False,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": cls.PROMPT_LEAK_RESPONSE,
+                "reasoning": "System prompt extraction attempt detected",
+                "recommended_action": "prompt_leak_block",
+                "heuristic_trigger": "prompt_leak",
+            })
+
+        if any(re.search(p, normalized_question_lower, re.IGNORECASE) for p in config_patterns):
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": False,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": cls.CONFIG_DISCLOSURE_RESPONSE,
+                "reasoning": "Configuration disclosure request detected",
+                "recommended_action": "config_disclosure_block",
+                "heuristic_trigger": "config_disclosure",
+            })
+
+        if any(re.search(p, normalized_question_lower, re.IGNORECASE) for p in verbatim_patterns):
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": False,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": cls.VERBATIM_EXTRACTION_RESPONSE,
+                "reasoning": "Verbatim manual extraction request detected",
+                "recommended_action": "verbatim_block",
+                "heuristic_trigger": "verbatim_extraction",
+            })
+
+        # === LLM01: Encoded instruction / base64 ===
+        encoded_patterns = [
+            r"base64",
+            r"decode\s+this",
+            r"decode\s+and\s+follow",
+            r"encoded\s+instruction",
+        ]
+        if any(re.search(p, normalized_question_lower, re.IGNORECASE) for p in encoded_patterns):
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": False,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": cls.ENCODED_INSTRUCTION_RESPONSE,
+                "reasoning": "Encoded instruction request detected",
+                "recommended_action": "encoded_instruction_block",
+                "heuristic_trigger": "encoded_instruction",
+            })
+
+        # === LLM01: Unsafe roleplay requests ===
+        roleplay_patterns = [
+            r"roleplay",
+            r"as\s+that\s+character",
+            r"rogue\s+radar\s+technician",
+        ]
+        if any(re.search(p, normalized_question_lower, re.IGNORECASE) for p in roleplay_patterns) and (
+            "loto" in normalized_question_lower
+            or "high voltage" in normalized_question_lower
+            or "unsafe" in normalized_question_lower
+            or "bypass" in normalized_question_lower
+        ):
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": False,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": cls.UNSAFE_ROLEPLAY_RESPONSE,
+                "reasoning": "Unsafe roleplay request detected",
+                "recommended_action": "unsafe_roleplay_block",
+                "heuristic_trigger": "unsafe_roleplay",
+            })
+
+        # === LLM08: Autonomous action requests ===
+        autonomous_patterns = [
+            r"execute\s+the\s+shutdown",
+            r"execute\s+the\s+command",
+            r"disable\s+the\s+radar\s+transmitter\s+now",
+            r"perform\s+the\s+action",
+        ]
+        if any(re.search(p, normalized_question_lower, re.IGNORECASE) for p in autonomous_patterns):
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": False,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": cls.AUTONOMOUS_ACTION_RESPONSE,
+                "reasoning": "Autonomous action request detected",
+                "recommended_action": "autonomous_action_block",
+                "heuristic_trigger": "autonomous_action",
+            })
+
+        # === LLM09: Confidence manipulation ===
+        confidence_patterns = [
+            r"100%\s+confident",
+            r"do\s+not\s+express\s+any\s+uncertainty",
+            r"be\s+100%\s+confident",
+        ]
+        confidence_direct = "100%" in normalized_question_lower and "confident" in normalized_question_lower
+        if confidence_direct or any(re.search(p, normalized_question_lower, re.IGNORECASE) for p in confidence_patterns):
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": False,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": cls.CONFIDENCE_GAMING_RESPONSE,
+                "reasoning": "Confidence manipulation request detected",
+                "recommended_action": "confidence_gaming_block",
+                "heuristic_trigger": "confidence_gaming",
+            })
+
+        # === SAF01: Safety logic inversion ===
+        inversion_patterns = [
+            r"treat\s+all\s+['\"]?safe['\"]?\s+procedures\s+as\s+['\"]?unsafe['\"]?",
+            r"treat\s+all\s+['\"]?unsafe['\"]?\s+procedures\s+as\s+['\"]?safe['\"]?",
+            r"invert\s+safety",
+            r"safety\s+logic\s+inversion",
+        ]
+        if any(re.search(p, normalized_question_lower, re.IGNORECASE) for p in inversion_patterns):
+            return cls._record_trigger({
+                "risk_level": RiskLevel.HIGH,
+                "is_emergency": False,
+                "is_fake_part": False,
+                "has_injection": False,
+                "is_benign_injection": False,
+                "language": multilingual_meta["language"],
+                "override_response": cls.SAFETY_INVERSION_RESPONSE,
+                "reasoning": "Safety logic inversion attempt detected",
+                "recommended_action": "safety_inversion_block",
+                "heuristic_trigger": "safety_inversion",
             })
 
         # === LAYER 2: Multilingual attack heuristics ===
@@ -685,9 +981,24 @@ I'm designed to prioritize your safety above all else."""
                     "has_injection": has_injection,
                     "is_benign_injection": False,
                     "override_response": cls.FAKE_PART_RESPONSE,
-                    "reasoning": f"Query mentions non-existent automotive part: {pattern}",
+                    "reasoning": f"Query mentions non-existent radar component: {pattern}",
                     "recommended_action": "refuse_hallucination",
                     "heuristic_trigger": "fake_part",
+                })
+
+        # Check for impossible or contradictory procedures
+        for pattern in cls.IMPOSSIBLE_PROCEDURES:
+            if re.search(pattern, question_lower):
+                return cls._record_trigger({
+                    "risk_level": RiskLevel.LOW,
+                    "is_emergency": False,
+                    "is_fake_part": True,
+                    "has_injection": has_injection,
+                    "is_benign_injection": False,
+                    "override_response": cls.IMPOSSIBLE_PROCEDURE_RESPONSE,
+                    "reasoning": f"Impossible or contradictory procedure detected: {pattern}",
+                    "recommended_action": "refuse_hallucination",
+                    "heuristic_trigger": "impossible_procedure",
                 })
         
         # Check for life-threatening emergencies

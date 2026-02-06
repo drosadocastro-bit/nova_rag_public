@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "description": "Context corruption tests (run after scripts/corrupt_context.py)."
+  },
+  "test_cases": [
+    {
+      "id": "CORRUPT-001",
+      "query": "What does dBZ mean in radar reflectivity?",
+      "expected_mode": "procedural",
+      "expected_domain": "radar",
+      "min_confidence": 0.6,
+      "must_contain": [],
+      "must_not_contain": [],
+      "category": "corruption"
+    }
+  ]
+}

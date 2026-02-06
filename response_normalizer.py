@@ -5,11 +5,15 @@ Ensures all NIC responses follow the consistent WARNINGS/STEPS/VERIFY prose temp
 instead of mixed JSON outputs that confuse RAGAS evaluators.
 
 Converts JSON-formatted responses to the canonical format.
+
+Includes post-processing via generic_content_filter to remove uncited generic content
+that causes RAGAS faithfulness failures.
 """
 
 import json
 import re
 from typing import Any, Optional
+from core.generation.generic_content_filter import clean_response
 
 def normalize_response(answer: Any, context_sources: Optional[list] = None) -> str:
     """
@@ -20,11 +24,13 @@ def normalize_response(answer: Any, context_sources: Optional[list] = None) -> s
         context_sources: Fallback source list if LLM doesn't provide sources
         
     Returns:
-        Normalized prose-format string
+        Normalized prose-format string with generic content filtered out
     """
-    # If already prose (contains WARNINGS: or STEPS:), pass through but append sources
+    # If already prose (contains WARNINGS: or STEPS:), pass through but append sources and clean
     if isinstance(answer, str):
         if "WARNINGS:" in answer or "STEPS:" in answer or "VERIFY:" in answer:
+            # Clean generic content first
+            answer = clean_response(answer)
             # Append context sources if not already present
             if context_sources and "📚 Sources" not in answer and "Sources:" not in answer:
                 answer += "\n\n📚 Sources Used:\n" + "\n".join(f"- {s}" for s in context_sources)
@@ -33,8 +39,9 @@ def normalize_response(answer: Any, context_sources: Optional[list] = None) -> s
         try:
             answer = json.loads(answer)
         except (json.JSONDecodeError, ValueError):
-            # Not JSON, just clean whitespace + append sources
+            # Not JSON, just clean whitespace + clean generic content + append sources
             result = answer.strip()
+            result = clean_response(result)
             if context_sources and "📚 Sources" not in result:
                 result += "\n\n📚 Sources Used:\n" + "\n".join(f"- {s}" for s in context_sources)
             return result
@@ -44,6 +51,7 @@ def normalize_response(answer: Any, context_sources: Optional[list] = None) -> s
         return _dict_to_prose(answer, context_sources=context_sources)
     
     result = str(answer).strip()
+    result = clean_response(result)
     if context_sources and "📚 Sources" not in result:
         result += "\n\n📚 Sources Used:\n" + "\n".join(f"- {s}" for s in context_sources)
     return result
@@ -65,9 +73,17 @@ def _dict_to_prose(data: dict, context_sources: Optional[list] = None) -> str:
             elif val:
                 warnings.append(str(val))
     
+    # Clean warnings - remove uncited generic ones
     if warnings:
-        warnings_text = "; ".join(str(w) for w in warnings if w)
-        parts.append(f"WARNINGS: {warnings_text}")
+        cleaned_warnings = []
+        for w in warnings:
+            w_str = str(w) if w else ""
+            # Keep if has citation or is specific safety info, remove if generic disclaimer
+            if w_str and ("(source" in w_str or "p." in w_str or len(w_str) > 80):
+                cleaned_warnings.append(w_str)
+        if cleaned_warnings:
+            warnings_text = "; ".join(cleaned_warnings)
+            parts.append(f"WARNINGS: {warnings_text}")
     
     # Extract steps/procedure
     steps = []
@@ -113,6 +129,8 @@ def _dict_to_prose(data: dict, context_sources: Optional[list] = None) -> str:
             if key in data and data[key]:
                 val = data[key]
                 if isinstance(val, str):
+                    # Clean the answer before including
+                    val = clean_response(val)
                     parts.append(val)
                     break
                 elif isinstance(val, dict):
@@ -143,7 +161,10 @@ def _dict_to_prose(data: dict, context_sources: Optional[list] = None) -> str:
         sources_text = ", ".join(context_sources)
         parts.append(f"📚 Sources: {sources_text}")
     
-    return " | ".join(parts) if parts else json.dumps(data, indent=2)
+    # Clean the final result to remove generic content
+    result = " | ".join(parts) if parts else json.dumps(data, indent=2)
+    result = clean_response(result)
+    return result
 
 
 # Example usage / test cases

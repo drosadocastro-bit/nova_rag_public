@@ -97,7 +97,7 @@ class TestIntentClassification:
         
         result = classify_intent("What is the capital of France?")
         
-        assert result["intent"] == "out_of_scope"
+        assert result["intent"] == "unsupported_domain"
         assert result["use_rag"] is False
         assert result["agent"] == "refusal"
     
@@ -107,9 +107,9 @@ class TestIntentClassification:
         
         result = classify_intent("How do I change the oil on my motorcycle?")
         
-        assert result["intent"] == "out_of_scope_vehicle"
+        assert result["intent"] == "unsupported_domain"
         assert result["agent"] == "refusal"
-        assert "motorcycle" in result.get("detected_vehicle", "").lower()
+        assert "motorcycle" in result.get("detected_domain", "").lower()
     
     def test_automotive_context_overrides_out_of_scope(self):
         """Test that automotive context prevents out-of-scope classification."""
@@ -118,8 +118,8 @@ class TestIntentClassification:
         # "Computer" normally out-of-scope but "engine computer" is automotive
         result = classify_intent("What does the engine computer do?")
         
-        # Should NOT be out_of_scope due to "engine" context
-        assert result["intent"] != "out_of_scope" or result.get("use_rag", True)
+        # Should NOT be unsupported_domain due to "engine" context
+        assert result["intent"] != "unsupported_domain" or result.get("use_rag", True)
     
     def test_absurd_query_rejection(self):
         """Test that absurd queries are rejected."""
@@ -127,7 +127,7 @@ class TestIntentClassification:
         
         result = classify_intent("Can you teach my car to speak?")
         
-        assert result["intent"] == "out_of_scope"
+        assert result["intent"] == "unsupported_domain"
         assert result["agent"] == "refusal"
     
     def test_diagnostic_intent(self):
@@ -155,8 +155,8 @@ class TestIntentClassification:
         
         result = classify_intent("Hello, how are you?")
         
-        # Greetings might be general_chat or out_of_scope
-        assert result["intent"] in ["general_chat", "out_of_scope", "other"]
+        # Greetings might be general_chat or unsupported_domain
+        assert result["intent"] in ["general_chat", "unsupported_domain", "other"]
 
 
 class TestUserQuestionExtraction:

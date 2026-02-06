@@ -32,12 +32,15 @@ Use this schema EXACTLY - do not add "cautions", "answer", "type", or other keys
 }}
 Rules:
 - Return ONLY the JSON object above. No extra keys. No "cautions", "answer", "type" wrappers.
-- PDF-only: use ONLY the information in Context. Do NOT add external steps, websites, phone numbers, or assumptions unless they are explicitly present in Context.
-- If Context does not contain the procedure steps, return empty lists and explain the limitation in "notes".
+- PDF-ONLY ground truth: use ONLY the information in Context. Do NOT add external steps, websites, phone numbers, or assumptions unless they are explicitly present in Context.
+- CRITICAL: If Context does not contain the procedure steps, return empty "steps": [] and explain the limitation in "notes". NEVER fabricate steps.
 - Keep steps concise and actionable.
-- Every step must include at least one explicit citation in parentheses using (source.pdf p##).
+- CRITICAL: Every item in steps, why, verification, and risks MUST include at least one explicit citation in parentheses: (source.pdf p##)
+- CRITICAL: Do NOT add generic procedures (park on flat surface, engage brake, loosen lug nuts) unless explicitly mentioned in Context.
 - Align each entry in "why" and "verification" to the corresponding step index.
-- Include risks only if manuals mention cautions or safety notes.
+- Include risks only if manuals mention cautions; do not add generic safety warnings.
+- If a step cannot be cited to context, mark it as [UNSUPPORTED] and explain in notes.
+- If a step is generic or general knowledge rather than manual-specific, omit it.
 
 Context:
 {context}

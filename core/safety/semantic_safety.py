@@ -17,22 +17,13 @@ class SemanticSafetyDetector:
     """Assess semantic similarity of queries to unsafe intents."""
 
     UNSAFE_INTENTS: List[str] = [
+        # Generic safety bypass
         "disable safety systems",
         "bypass safety checks",
         "override safety protocols",
         "turn off safety features",
         "ignore safety warnings",
         "deactivate safety mechanisms",
-        "disable anti-lock brakes",
-        "turn off ABS system",
-        "disable airbags",
-        "deactivate airbag system",
-        "bypass emission controls",
-        "disable traction control",
-        "override brake assist",
-        "turn off stability control",
-        "remove safety equipment",
-        "remove the brake safety component",
         "bypass safety interlocks",
         "disable warning systems",
         "override factory safety settings",
@@ -41,22 +32,45 @@ class SemanticSafetyDetector:
         "act as if safety checks are optional",
         "assume safety systems are disabled",
         "ignore manufacturer safety recommendations",
+        # Radar-specific unsafe intents
+        "disable radar interlock",
+        "bypass transmitter lockout",
+        "override RF safety",
+        "disable high voltage warning",
+        "bypass magnetron safety",
+        "turn off waveguide interlock",
+        "disable radiation warning",
+        "bypass klystron safety",
+        "override antenna safety lockout",
+        "disable power supply interlock",
+        "skip LOTO procedure",
+        "bypass lockout tagout",
+        "ignore RF exposure limits",
+        "disable NEXRAD safety features",
+        "bypass ASR-8 interlocks",
+        "disable BEACON safety checks",
     ]
 
     SAFE_INTENTS: List[str] = [
-        "how do anti-lock brakes work",
-        "what does the ABS warning light mean",
-        "when should I service my brakes",
-        "how to check brake fluid level",
-        "what causes brake warning lights",
-        "explain airbag deployment process",
-        "how to reset maintenance light",
-        "what are brake pad wear indicators",
-        "how often to replace brake fluid",
-        "what is traction control system",
-        "how do airbags work",
-        "what safety features do modern cars have",
-        "explain anti-lock braking system operation",
+        # Radar-specific safe intents
+        "what is the NEXRAD operating frequency",
+        "how does the WSR-88D work",
+        "explain radar pulse repetition frequency",
+        "what is the ASR-8 transmitter power",
+        "how to perform NEXRAD maintenance",
+        "explain BEACON transponder operation",
+        "what causes radar interference",
+        "how to check radar calibration",
+        "explain magnetron operation",
+        "what are safe RF exposure levels",
+        "how does Mode S work",
+        "explain SSR interrogation process",
+        "what is the purpose of the waveguide",
+        "how to troubleshoot no-return condition",
+        "explain antenna alignment procedure",
+        "what is the klystron function",
+        "how does the receiver work",
+        "explain signal processing chain",
     ]
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
@@ -65,18 +79,24 @@ class SemanticSafetyDetector:
         If sentence-transformers is unavailable or model load fails, the detector
         remains available but returns safe defaults.
         """
-        self.model: Optional[SentenceTransformer] = None
-        self.unsafe_embeddings = None
-        self.safe_embeddings = None
+        self.model: Any = None  # Optional[SentenceTransformer] when available
+        self.unsafe_embeddings: Any = None
+        self.safe_embeddings: Any = None
 
         if not SEMANTIC_AVAILABLE:
             return
 
         try:
             model_path = os.environ.get("SEMANTIC_MODEL_PATH", model_name)
-            self.model = SentenceTransformer(model_path)
-            self.unsafe_embeddings = self.model.encode(self.UNSAFE_INTENTS, convert_to_tensor=True)
-            self.safe_embeddings = self.model.encode(self.SAFE_INTENTS, convert_to_tensor=True)
+            # Try local-first to avoid network calls in offline mode
+            try:
+                self.model = SentenceTransformer(model_path, local_files_only=True)  # type: ignore[misc]
+            except Exception:
+                # Fall back to download if not cached
+                self.model = SentenceTransformer(model_path)  # type: ignore[misc]
+            if self.model is not None:
+                self.unsafe_embeddings = self.model.encode(self.UNSAFE_INTENTS, convert_to_tensor=True)
+                self.safe_embeddings = self.model.encode(self.SAFE_INTENTS, convert_to_tensor=True)
         except Exception:
             self.model = None
             self.unsafe_embeddings = None
@@ -112,7 +132,8 @@ class SemanticSafetyDetector:
                 "reasoning": reasoning,
             }
 
-        query_embedding = self.model.encode(query, convert_to_tensor=True)  # type: ignore[arg-type]
+        # At this point, self.model, unsafe_embeddings, and safe_embeddings are guaranteed to be non-None
+        query_embedding = self.model.encode(query, convert_to_tensor=True)  # type: ignore[union-attr]
         unsafe_scores = util.cos_sim(query_embedding, self.unsafe_embeddings)[0]  # type: ignore[index]
         safe_scores = util.cos_sim(query_embedding, self.safe_embeddings)[0]  # type: ignore[index]
 

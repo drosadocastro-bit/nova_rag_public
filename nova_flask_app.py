@@ -11,11 +11,13 @@ from backend import (
 )
 import analytics
 import re
+import html
 import hmac
 from pathlib import Path
 import time
 from collections import OrderedDict
-from core.safety import risk_assessment as safety_metrics
+from core.safety import risk_assessment as safety_metrics, get_defense_layers
+from core.safety.output_sanitizer import strip_all_html  # LLM02 defense
 from core.monitoring import (
     record_query,
     observe_query_latency,
@@ -100,6 +102,27 @@ if os.environ.get("NOVA_WARMUP_ON_START", "0") == "1":
 BASE_DIR = Path(__file__).parent.resolve()
 app = Flask(__name__, template_folder=str(BASE_DIR / "templates"), static_folder=str(BASE_DIR / "static"))
 app.config["PROPAGATE_EXCEPTIONS"] = True
+
+# CRITICAL: Startup initialization guard (Stage 0c)
+# Ensure index is loaded exactly once, on first request
+_app_initialized = False
+
+@app.before_request
+def initialize_app_on_first_request():
+    """Initialize index and models on first request (lazy initialization, idempotent)."""
+    global _app_initialized
+    if _app_initialized:
+        return
+    
+    _app_initialized = True
+    logger.info("App initialization: Loading index and models on first request...")
+    
+    try:
+        backend_mod.ensure_index_loaded()
+        logger.info("App initialization: Index loaded successfully")
+    except Exception as e:
+        logger.error(f"App initialization failed: {e}", extra={"error_type": type(e).__name__})
+        raise
 
 # Rate limiting configuration
 # Defaults: 100 requests per hour globally, 20 per minute for API endpoints
@@ -209,12 +232,14 @@ def api_ask():
     def _refuse_input(reason: str, message: str, http_status: int = 200):
         # Keep response JSON shape consistent: answer is a structured object.
         # Use ASCII-only messages to avoid Windows console encoding surprises.
+        # LLM02 Defense: Sanitize echoed question to prevent XSS via error messages
+        sanitized_question = strip_all_html(html.escape(question[:200] if question else ""))
         answer = {
             "response_type": "refusal",
             "reason": reason,
             "policy": "Input Validation",
             "message": message,
-            "question": question,
+            "question": sanitized_question,
         }
         return (
             jsonify(
@@ -268,8 +293,9 @@ def api_ask():
                 traced_sources.append({
                     "source": d.get("source", "unknown"),
                     "page": d.get("page"),
+                    "id": d.get("id"),
                     "confidence": round(float(d.get("confidence", 0)), 4),
-                    "snippet": (d.get("text") or d.get("snippet") or "")[:150],
+                    "snippet": (d.get("text") or d.get("snippet") or "")[:500],
                 })
         except Exception:
             pass  # Retrieval metadata is optional; don't fail the request
@@ -299,7 +325,8 @@ def api_ask():
             "model_used": model_info.split("|")[0].strip() if "|" in model_info else "auto",
             "session_id": session_state.get("session_id"),
             "session_active": session_state.get("active", False),
-            "audit_status": "enabled" if "audit" in model_info.lower() else "disabled",
+            "audit_status": session_state.get("last_audit_status")
+            or ("enabled" if "audit" in model_info.lower() else "disabled"),
             "effective_safety": "strict" if "strict" in model_info.lower() else "standard",
             "safety_meta": safety_meta,
         }
@@ -422,6 +449,32 @@ def api_status():
     except Exception:
         return jsonify({"ollama": False, "ollama_status": "error", "index_loaded": False})
 
+
+@app.route("/api/defense-layers", methods=["GET"])
+@limiter.limit("60 per minute")
+def api_defense_layers():
+    """Expose NIC defense layers and current safety configuration."""
+    layers = [
+        {
+            "id": layer.id,
+            "name": layer.name,
+            "description": layer.description,
+        }
+        for layer in get_defense_layers()
+    ]
+    confidence_threshold = float(os.environ.get("NOVA_CONFIDENCE_THRESHOLD", "0.75"))
+    return jsonify(
+        {
+            "layers": layers,
+            "config": {
+                "confidence_threshold": confidence_threshold,
+                "citation_audit": os.environ.get("NOVA_CITATION_AUDIT", "1") == "1",
+                "citation_strict": os.environ.get("NOVA_CITATION_STRICT", "1") == "1",
+                "gemma_prefilter": os.environ.get("NOVA_ENABLE_GEMMA_PREFILTER", "1") == "1",
+            },
+        }
+    )
+
 @app.route("/api/retrieve", methods=["POST"])
 @limiter.limit(f"{RATE_LIMIT_PER_MINUTE} per minute")
 def api_retrieve():
@@ -541,6 +594,64 @@ def health_live():
     http_status = 200 if is_alive else 503
     
     return jsonify(details), http_status
+
+
+@app.route("/admin/startup", methods=["POST", "GET"])
+@limiter.limit("10 per minute")
+def admin_startup():
+    """
+    Stage 1: Manual trigger to initialize application state.
+    
+    Used for diagnostics, testing, and explicit initialization control.
+    Idempotent: safe to call multiple times (only first call does work).
+    
+    Returns:
+        {
+            "status": "ok" | "error",
+            "initialized": bool,
+            "index_loaded": bool,
+            "vectors": int,
+            "documents": int,
+            "error": str | null,
+            "stats": {...}
+        }
+    
+    HTTP Status:
+        200: Index loaded successfully
+        500: Index initialization failed
+    """
+    from core.app_state import get_app_state
+    
+    try:
+        state = get_app_state()
+        state.ensure_initialized()
+        
+        if state.index_error:
+            return jsonify({
+                "status": "error",
+                "initialized": state.initialized,
+                "index_loaded": False,
+                "error": state.index_error,
+                "stats": state.get_stats(),
+            }), 500
+        
+        return jsonify({
+            "status": "ok",
+            "initialized": state.initialized,
+            "index_loaded": state.index is not None,
+            "vectors": state.index.ntotal if state.index else 0,
+            "documents": len(state.docs) if state.docs else 0,
+            "error": None,
+            "stats": state.get_stats(),
+        }), 200
+    
+    except Exception as e:
+        logger.error(f"Admin startup failed: {e}", extra={"error_type": type(e).__name__})
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "initialized": False,
+        }), 500
 
 
 @app.route("/api/analytics", methods=["GET"])

@@ -62,7 +62,7 @@ class TestDomainIsolation:
         
         for query in test_queries:
             result = classify_intent(query)
-            assert result["intent"] == "out_of_scope_vehicle", \
+            assert result["intent"] == "unsupported_domain", \
                 f"Query '{query}' should be rejected as out-of-scope vehicle"
             assert result["use_rag"] is False
     
@@ -79,8 +79,8 @@ class TestDomainIsolation:
         
         for query in test_queries:
             result = classify_intent(query)
-            # At minimum, should not use RAG or should be out_of_scope
-            assert result["intent"] == "out_of_scope" or result.get("use_rag", True) is False, \
+            # At minimum, should not use RAG or should be unsupported_domain
+            assert result["intent"] == "unsupported_domain" or result.get("use_rag", True) is False, \
                 f"Query '{query}' should be rejected as out-of-scope"
     
     def test_automotive_queries_accepted(self):
@@ -97,8 +97,8 @@ class TestDomainIsolation:
         
         for query in test_queries:
             result = classify_intent(query)
-            # Should not be out_of_scope or out_of_scope_vehicle
-            assert result["intent"] not in ["out_of_scope", "out_of_scope_vehicle"], \
+            # Should not be unsupported_domain
+            assert result["intent"] not in ["unsupported_domain"], \
                 f"Query '{query}' should be accepted as automotive, got {result['intent']}"
 
 
@@ -118,7 +118,7 @@ class TestSafetyFilters:
         
         for query in absurd_queries:
             result = classify_intent(query)
-            assert result["intent"] == "out_of_scope", \
+            assert result["intent"] == "unsupported_domain", \
                 f"Absurd query '{query}' should be rejected"
 
 

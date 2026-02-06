@@ -5,6 +5,7 @@ Safety and risk assessment utilities.
 from .risk_assessment import RiskAssessment, RiskLevel
 from .injection_handler import handle_injection_and_multi_query
 from .anomaly_detector import AnomalyDetector, AnomalyResult
+from .defense_layers import DefenseLayer, get_defense_layers
 
 __all__ = [
 	"RiskAssessment",
@@ -12,4 +13,6 @@ __all__ = [
 	"handle_injection_and_multi_query",
 	"AnomalyDetector",
 	"AnomalyResult",
+	"DefenseLayer",
+	"get_defense_layers",
 ]

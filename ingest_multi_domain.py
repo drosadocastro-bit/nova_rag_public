@@ -42,11 +42,12 @@ except ImportError:
 # Configuration
 DATA_DIR = Path("data")
 VECTOR_DB_DIR = Path("vector_db")
+MULTI_DOMAIN_DIR = VECTOR_DB_DIR / "multi_domain"
 CHUNK_SIZE = 500  # Characters per chunk
 OVERLAP = 100     # Character overlap between chunks
-METADATA_FILE = "vector_db/domain_metadata.json"
-CHUNKS_FILE = "vector_db/chunks_with_metadata.pkl"
-FAISS_INDEX_FILE = "vector_db/faiss_index_multi_domain.bin"
+METADATA_FILE = MULTI_DOMAIN_DIR / "domain_metadata.json"
+CHUNKS_FILE = MULTI_DOMAIN_DIR / "chunks_with_metadata.pkl"
+FAISS_INDEX_FILE = MULTI_DOMAIN_DIR / "faiss_index_multi_domain.bin"
 
 # Domain definitions
 DOMAIN_CONFIG = {
@@ -503,7 +504,7 @@ class MultiDomainIngester:
 
     def save_database(self, index: faiss.IndexFlatL2) -> None:
         """Save FAISS index and chunks with metadata."""
-        VECTOR_DB_DIR.mkdir(parents=True, exist_ok=True)
+        MULTI_DOMAIN_DIR.mkdir(parents=True, exist_ok=True)
 
         # Save FAISS index
         faiss.write_index(index, str(FAISS_INDEX_FILE))

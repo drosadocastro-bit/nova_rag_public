@@ -46,8 +46,8 @@ class NeuralAdvisoryLayer:
         self.config = AdvisoryConfig(
             use_finetuned_embeddings=os.environ.get("NOVA_USE_FINETUNED_EMBEDDINGS", "0") == "1",
             anomaly_detection_enabled=(
-                os.environ.get("NOVA_ANOMALY_DETECTOR", "0") == "1"
-                or os.environ.get("NOVA_ENABLE_ANOMALY_DETECTION", "0") == "1"
+                os.environ.get("NOVA_ANOMALY_DETECTOR", "1") == "1"
+                or os.environ.get("NOVA_ENABLE_ANOMALY_DETECTION", "1") == "1"
             ),
             auto_compliance_reports=os.environ.get("NOVA_AUTO_COMPLIANCE_REPORTS", "0") == "1",
             report_formats=report_formats,

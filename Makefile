@@ -1,7 +1,7 @@
 # NIC - Offline RAG System Makefile
 # Common development commands for ease of use
 
-.PHONY: help install test lint format docker-build docker-up docker-down clean coverage security
+.PHONY: help install test lint format docker-build docker-up docker-down clean coverage security eval-custom
 
 # Default target
 help:
@@ -14,6 +14,7 @@ help:
 	@echo "  make lint           - Lint code with ruff"
 	@echo "  make format         - Format code with ruff"
 	@echo "  make security       - Run security scans"
+	@echo "  make eval-custom    - Run deterministic custom evaluation suite"
 	@echo "  make docker-build   - Build Docker images"
 	@echo "  make docker-up      - Start Docker services"
 	@echo "  make docker-down    - Stop Docker services"
@@ -120,6 +121,11 @@ validate:
 	pytest tests/unit/ -v --tb=short
 	@echo ""
 	@echo "✓ Validation complete!"
+
+# Deterministic custom evaluation
+eval-custom:
+	@echo "Running deterministic custom evaluation..."
+	python scripts/custom_eval_runner.py --run-stress --run-degradation --domain radar
 
 # CI simulation
 ci-local:

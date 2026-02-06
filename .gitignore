@@ -181,20 +181,192 @@ cython_debug/
 .cursorindexingignore
 
 # NIC Project Specific
-models/                    # Large embedding/LLM model files
-vector_db/*.pkl           # Cached vector indexes (regenerate from data/)
-vector_db/*.faiss         # FAISS index files
+# Large embedding/LLM model files
+models/
+# Cached vector indexes (regenerate from data/)
+vector_db/*.pkl
+# FAISS index files
+vector_db/*.faiss
+# JSONL doc metadata
+vector_db/*.jsonl
+# Numpy embeddings
+vector_db/*.npy
+# Multi-domain indexes
+vector_db/multi_domain/
+# Analytics database
+vector_db/analytics.db
 
-# Data files - large binary assets (PDFs, HTMLs)
-*.pdf                     # PDF manuals (too large for git)
-*.html                    # HTML exports
-ragas_results/            # Evaluation output (regenerate via nic_ragas_eval.py)
-*_results.json            # Test result artifacts
-*_output.txt              # Test output artifacts
+# Data files - large binary assets (PDFs, HTMLs, manuals)
+# Radar manuals (FAA/NEXRAD PDFs - not for public upload)
+data/radar/
+# Beacon manuals
+data/beacon/
+# Aerospace manuals
+data/aerospace/
+# Vehicle manuals
+data/vehicle/
+# Forklift manuals
+data/forklift/
+# Electronics manuals
+data/electronics/
+# HVAC manuals
+data/hvac/
+# Medical manuals
+data/medical/
+# Nuclear manuals
+data/nuclear/
+# Fine-tuning training data
+data/finetuning/
+# Generated diagram images
+data/diagrams/*.png
+# Extracted diagram subdirectories
+data/diagrams/*/
+# Diagram manifests
+data/diagrams/*.jsonl
+# Signal path data
+data/signal_paths/
+# PDF manuals (too large for git)
+*.pdf
+# HTML exports (not the templates)
+*.html
+
+# FAA-specific files (do not upload)
+extract_faa.py
+*FAA*
+*faa*
+ROADMAP_FAA_CERTIFICATION.md
+NIC_vs_FAA_ALIGNMENT.md
+NIC_vs_INDUSTRY_ALIGNMENT.md
+docs/NIC_ARCHITECTURAL_ANALYSIS.md
+docs/RETRIEVAL_ENHANCEMENT_IMPLEMENTATION.md
+
+# Evaluation output (regenerate via nic_ragas_eval.py)
+ragas_results/
+# Test result artifacts
+*_results.json
+# Test output artifacts
+*_output.txt
+# Generated compliance reports
+compliance_reports/
+# Generated reports
+reports/
+# Generated graphs
+graphs/
 
 # PowerShell scripts (local tooling)
 link_lmstudio_to_ollama.ps1
 register_*.ps1
+start_*.ps1
+stop_*.ps1
+run_tests_with_venv.ps1
+enable_retrieval_improvements.ps1
+enable_retrieval_improvements.sh
+
+# Temporary/working markdown summaries (local session artifacts)
+COMPLETE_*.md
+COMPLETION_SUMMARY.md
+CROSS_ENCODER_SETUP.md
+DELIVERY_SUMMARY.txt
+DOMAIN_TIER_POLICY.md
+FINAL_CHECKLIST.txt
+FIXES_SUMMARY.md
+FULL_TEST_VALIDATION_REPORT.md
+IMPLEMENTATION_GUIDE.md
+MULTIDOM_*.md
+MULTI_RADAR_*.md
+MULTIRADARVECTORDB_*.md
+NEGATIVE_SIGNALS_ENHANCEMENT.md
+NEXRAD_IMPLEMENTATION.md
+NEXT_ACTION_ITEMS.md
+OCR_INDEXING_*.md
+PHASE1_*.md
+PHASE4_*.md
+QUICK_START_VECTOR_DB.md
+RADAR_MIGRATION_SOP.md
+RADAR_PIVOT_SUMMARY.md
+RADAR_QUICKSTART.md
+RAGAS_FAILURE_ANALYSIS.md
+RETRIEVAL_ENHANCEMENT_QUICKSTART.md
+STAGE0*.md
+STAGED_MIGRATION_PLAN.md
+STEP2_IMPLEMENTATION_SUMMARY.md
+VENV_*.md
+
+# Temporary test/analysis scripts (local dev tooling)
+analyze_*.py
+check_*.py
+show_failures.py
+extract_*.py
+debug_*.py
+memory_profiler.py
+security_scan.py
+validate_graphs.py
+verify_chunk_counts.py
+download_cross_encoder.py
+train_domain_classifier.py
+finetune_embeddings.py
+hvac_corpus_kit.py
+nexrad_ingest_kit.py
+run_full_*.py
+quick_domain_sanity_check.py
+quick_granite_gemma_test.py
+chunk_embed_faiss_all.py
+create_multidom_ragas_dataset.py
+glossary_gar_asr8.py
+glossary_gar_beacon.py
+glossary_gar_radar.py
+multi_radar_retriever.py
+radar_diagram_analyzer.py
+risk_assessment_asr8.py
+risk_assessment_beacon.py
+nic_multidom_adversarial_test.py
+nic_radar_adversarial_test.py
+test_anomaly_cove_integration.py
+test_beacon_negative_signals.py
+test_cove.py
+test_domain_gating.py
+test_domain_isolation.py
+test_domain_isolation_filtered.py
+test_e2e.py
+test_error_handling.py
+test_gemma_prefilter.py
+test_multi_radar_adversarial.py
+test_neural_advisory.py
+test_new_patterns.py
+test_policy_improvements.py
+test_query_core_gemma.py
+test_rag_pipeline.py
+test_safety_modules.py
+test_single_query.py
+test_step2_implementation.py
+
+# Test result artifacts
+test_pipeline_results.json
+multidom_test_results.txt
+nic_adversarial_report.md
+nic_multidom_adversarial_results.json
+tests/owasp_llm_results.json
+
+# Data subdirectories (diagrams extracted from manuals)
+data/diagrams/6-*/
+data/diagrams/6310_*/
+data/diagrams/6345_*/
+data/diagrams/6360_*/
+data/diagrams/EHB*/
+
+# Modelfiles (local LLM config)
+Modelfile.*
+
+# Additional governance/eval artifacts
+governance/nic_custom_eval_dataset.json
+governance/nic_multidom_qa_dataset.json
+data/radar_qa_dataset.json
+
+# VS Code settings
+.vscode/
+
+# Env backups
+.env.backup.*
 
 # Cache directory (binary files only)
 cache/**/*.pkl
@@ -208,3 +380,6 @@ cache/**/*.db
 bm25_index.pkl
 retrieval_cache.pkl
 search_history.pkl
+
+# Entire vector_db directory (all generated, regenerate from data/)
+vector_db/

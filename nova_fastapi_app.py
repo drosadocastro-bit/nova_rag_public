@@ -128,12 +128,14 @@ def run_startup_validation() -> bool:
 
 
 # Initialize - will be started by FastAPI
-async_handler = None
+async_handler: Optional[AsyncQueryHandler] = None
 
 @app.on_event("startup")
 async def startup():
     """Initialize on startup."""
+    global async_handler
     log_startup_config()
+    async_handler = AsyncQueryHandler()
     logger.info("Nova FastAPI started", extra={"mode": "async-streaming"})
 
 
@@ -158,7 +160,7 @@ async def stream_chunks(
     """
     if not async_handler:
         yield json.dumps({"error": "System not ready"}) + "\n"
-        return
+        return  # type: ignore[return-value]
     
     start_time = time.time()
     
@@ -293,7 +295,13 @@ async def query_batch(queries: list[str] = Query(..., description="List of queri
     
     for q in queries:
         try:
-            answer = backend_mod.nova_text_handler(q)
+            answer, _ = backend_mod.nova_text_handler(
+                question=q,
+                mode="Auto",
+                npc_name=None,
+                resume_session_id=None,
+                fallback_mode=None
+            )
             results.append({"query": q, "answer": answer, "status": "ok"})
         except Exception as e:
             results.append({"query": q, "error": str(e), "status": "error"})
@@ -312,9 +320,13 @@ async def query_batch(queries: list[str] = Query(..., description="List of queri
 # ============================================================================
 
 @app.post("/session/new")
-async def new_session():
+async def new_session(
+    topic: str = Query(..., description="Session topic"),
+    model: str = Query("Granite", description="Model to use"),
+    mode: str = Query("Auto", description="Query mode"),
+):
     """Start a new query session."""
-    session_id = start_new_session()
+    session_id = start_new_session(topic=topic, model=model, mode=mode)
     return JSONResponse({
         "session_id": session_id,
         "status": "active",
@@ -324,7 +336,7 @@ async def new_session():
 @app.post("/session/reset")
 async def reset(session_id: str = Query(...)):
     """Reset session state."""
-    reset_session(session_id)
+    reset_session(save_to_db=True)
     return JSONResponse({"status": "reset", "session_id": session_id})
 
 

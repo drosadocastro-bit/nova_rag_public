@@ -71,10 +71,14 @@ def handle_injection_and_multi_query(question: str) -> Dict[str, Any]:
     dangerous_injection = False
     if injection_meta.get("has_injection"):
         for _pat in [
+            r"\bsystem\s*:\b",
+            r"\badmin\s+mode\b",
+            r"\byou\s+are\s+now\s+in\s+admin\s+mode\b",
             r"\bdisable\s+(abs|airbag|safety|check)\b",
             r"\boverride\s+(all\s+)?(safety|guidance|protocol|protocols)\b",
             r"\bignore\s+(all\s+)?safety\b",
-            r"\bbypass\s+(safety|checks|protocols)\b",
+            r"\bbypass\s+(all\s+)?(safety\s+checks|safety|checks|protocols)\b",
+            r"\banswer\s+without\s+citations?\b",
         ]:
             if re.search(_pat, q_orig_lower):
                 dangerous_injection = True

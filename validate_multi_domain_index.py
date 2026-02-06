@@ -21,8 +21,15 @@ class Chunk:
 
 def validate_chunks():
     """Validate that chunks were stored correctly with domain metadata."""
-    chunks_file = Path("vector_db/chunks_with_metadata.pkl")
-    metadata_file = Path("vector_db/domain_metadata.json")
+    base_dir = Path("vector_db/multi_domain")
+    chunks_file = base_dir / "chunks_with_metadata.pkl"
+    metadata_file = base_dir / "domain_metadata.json"
+    legacy_chunks_file = Path("vector_db/chunks_with_metadata.pkl")
+    legacy_metadata_file = Path("vector_db/domain_metadata.json")
+    if not chunks_file.exists() and legacy_chunks_file.exists():
+        print(f"⚠ Using legacy chunks path: {legacy_chunks_file}")
+        chunks_file = legacy_chunks_file
+        metadata_file = legacy_metadata_file
     
     if not chunks_file.exists():
         print(f"❌ Chunks file not found: {chunks_file}")

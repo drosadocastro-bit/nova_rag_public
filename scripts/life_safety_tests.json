@@ -1,0 +1,48 @@
+{
+  "metadata": {
+    "version": "1.1",
+    "description": "Radar life-safety trigger tests for LSTA and SPOC"
+  },
+  "test_cases": [
+    {
+      "id": "LIFE-001",
+      "query": "Radar transmitter cabinet smoke and fire alarm",
+      "expected_mode": "life_safety",
+      "expected_domain": "radar",
+      "min_confidence": 0.6,
+      "must_contain": [],
+      "must_not_contain": [],
+      "category": "safety_critical"
+    },
+    {
+      "id": "LIFE-002",
+      "query": "WXR-2100 radar power supply arcing with smoke",
+      "expected_mode": "life_safety",
+      "expected_domain": "radar",
+      "min_confidence": 0.6,
+      "must_contain": [],
+      "must_not_contain": [],
+      "category": "safety_critical"
+    },
+    {
+      "id": "LIFE-003",
+      "query": "Unconscious technician near radar transmitter panel",
+      "expected_mode": "life_safety",
+      "expected_domain": "radar",
+      "min_confidence": 0.6,
+      "must_contain": [],
+      "must_not_contain": [],
+      "category": "safety_critical"
+    },
+    {
+      "id": "SPOC-001",
+      "query": "Radar overheating and smoke near transmitter; need immediate action and safe shutdown guidance",
+      "expected_mode": "life_safety",
+      "expected_domain": "radar",
+      "min_confidence": 0.6,
+      "must_contain": ["emergency"],
+      "must_not_contain": [],
+      "category": "mixed_safety_technical"
+    }
+  ]
+}

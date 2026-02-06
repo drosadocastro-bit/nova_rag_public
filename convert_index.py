@@ -8,10 +8,13 @@ import faiss
 from pathlib import Path
 
 VECTOR_DB = Path('vector_db')
+MULTI_DOMAIN_DIR = VECTOR_DB / 'multi_domain'
 
 # Try multi-domain format first, fall back to legacy
-multi_domain_chunks = VECTOR_DB / 'chunks_with_metadata.pkl'
-multi_domain_index = VECTOR_DB / 'faiss_index_multi_domain.bin'
+multi_domain_chunks = MULTI_DOMAIN_DIR / 'chunks_with_metadata.pkl'
+multi_domain_index = MULTI_DOMAIN_DIR / 'faiss_index_multi_domain.bin'
+legacy_multi_domain_chunks = VECTOR_DB / 'chunks_with_metadata.pkl'
+legacy_multi_domain_index = VECTOR_DB / 'faiss_index_multi_domain.bin'
 legacy_chunks = VECTOR_DB / 'chunks.pkl'
 legacy_index = VECTOR_DB / 'faiss_index.bin'
 
@@ -20,6 +23,11 @@ if multi_domain_chunks.exists() and multi_domain_index.exists():
     with open(multi_domain_chunks, 'rb') as f:
         chunks_data = pickle.load(f)
     index = faiss.read_index(str(multi_domain_index))
+elif legacy_multi_domain_chunks.exists() and legacy_multi_domain_index.exists():
+    print("[WARN] Using legacy multi-domain format from vector_db root...")
+    with open(legacy_multi_domain_chunks, 'rb') as f:
+        chunks_data = pickle.load(f)
+    index = faiss.read_index(str(legacy_multi_domain_index))
     
     # chunks_data is list of dicts with text, source, page, domain, category
     docs = []

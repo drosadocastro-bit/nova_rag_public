@@ -58,9 +58,14 @@ Rules:
 - Align rationale to likely_causes by index; align verification to next_steps by index.
 - Use fallback only if manuals specify an alternate path.
 - Include reference_diagrams if diagrams are provided; reference them in next_steps.
-- Critical: Every item in likely_causes, rationale, next_steps, and verification MUST be directly supportable by the provided context text.
+- CRITICAL: Every item in likely_causes, rationale, next_steps, and verification MUST include an explicit citation in parentheses: (source.pdf p##)
+- CRITICAL: Every claim must be directly grounded in the provided context text. Do NOT add external knowledge or generic troubleshooting steps.
+- CRITICAL: Do NOT add severity judgments or catastrophizing ("this is dangerous", "must stop immediately", "consult professional") unless in Context.
+- CRITICAL: If specific value/procedure exists in Context, extract fully with citation; do not wrap in generic elaboration.
 - To make validation possible, reuse the manuals' exact terminology and identifiers (alarm description text, component names, table/figure IDs like "Figure FO6-4", and phrases like "maintenance limit in Adaptation Data").
 - Avoid generic paraphrases. If you cannot ground a claim in the context wording, omit it.
+- If context does not support a step, mark it as [UNSUPPORTED] and explain in notes.
+- Never append "refer to manual" or "consult technician" unless explicitly in Context.
 
 Context:
 {context}

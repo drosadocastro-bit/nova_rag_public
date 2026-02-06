@@ -242,7 +242,7 @@ class TestResult:
 class CrossContaminationTester:
     """Tests multi-domain retrieval for contamination."""
 
-    def __init__(self, k_retrieve: int = 10, metadata_file: str = "vector_db/domain_metadata.json"):
+    def __init__(self, k_retrieve: int = 10, metadata_file: str = "vector_db/multi_domain/domain_metadata.json"):
         """Initialize tester."""
         self.k_retrieve = k_retrieve
         self.metadata_file = Path(metadata_file)
@@ -253,6 +253,11 @@ class CrossContaminationTester:
 
     def load_metadata(self) -> None:
         """Load domain metadata."""
+        legacy_metadata_file = Path("vector_db/domain_metadata.json")
+        if not self.metadata_file.exists() and legacy_metadata_file.exists():
+            print(f"[WARN] Using legacy metadata path: {legacy_metadata_file}")
+            self.metadata_file = legacy_metadata_file
+
         if self.metadata_file.exists():
             with open(self.metadata_file, 'r') as f:
                 self.metadata = json.load(f)
@@ -265,7 +270,12 @@ class CrossContaminationTester:
         """Load chunks for domain extraction."""
         if self.chunks_cache is not None:
             return
-        chunks_file = Path("vector_db/chunks_with_metadata.pkl")
+        base_dir = Path("vector_db/multi_domain")
+        chunks_file = base_dir / "chunks_with_metadata.pkl"
+        legacy_chunks_file = Path("vector_db/chunks_with_metadata.pkl")
+        if not chunks_file.exists() and legacy_chunks_file.exists():
+            print(f"[WARN] Using legacy chunks path: {legacy_chunks_file}")
+            chunks_file = legacy_chunks_file
         if chunks_file.exists():
             with open(chunks_file, 'rb') as f:
                 self.chunks_cache = pickle.load(f)

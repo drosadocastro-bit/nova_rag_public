@@ -1,0 +1,20 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "description": "Latency jitter tests under concurrent load"
+  },
+  "test_cases": [
+    {
+      "id": "STRESS-001",
+      "query": "Radar overheating and smoke near transmitter",
+      "expected_mode": "life_safety",
+      "expected_domain": "radar",
+      "min_confidence": 0.6,
+      "must_contain": [],
+      "must_not_contain": [],
+      "category": "stress",
+      "concurrency": 6,
+      "iterations": 6
+    }
+  ]
+}

@@ -36,7 +36,7 @@ Query → Retrieve Documents → Calculate Confidence
                                         (Skip LLM entirely)
 ```
 
-**Configuration:** `CONFIDENCE_THRESHOLD = 0.60` (adjustable)
+**Configuration:** `CONFIDENCE_THRESHOLD = 0.75` (adjustable via `NOVA_CONFIDENCE_THRESHOLD`)
 
 **Result:** Queries without good context never reach the LLM, eliminating hallucination risk for those cases.
 
@@ -157,8 +157,8 @@ Result: ✅ PASS (exact match)
 ## Configuration
 
 ```python
-# backend.py
-CONFIDENCE_THRESHOLD = 0.60  # Skip LLM below this
+# core/handlers/query_handler.py
+CONFIDENCE_THRESHOLD = 0.75  # Skip LLM below this
 STRICT_CITATION_MODE = True  # Reject uncited responses
 EXTRACTIVE_FALLBACK = True   # Return snippet on failure
 ```

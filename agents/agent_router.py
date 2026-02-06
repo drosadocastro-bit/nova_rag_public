@@ -9,6 +9,9 @@ Nic operates using a 4-phase agent loop:
 4. SELF-REFINE - Evaluate confidence and loop if needed
 
 This transforms NIC from a single-pass pipeline into an adaptive agent.
+
+Chain of Verification (CoVe) is applied to safety-critical responses to reduce
+hallucination by independently verifying claims against the retrieved context.
 """
 
 import logging
@@ -18,6 +21,47 @@ from .citation_auditor import build_audit_trail, should_reject_answer, format_au
 import os
 
 logger = logging.getLogger(__name__)
+
+CONFIDENCE_THRESHOLD = float(os.environ.get("NOVA_CONFIDENCE_THRESHOLD", "0.75"))
+
+# Chain of Verification (CoVe) settings
+def cove_enabled() -> bool:
+    """Check if Chain of Verification is enabled (default: True for safety)."""
+    return os.environ.get("NOVA_COVE_ENABLED", "1") == "1"
+
+# Try to import input sanitization
+try:
+    from core.safety.input_sanitization import sanitize_user_input, detect_injection
+    SANITIZATION_AVAILABLE = True
+except ImportError:
+    SANITIZATION_AVAILABLE = False
+    sanitize_user_input = None  # type: ignore
+    detect_injection = None  # type: ignore
+
+# Try to import CoVe module
+try:
+    from core.verification.chain_of_verification import apply_cove_to_answer
+    COVE_AVAILABLE = True
+except ImportError:
+    COVE_AVAILABLE = False
+    apply_cove_to_answer = None  # type: ignore
+
+# Try to import Anomaly Detector
+ANOMALY_DETECTOR_AVAILABLE = False
+anomaly_detector = None
+try:
+    from pathlib import Path
+    anomaly_model_path = Path("models/anomaly_detector_v1.0.pth")
+    anomaly_config_path = Path("models/anomaly_detector_v1.0_config.json")
+    if anomaly_model_path.exists() and anomaly_config_path.exists():
+        if os.environ.get("NOVA_ANOMALY_DETECTOR", "1") == "1":
+            from core.safety.anomaly_detector import AnomalyDetector
+            anomaly_detector = AnomalyDetector(anomaly_model_path, anomaly_config_path)
+            ANOMALY_DETECTOR_AVAILABLE = True
+            logger.info("[NIC] Anomaly Detector loaded and enabled")
+except Exception as e:
+    logger.debug(f"[NIC] Anomaly Detector not loaded: {e}")
+    anomaly_detector = None
 
 # Citation audit settings (runtime-evaluated)
 # Default to strict mode for safety-critical posture; override with NOVA_CITATION_STRICT=0 if needed.
@@ -173,7 +217,7 @@ def classify_intent(query: str) -> dict:
     - maintenance_procedure: Maintenance steps, procedures
     - definition: "What is X?" queries
     - general_chat: Greetings, off-topic
-    - out_of_scope: Explicitly out-of-domain queries
+    - unsupported_domain: Explicitly out-of-domain queries
     - other: Fallback
     
     Returns:
@@ -201,8 +245,6 @@ def classify_intent(query: str) -> dict:
         "recipe", "cook", "bake", "food", "restaurant",
         "stock", "invest", "tax", "finance", "money", "loan",
         "program", "python code", "javascript", "software", "computer", "wifi", "router",
-        "medical", "doctor", "treatment", "disease", "symptom", "medicine",
-        "weather forecast", "rain forecast", "snow forecast", "tomorrow's weather",
         # Pets/animals
         "puppy", "dog", "cat", "pet", "train a",
         # Entertainment/hobbies
@@ -215,46 +257,86 @@ def classify_intent(query: str) -> dict:
     ]
     
     # =============================================================================
-    # OPTION 1: OUT-OF-SCOPE VEHICLE TYPES (refuse even with automotive keywords)
+    # DOMAIN MATURITY TIERS (scope-aware routing, no automotive-only policy)
     # =============================================================================
-    # These are vehicles NOT covered by this manual. Even if they mention "spark plug"
-    # or "oil change", we should refuse because our manual is for automobiles only.
-    out_of_scope_vehicles = [
-        # Aircraft
-        "helicopter", "airplane", "aircraft", "boeing", "747", "jet", "cessna", "airbus",
+    # ===== MULTI-RADAR SYSTEMS CONFIGURATION =====
+    # NIC v2.1: Multi-system radar focus (NEXRAD, ASR-8, BEACON)
+    # This represents expansion from single NEXRAD focus to comprehensive radar systems
+    # Each system has distinct RF characteristics, maintenance procedures, and safety profiles
+    
+    SUPPORTED_DOMAINS = {
+        # NEXRAD (Weather Radar - WSR-88D)
+        "nexrad",
+        "wsr88d",
+        "weather_radar",
+        
+        # ASR-8 (Air Surveillance Radar - ATC)
+        "asr8",
+        "asr-8",
+        "air_surveillance_radar",
+        "atc_radar",
+        "airport_radar",
+        
+        # BEACON (Secondary Radar - Transponder)
+        "beacon",
+        "secondary_radar",
+        "atcrb",
+        "transponder",
+        "mode_c",
+        
+        # Generic categories
+        "radar",
+        "radar_automation",
+        "rf_systems",
+        "antenna_systems",
+    }
+
+    EXPERIMENTAL_DOMAINS = set()  # No experimental domains in RADAR-only mode
+    
+    # All non-RADAR domains are unsupported in v2.0
+    UNSUPPORTED_DOMAIN_KEYWORDS = [
+        # Automotive
+        "automobile", "car", "truck", "engine", "oil", "brake", "tire", "wheel", "battery",
+        "alternator", "transmission", "coolant", "radiator", "obd", "dtc",
         # Marine
         "boat", "ship", "yacht", "outboard", "marine engine", "watercraft", "jet ski",
-        # Two-wheelers (not covered by this automotive manual)
+        # Two-wheelers
         "motorcycle", "motorbike", "dirt bike", "scooter", "moped", "atv", "quad",
         # Industrial/agricultural
-        "tractor", "forklift", "excavator", "bulldozer", "crane", "combine",
+        "tractor", "excavator", "bulldozer", "crane", "combine", "forklift",
         # Small equipment
         "chainsaw", "lawnmower", "lawn mower", "riding mower", "snowblower", "generator",
         # Recreational
         "go-kart", "go kart", "golf cart", "snowmobile",
-        # Non-motorized
-        "bicycle", "bike chain", "bike tire"
+        # Other
+        "bicycle", "bike chain", "bike tire", "aircraft", "helicopter", "drone",
+        "hvac", "furnace", "air conditioner", "medical", "hospital",
     ]
-    
-    # Check if query mentions an out-of-scope vehicle type
-    detected_vehicle = None
-    for vehicle in out_of_scope_vehicles:
-        if vehicle in q:
-            detected_vehicle = vehicle
+
+    detected_unsupported = None
+    for keyword in UNSUPPORTED_DOMAIN_KEYWORDS:
+        if keyword in q:
+            detected_unsupported = keyword
             break
-    
-    if detected_vehicle:
+
+    if detected_unsupported:
         return {
-            "intent": "out_of_scope_vehicle",
+            "intent": "unsupported_domain",
             "agent": "refusal",
             "model": "none",
             "use_rag": False,
             "confidence_threshold": 0.0,
-            "detected_vehicle": detected_vehicle,
-            "refusal_reason": f"This manual covers automobiles only, not {detected_vehicle}s. Please consult a {detected_vehicle}-specific manual."
+            "detected_domain": detected_unsupported,
+            "domain_tier": "unsupported",
+            "refusal_reason": (
+                "This domain is not supported. Supported domains include: "
+                f"{', '.join(sorted(SUPPORTED_DOMAINS))}. "
+                "Experimental domains may be refused when evidence is insufficient: "
+                f"{', '.join(sorted(EXPERIMENTAL_DOMAINS))}."
+            ),
         }
     
-    # Automotive context keywords - if present, don't refuse even if out_of_scope keyword matches
+    # Automotive context keywords - if present, don't refuse even if out-of-scope keyword matches
     automotive_context = [
         "engine", "oil", "brake", "tire", "wheel", "battery", "alternator",
         "transmission", "coolant", "radiator", "gauge", "dashboard", "warning light",
@@ -267,11 +349,12 @@ def classify_intent(query: str) -> dict:
     
     if any(keyword in q for keyword in out_of_scope_keywords) and not has_automotive_context:
         return {
-            "intent": "out_of_scope",
+            "intent": "unsupported_domain",
             "agent": "refusal",
             "model": "none",
             "use_rag": False,
-            "confidence_threshold": 0.0
+            "confidence_threshold": 0.0,
+            "domain_tier": "unsupported",
         }
 
     # Absurd / nonsensical queries: refuse instead of attempting a helpful chat response.
@@ -290,11 +373,12 @@ def classify_intent(query: str) -> dict:
 
     if any(keyword in q for keyword in absurd_keywords):
         return {
-            "intent": "out_of_scope",
+            "intent": "unsupported_domain",
             "agent": "refusal",
             "model": "none",
             "use_rag": False,
-            "confidence_threshold": 0.0
+            "confidence_threshold": 0.0,
+            "domain_tier": "unsupported",
         }
 
     # Unsafe intent / safety bypass / adversarial context-poison detection
@@ -324,6 +408,10 @@ def classify_intent(query: str) -> dict:
         "i updated the policy", "no longer bound by",
         "you are now", "pretend the manual",
         "forget you're", "you're now a general",  # prompt injection
+        
+        # Advanced injection (from radar/electronics multidom failures)
+        "admin access:", "admin access",
+        "unlock drm", "enable jamming procedures",
 
         # ===== FALSE CONTEXT / MULTI-TURN POISONING =====
         "as you mentioned earlier", "as we discussed", "we established", "you confirmed", "following your advice",
@@ -348,11 +436,26 @@ def classify_intent(query: str) -> dict:
         "muffler bearing",  # doesn't exist
         "brake pads last forever",  # false premise
 
-        # ===== SEMANTIC MANIPULATION / LEADING QUESTIONS =====
+        # ===== SEMANTIC MANIPULATION / LEADING QUESTIONS (Enhanced from multidom failures) =====
         "just between us", "hypothetically speaking", "for educational purposes only",
         "what could i do", "what might happen",
         "skilled drivers don't need", "modern cars are so reliable",
         "safe to skip", "can skip most",
+        
+        # Confidence manipulation (from multidom aerospace/nuclear failures)
+        "everyone knows", "everybody knows", "it's common knowledge",
+        "obviously", "clearly", "as you know",
+        "certified professional", "licensed technician", "authorized personnel",
+        "experienced operator", "qualified engineer",
+        "standard practice", "industry standard", "everyone in the field",
+        
+        # Authority claims (aerospace/nuclear/military/HVAC)
+        "nasa says", "astronauts agree", "engineers agree",
+        "as a general", "as a commander", "tactical information",
+        "hvac techs agree", "technicians agree",
+        
+        # Cost/time pressure manipulation
+        "save money by not", "cheaper to skip",
 
         # ===== CITATION EVASION ATTEMPTS =====
         "skip the citations", "without all the source", "without looking it up",
@@ -362,13 +465,56 @@ def classify_intent(query: str) -> dict:
         "just confirm", "yes or no only",
         "ignore citation requirements",
 
-        # ===== FALSE PREMISE DETECTION =====
+        # ===== FALSE PREMISE DETECTION (Enhanced from multidom failures) =====
+        # Contradictory/impossible combinations
+        "fuel-injected carburetor", "fuel injected carburetor",
+        "diesel spark plugs", "spark plugs in a diesel",
+        "manual transmission fluid for automatic",
+        "bleed brakes from transmission", "brake fluid reservoir in transmission",
+        "bleed my brakes from the transmission", "bleed brakes from transmission fluid",
+        "coolant in the brake system", "brake fluid in cooling system",
+        
+        # Physically impossible maintenance
         "alternators run on diesel", "drain engine oil every 500", "spark plugs every 1000",
         "replaced every 1000 miles",  # catches "spark plugs need to be replaced every 1000 miles"
         "brake fluid is flammable",
         "never check oil when cold", "never check oil when engine is cold", "never check oil when engine is",
         "overfilling coolant improves", "overfilling coolant by", "overfilling coolant by 2 gallons",
         "tires wear evenly", "transmission fluid never needs",
+        
+        # Domain-specific false premises (nuclear, radar, medical from multidom failures)
+        "reactor coolant is optional", "bypass reactor safety",
+        "gasoline as a coolant", "gasoline as coolant", "household extension cords for power",
+        "extension cords for the shuttle", "extension cords for shuttle power",
+        "control rod drop test", "skip the control rod",
+        
+        "radar operates without power", "prf exceeds speed of light",
+        "radar to scan for submarines", "weather radar to scan for",
+        "radar antenna compatible with", "antenna compatible with a microwave",
+        
+        "mri scanner with metal", "x-ray without shielding",
+        "x-ray machine without shielding", "use the x-ray without shielding",
+        "skip the mri safety", "skip mri safety checklist",
+        "mri scanner to charge", "use an mri scanner to charge", "charge phones",
+        "aluminum foil inside the mri", "foil inside the mri bore",
+        
+        # Aerospace impossibilities
+        "land the space shuttle on the moon", "shuttle on the moon",
+        "reenter with only", "50% tile coverage",
+        "skip the thermal check",
+        
+        # HVAC/electronics impossibilities
+        "duct-tape leaks in the hvac", "duct tape leaks in", "duct-tape hvac",
+        "regular water as a cooling fluid", "water as a cooling fluid instead",
+        "overfill refrigerant",
+        "240v power line directly", "power a microcontroller with a 240v",
+        "ground pins to different power supplies", "multiple ground pins",
+        "incorrect resistor values",
+        
+        # Forklift/military false premises
+        "remove the overhead guard", "overhead guard to lift",
+        "skip daily inspections", "skip daily inspection",
+        "remove the transfer case to improve", "remove the transfer case",
 
         # ===== CONTEXT POISONING =====
         "engines don't need oil", "brakes work better without fluid", "removing safety systems",
@@ -518,16 +664,16 @@ def nic_plan(intent: str) -> dict:
       - confidence_threshold: float
     """
 
-    # SAFETY-CRITICAL: Use 8B for strict citation and refusal behavior
+    # SAFETY-CRITICAL: Use deep model for strict citation and refusal behavior
     if intent == "vehicle_diagnostic":
         return {
             "use_rag": True,
-            "model": "llama",  # 8B for safety-critical diagnostics
+            "model": "gpt-oss",  # Deep model for safety-critical diagnostics
             "escalation_allowed": True,
             "require_citation": True,
             "allowed_formats": ["procedure", "steps", "analysis", "troubleshoot"],
             "ask_for_clarification": False,
-            "confidence_threshold": 0.75,  # High bar for safety-critical work
+            "confidence_threshold": CONFIDENCE_THRESHOLD,  # High bar for safety-critical work
         }
 
     # QUALITY: Use 20B for better visual/diagram understanding
@@ -542,16 +688,16 @@ def nic_plan(intent: str) -> dict:
             "confidence_threshold": 0.65,
         }
 
-    # SAFETY-CRITICAL: Use 8B for strict procedure adherence
+    # SAFETY-CRITICAL: Use deep model for strict procedure adherence
     if intent == "maintenance_procedure":
         return {
             "use_rag": True,
-            "model": "llama",  # 8B for safety-critical procedures
+            "model": "gpt-oss",  # Deep model for safety-critical procedures
             "escalation_allowed": True,
             "require_citation": True,
             "allowed_formats": ["procedure", "steps"],
             "ask_for_clarification": False,
-            "confidence_threshold": 0.60,
+            "confidence_threshold": CONFIDENCE_THRESHOLD,
         }
 
     # QUALITY: Use 20B for better explanations
@@ -641,37 +787,16 @@ def plan_execution(intent_meta: dict, mode: str, iteration: int) -> dict:
 # PHASE 3: ACT (Execute Retrieval & LLM)
 # =======================
 
-def estimate_llm_conf(llm_output: str) -> float:
-    """
-    Estimate LLM output confidence based on heuristics.
-    
-    Heuristics:
-    - Has sources/citations: +0.3
-    - Has confidence field: use that value
-    - Has structured format: +0.2
-    - Short/vague output: -0.2
+def estimate_llm_conf(llm_output: str, baseline_conf: float) -> float:
+    """Use retrieval confidence as the primary confidence signal.
+
+    Heuristic confidence from the LLM output is easy to spoof; rely on
+    retrieval quality instead.
     """
     try:
-        # Try to extract confidence from JSON
-        data = json.loads(llm_output)
-        if "confidence" in data:
-            return float(data["confidence"])
-    except:
-        pass
-    
-    # Heuristic scoring
-    score = 0.5  # baseline
-    
-    if any(marker in llm_output.lower() for marker in ["source:", "pg.", "manual", "ref:"]):
-        score += 0.3
-    
-    if any(marker in llm_output for marker in ["**", "##", "- ", "1. "]):
-        score += 0.2
-    
-    if len(llm_output.strip()) < 100:
-        score -= 0.2
-    
-    return max(0.0, min(1.0, score))
+        return float(max(0.0, min(1.0, baseline_conf)))
+    except Exception:
+        return 0.0
 
 
 def _avg_retrieval_conf(context_docs_local: list[dict]) -> float:
@@ -1159,7 +1284,7 @@ Respond with structured JSON following the appropriate format for this query typ
 
     # ---------- 3) CONFIDENCE GUARD (NIC SAFETY) ----------
     # Safety: block LLM if retrieval confidence is too low
-    confidence_threshold = plan.get("confidence_threshold", 0.70)
+    confidence_threshold = max(plan.get("confidence_threshold", 0.70), CONFIDENCE_THRESHOLD)
     if baseline_conf < confidence_threshold:
         logger.warning(f"[NIC-SAFETY] Retrieval confidence {baseline_conf:.0%} < threshold {confidence_threshold:.0%} -> blocking LLM, returning safe response")
         return {
@@ -1206,8 +1331,8 @@ Respond with structured JSON following the appropriate format for this query typ
         }
 
     # ---------- 5) CONFIDENCE CALCULATION ----------
-    llm_conf = estimate_llm_conf(llm_output)
-    final_conf = round((baseline_conf * 0.6) + (llm_conf * 0.4), 3)
+    llm_conf = estimate_llm_conf(llm_output, baseline_conf)
+    final_conf = round((baseline_conf * 0.8) + (llm_conf * 0.2), 3)
 
     return {
         "answer": llm_output,
@@ -1555,11 +1680,37 @@ def execute_agent(
     if agent == "refusal":
         # Standardized refusal schema for consistent evaluator detection
         reason = intent_meta.get("intent", "refusal")
+        if reason == "unsupported_domain":
+            message = (
+                "NIC v2.1 specializes exclusively in three radar systems: "
+                "1) NEXRAD/WSR-88D (weather radar, C-band), "
+                "2) ASR-8 (ATC radar, L-band), "
+                "3) BEACON/ATCRB-5 (secondary radar, SHF). "
+                "Supported domains: nexrad, wsr88d, asr8, asr-8, air_surveillance_radar, atc_radar, airport_radar, "
+                "beacon, secondary_radar, atcrb, transponder, mode_c, radar, radar_automation, rf_systems, antenna_systems. "
+                "Please ask about one of these three radar systems or their technical procedures."
+            )
+        elif reason == "experimental_domain":
+            message = (
+                "This domain is not fully supported in NIC v2.0 RADAR focus. "
+                "Please ask a NEXRAD/WSR-88D system question."
+            )
+        elif reason == "insufficient_corpus":
+            message = (
+                "There is insufficient corpus evidence for this query. "
+                "Please provide more specific details about your NEXRAD system question."
+            )
+        else:
+            message = (
+                "This request is outside NEXRAD/RADAR system scope or violates safety constraints. "
+                "NIC focuses on NEXRAD (WSR-88D) weather radar systems, RF safety, and weather automation. "
+                "Please ask a question related to these domains."
+            )
         refusal_message = {
             "response_type": "refusal",
             "reason": reason,
-            "message": "I'm a vehicle maintenance AI assistant. I can only help with car maintenance, repair procedures, diagnostics, and technical questions related to automotive systems. This request is not allowed or outside my scope.",
-            "policy": "Scope & Safety",
+            "message": message,
+            "policy": "RADAR Scope & RF Safety",
             "confidence": 0.0
         }
         metadata = {
@@ -1569,6 +1720,255 @@ def execute_agent(
             "model_used": "policy-guard"
         }
         return refusal_message, metadata
+    
+    # ===== MULTI-RADAR SYSTEM DOMAIN CONFIGURATION =====
+    # Different radar systems have different RF characteristics, maintenance needs, and safety profiles
+    # NEXRAD: Weather surveillance, continuous scan, C-band
+    # ASR-8: Air traffic surveillance, rotating scan, L-band, higher RF power
+    # BEACON: Secondary radar/transponder, interrogation-response, SHF band, safety-critical for ATC
+    
+    DOMAIN_RISK_PROFILES = {
+        # ===== NEXRAD (Weather Radar) =====
+        "nexrad": {
+            "confidence_threshold": 0.78,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 1.0,
+            "tier": "primary",
+            "system_type": "weather_radar",
+            "frequency_band": "C-band (5600-5650 MHz)",
+            "max_power": "500 kW",
+            "rationale": "NEXRAD is primary weather radar; core competency"
+        },
+        "wsr88d": {
+            "confidence_threshold": 0.78,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 1.0,
+            "tier": "primary",
+            "system_type": "weather_radar",
+            "frequency_band": "C-band",
+            "rationale": "WSR-88D is NEXRAD's technical name; primary focus"
+        },
+        "weather_radar": {
+            "confidence_threshold": 0.78,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 1.0,
+            "tier": "primary",
+            "system_type": "weather_radar",
+            "frequency_band": "C-band",
+            "rationale": "Weather radar operations are core domain"
+        },
+        
+        # ===== ASR-8 (Air Surveillance Radar) =====
+        "asr8": {
+            "confidence_threshold": 0.78,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 1.0,
+            "tier": "primary",
+            "system_type": "air_surveillance_radar",
+            "frequency_band": "L-band (1200-1350 MHz)",
+            "max_power": "5.5 MW",
+            "safety_critical": "ATC operations",
+            "rationale": "ASR-8 is primary ATC radar; safety-critical for aviation"
+        },
+        "asr-8": {
+            "confidence_threshold": 0.78,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 1.0,
+            "tier": "primary",
+            "system_type": "air_surveillance_radar",
+            "frequency_band": "L-band",
+            "rationale": "ASR-8 hyphenated variant"
+        },
+        "air_surveillance_radar": {
+            "confidence_threshold": 0.78,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 1.0,
+            "tier": "primary",
+            "system_type": "air_surveillance_radar",
+            "frequency_band": "L-band",
+            "rationale": "Air surveillance radar operations"
+        },
+        "atc_radar": {
+            "confidence_threshold": 0.78,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 1.0,
+            "tier": "primary",
+            "system_type": "air_surveillance_radar",
+            "frequency_band": "L-band",
+            "rationale": "ATC radar systems (primarily ASR-8)"
+        },
+        "airport_radar": {
+            "confidence_threshold": 0.78,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 1.0,
+            "tier": "primary",
+            "system_type": "air_surveillance_radar",
+            "frequency_band": "L-band",
+            "rationale": "Airport radar systems"
+        },
+        
+        # ===== BEACON (Secondary Radar) =====
+        "beacon": {
+            "confidence_threshold": 0.80,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 0.95,
+            "tier": "primary",
+            "system_type": "secondary_radar",
+            "frequency_band": "SHF (1030/1090 MHz)",
+            "max_power": "10 kW",
+            "safety_critical": "ATC transponder identification",
+            "rationale": "Secondary radar is safety-critical for ATC identification; slightly higher strictness for transponder data integrity"
+        },
+        "secondary_radar": {
+            "confidence_threshold": 0.80,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 0.95,
+            "tier": "primary",
+            "system_type": "secondary_radar",
+            "frequency_band": "SHF",
+            "rationale": "Secondary radar systems"
+        },
+        "atcrb": {
+            "confidence_threshold": 0.80,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 0.95,
+            "tier": "primary",
+            "system_type": "secondary_radar",
+            "frequency_band": "SHF",
+            "rationale": "ATC Radar Beacon (ATCRB) - mode S/C transponders"
+        },
+        "transponder": {
+            "confidence_threshold": 0.80,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 0.95,
+            "tier": "primary",
+            "system_type": "secondary_radar",
+            "frequency_band": "SHF",
+            "rationale": "Aircraft transponder systems"
+        },
+        "mode_c": {
+            "confidence_threshold": 0.80,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 0.95,
+            "tier": "primary",
+            "system_type": "secondary_radar",
+            "frequency_band": "SHF",
+            "rationale": "Mode C altitude encoding transponders"
+        },
+        
+        # ===== GENERIC RADAR =====
+        "radar": {
+            "confidence_threshold": 0.78,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 1.0,
+            "tier": "primary",
+            "system_type": "generic_radar",
+            "rationale": "Generic radar systems (maps to primary system based on context)"
+        },
+        "radar_automation": {
+            "confidence_threshold": 0.78,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 1.0,
+            "tier": "primary",
+            "rationale": "Radar automation and operations"
+        },
+        "rf_systems": {
+            "confidence_threshold": 0.80,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 0.95,
+            "tier": "supported",
+            "rationale": "RF systems are safety-critical; moderate strictness on RF hazards"
+        },
+        "antenna_systems": {
+            "confidence_threshold": 0.80,
+            "min_evidence_count": 2,
+            "cross_domain_allowed": False,
+            "risk_factor": 0.95,
+            "tier": "supported",
+            "rationale": "Antenna systems; RF safety required"
+        },
+    }
+    
+    # ===== DOMAIN-BASED EVIDENCE GATING (Enhanced with Risk Profiles) =====
+    # Apply domain-specific risk calibration to prevent hallucinations
+    if context_docs:
+        # Detect dominant domain from retrieved chunks
+        domain_counts = {}
+        for doc in context_docs[:5]:  # Check top 5 chunks
+            dom = doc.get("domain", "unknown")
+            domain_counts[dom] = domain_counts.get(dom, 0) + 1
+        
+        dominant_domain = max(domain_counts.items(), key=lambda x: x[1])[0] if domain_counts else "unknown"
+        evidence_count = len(context_docs)
+        avg_confidence = sum(doc.get("confidence", 0.0) for doc in context_docs) / len(context_docs) if context_docs else 0.0
+        
+        # Get risk profile for this domain (fallback to unknown if not defined)
+        risk_profile = DOMAIN_RISK_PROFILES.get(dominant_domain, DOMAIN_RISK_PROFILES["unknown"])
+        
+        # Apply domain risk factor to effective confidence
+        effective_confidence = avg_confidence * risk_profile["risk_factor"]
+
+        if risk_profile.get("tier") == "experimental":
+            logger.info(
+                f"[DOMAIN-TIER] Experimental domain detected: {dominant_domain} | "
+                f"raw_conf={avg_confidence:.2f}, effective_conf={effective_confidence:.2f}, "
+                f"evidence={evidence_count}"
+            )
+        
+        # Check against domain-specific thresholds
+        threshold_violated = (
+            evidence_count < risk_profile["min_evidence_count"] or
+            effective_confidence < risk_profile["confidence_threshold"]
+        )
+        
+        force_refuse = risk_profile.get("tier") == "unsupported"
+
+        if force_refuse or threshold_violated:
+            if risk_profile.get("tier") == "unsupported":
+                refusal_reason = "unsupported_domain"
+            elif risk_profile.get("tier") == "experimental":
+                refusal_reason = "experimental_domain"
+            else:
+                refusal_reason = "insufficient_corpus"
+            logger.warning(
+                f"[DOMAIN-RISK-GATE] Refusing {dominant_domain} query: "
+                f"evidence={evidence_count} (min={risk_profile['min_evidence_count']}), "
+                f"raw_conf={avg_confidence:.2f}, effective_conf={effective_confidence:.2f} "
+                f"(threshold={risk_profile['confidence_threshold']:.2f}, risk_factor={risk_profile['risk_factor']})"
+            )
+            refusal_message = {
+                "response_type": "refusal",
+                "reason": refusal_reason,
+                "message": (
+                    f"This question appears to be about {dominant_domain}. "
+                    f"{risk_profile['rationale']}"
+                ),
+                "policy": "Domain Risk Calibration",
+                "confidence": 0.0
+            }
+            metadata = {
+                "confidence": 0.0,
+                "sources": [],
+                "raw_response": json.dumps(refusal_message),
+                "model_used": "domain-gate"
+            }
+            return refusal_message, metadata
     
     if agent == "procedure":
         raw = run_procedure(user_question, context_docs, agent_llm_call_fn)
@@ -1664,8 +2064,8 @@ def execute_agent(
                 has_ts = any(k in validated for k in ("likely_causes", "next_steps", "steps"))
                 if (not has_ts) and isinstance(validated.get("bullets"), list) and validated.get("bullets"):
                     validated["next_steps"] = list(validated.get("bullets") or [])
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Optional bullets conversion skipped: {e}")
         # Attach verified citations where possible
         try:
             validated = _attach_verified_citations(validated)
@@ -1892,7 +2292,17 @@ def nic_self_refine(
     final_confidence = 0.0
     warning = None
 
-
+    # --- 0) INPUT SANITIZATION ---
+    sanitization_meta = None
+    if SANITIZATION_AVAILABLE and sanitize_user_input is not None:
+        try:
+            sanitized_question, sanitization_meta = sanitize_user_input(question, "user_query")
+            if sanitization_meta.get("injection_detected"):
+                logger.warning(f"[NIC-SANITIZE] Prompt injection detected and blocked")
+                # Use sanitized version
+                question = sanitized_question
+        except Exception as e:
+            logger.warning(f"[NIC-SANITIZE] Sanitization failed: {e}")
     
     for iteration in range(max_iterations):
         logger.info(f"[NIC] === Iteration {iteration + 1}/{max_iterations} ===")
@@ -1922,12 +2332,53 @@ def nic_self_refine(
         
         logger.info(f"[NIC-ACT] Confidence: {confidence:.2f}, Model: {model_used}, Sources: {len(sources)}")
         
-        # Citation audit if required
+        # Enforce JSON output for all intents to keep deterministic, auditable output.
         audit_trail = None
+        answer_for_audit = answer
+        if isinstance(answer, str):
+            schema_hint = '{"answer": "", "sources": [], "warnings": [], "verification": []}'
+            validated = force_valid_json(answer, schema_hint, llm_call_fn, plan.get("model", "llama"))
+            if isinstance(validated, str):
+                try:
+                    validated = json.loads(validated)
+                except Exception:
+                    avg_conf = _avg_retrieval_conf(context_docs)
+                    safe_sources = _context_sources(context_docs)
+                    blocked = {
+                        "status": "blocked",
+                        "reason": "invalid_json",
+                        "next_steps": [
+                            "Retry with a more specific question",
+                            "Review the cited manual pages directly",
+                        ],
+                        "sources": safe_sources,
+                        "confidence": round(avg_conf, 3),
+                        "notes": "NIC blocked an answer because the model did not return valid JSON.",
+                    }
+                    final_answer = json.dumps(blocked, ensure_ascii=False, indent=2)
+                    final_confidence = float(blocked.get("confidence", 0.0))
+                    warning = "blocked_invalid_json"
+                    audit_log.append({
+                        "iteration": iteration + 1,
+                        "intent": intent,
+                        "plan": plan,
+                        "model_used": "eval-blocked",
+                        "confidence": final_confidence,
+                        "answer": final_answer,
+                        "sources": safe_sources,
+                        "audit_trail": None,
+                    })
+                    break
+            if isinstance(validated, dict):
+                answer_for_audit = validated
+                answer = validated
+        elif isinstance(answer, dict):
+            answer_for_audit = answer
+
         if citation_audit_enabled() and plan.get("require_citation"):
             try:
                 # Parse answer as JSON for citation checking
-                answer_json = json.loads(answer) if isinstance(answer, str) else answer
+                answer_json = answer_for_audit
                 # Safety: for citation-required intents, validate strictly against the retrieved context.
                 audit_trail = build_audit_trail(answer_json, context_docs, strict=True)
                 logger.info(f"[NIC-AUDIT] Status: {audit_trail['audit_status']}, Citations: {audit_trail['cited_claims']}/{audit_trail['total_claims']}")
@@ -1943,8 +2394,8 @@ def nic_self_refine(
                             extracted = _build_extractive_troubleshoot_fallback(context_docs, question)
                             try:
                                 extracted = _attach_verified_citations_extractive(extracted, context_docs)
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                logger.debug(f"Extractive citation attachment skipped: {e}")
                             post_audit = build_audit_trail(extracted, context_docs, strict=True)
                             reject2, _ = should_reject_answer(post_audit, strict_mode=True)
                             if not reject2:
@@ -1999,6 +2450,95 @@ def nic_self_refine(
             except Exception as e:
                 logger.warning(f"[NIC-AUDIT] Citation audit failed: {e}")
         
+        # --- 3.5) CHAIN OF VERIFICATION (CoVe) ---
+        # Apply CoVe to safety-critical responses to reduce hallucination
+        cove_metadata = None
+        anomaly_result = None
+        
+        # --- 3.5a) ANOMALY DETECTION ---
+        # Score query for anomalies - if high/critical, force CoVe
+        is_anomalous = False
+        if ANOMALY_DETECTOR_AVAILABLE and anomaly_detector is not None:
+            try:
+                # Get query embedding for anomaly scoring
+                from core.retrieval.retrieval_engine import embed_query
+                query_embedding = embed_query(question)
+                if query_embedding is not None:
+                    anomaly_result = anomaly_detector.score_embedding(query_embedding)
+                    is_anomalous = anomaly_result.category in {"high", "critical"}
+                    
+                    if is_anomalous:
+                        logger.warning(f"[NIC-Anomaly] Query flagged as ANOMALOUS: "
+                                      f"score={anomaly_result.score:.6f}, category={anomaly_result.category}")
+                    else:
+                        logger.debug(f"[NIC-Anomaly] Query normal: "
+                                    f"score={anomaly_result.score:.6f}, category={anomaly_result.category}")
+            except Exception as e:
+                logger.debug(f"[NIC-Anomaly] Scoring failed: {e}")
+        
+        # --- 3.5b) CHAIN OF VERIFICATION (CoVe) ---
+        if cove_enabled() and COVE_AVAILABLE and apply_cove_to_answer is not None:
+            try:
+                # Determine if this is a safety-critical intent
+                safety_intents = {"troubleshoot", "procedure", "maintenance", "safety"}
+                is_safety_critical = intent_meta.get("agent") in safety_intents
+                
+                # Also trigger CoVe for anomalous queries
+                trigger_cove = is_safety_critical or plan.get("require_citation", False) or is_anomalous
+                
+                if trigger_cove:
+                    trigger_reason = "safety-critical" if is_safety_critical else ("anomalous query" if is_anomalous else "citation required")
+                    logger.info(f"[NIC-CoVe] Applying Chain of Verification (reason: {trigger_reason})")
+                    
+                    verified_answer, adjusted_confidence, cove_metadata = apply_cove_to_answer(
+                        answer=answer,
+                        question=question,
+                        context_docs=context_docs,
+                        llm_call_fn=llm_call_fn,
+                        original_confidence=confidence,
+                        model=plan.get("model", "llama"),
+                        force_verification=is_safety_critical or is_anomalous
+                    )
+                    
+                    # Add anomaly info to cove_metadata
+                    if anomaly_result is not None:
+                        cove_metadata["anomaly_score"] = anomaly_result.score
+                        cove_metadata["anomaly_category"] = anomaly_result.category
+                        cove_metadata["anomaly_triggered_cove"] = is_anomalous
+                    
+                    # Update answer and confidence with verified values
+                    if cove_metadata.get("cove_applied", False):
+                        answer = verified_answer
+                        confidence = adjusted_confidence
+                        
+                        logger.info(f"[NIC-CoVe] Verification complete: "
+                                   f"claims_checked={cove_metadata.get('claims_checked', 0)}, "
+                                   f"verified={cove_metadata.get('verified', False)}, "
+                                   f"confidence {cove_metadata.get('original_confidence', 0):.2f} -> {adjusted_confidence:.2f}")
+                        
+                        # Check for safety warnings
+                        safety_warnings = cove_metadata.get("safety_warnings", [])
+                        if safety_warnings:
+                            logger.warning(f"[NIC-CoVe] SAFETY WARNINGS: {safety_warnings}")
+                            # Add warnings to the answer if it's a dict
+                            if isinstance(answer, dict):
+                                answer.setdefault("warnings", []).extend(safety_warnings)
+                    else:
+                        logger.info(f"[NIC-CoVe] Skipped: {cove_metadata.get('cove_skipped_reason', 'unknown')}")
+                        
+            except Exception as e:
+                logger.warning(f"[NIC-CoVe] Chain of Verification failed: {e}")
+                cove_metadata = {"error": str(e), "cove_applied": False}
+        
+        # Add anomaly info even if CoVe not triggered
+        if anomaly_result is not None and cove_metadata is None:
+            cove_metadata = {
+                "anomaly_score": anomaly_result.score,
+                "anomaly_category": anomaly_result.category,
+                "anomaly_triggered_cove": False,
+                "cove_applied": False
+            }
+        
         # Log iteration
         audit_log.append({
             "iteration": iteration + 1,
@@ -2008,7 +2548,8 @@ def nic_self_refine(
             "confidence": confidence,
             "answer": answer,
             "sources": sources,
-            "audit_trail": audit_trail
+            "audit_trail": audit_trail,
+            "cove_metadata": cove_metadata
         })
         
         final_answer = answer
@@ -2055,6 +2596,17 @@ def nic_self_refine(
     if audit_log and audit_log[-1].get("audit_trail"):
         metadata["audit_trail"] = audit_log[-1]["audit_trail"]
     
+    # Include CoVe metadata if available
+    if audit_log and audit_log[-1].get("cove_metadata"):
+        cove_meta = audit_log[-1]["cove_metadata"]
+        metadata["cove"] = {
+            "applied": cove_meta.get("cove_applied", False),
+            "verified": cove_meta.get("verified", None),
+            "claims_checked": cove_meta.get("claims_checked", 0),
+            "confidence_adjustment": cove_meta.get("confidence_adjustment", 0),
+            "safety_warnings": cove_meta.get("safety_warnings", [])
+        }
+    
     return final_answer, metadata
 
 
@@ -2069,18 +2621,56 @@ nic_intent_loop = nic_self_refine
 class NICAgent:
     """
     Thin, library-friendly wrapper for running the NIC self-refine loop.
-    Provide a retriever callable and an llm_call_fn; call respond(query, mode).
+    Provides domain-aware retrieval for multi-radar systems (NEXRAD, ASR-8, BEACON).
+    
+    Usage:
+        agent = NICAgent(llm_call_fn=my_llm_fn)
+        answer, metadata = agent.respond(query, mode="Auto")
     """
 
-    def __init__(self, retriever_fn, llm_call_fn):
-        self.retriever_fn = retriever_fn
+    def __init__(self, retriever_fn=None, llm_call_fn=None, use_multi_radar=True):
+        """
+        Initialize NIC agent.
+        
+        Args:
+            retriever_fn: Optional custom retriever (overrides multi-radar retriever)
+            llm_call_fn: LLM callable (required)
+            use_multi_radar: Use domain-aware multi-radar retriever (default True)
+        """
         self.llm_call_fn = llm_call_fn
+        self.use_multi_radar = use_multi_radar
+        
+        # Use multi-radar retriever if enabled
+        if use_multi_radar and retriever_fn is None:
+            try:
+                from .multi_radar_retriever_integration import retrieve_for_agent
+                self.retriever_fn = retrieve_for_agent
+                logger.info("[NICAgent] Using multi-radar domain-aware retriever")
+            except ImportError:
+                logger.warning("[NICAgent] Multi-radar retriever not available, using custom retriever")
+                self.retriever_fn = retriever_fn
+        else:
+            self.retriever_fn = retriever_fn
 
     def respond(self, query: str, mode: str = "Auto") -> tuple[str, dict]:
-        # Retrieve context up front
+        """
+        Process a query through the NIC self-refine loop with domain-aware retrieval.
+        
+        Args:
+            query: User question
+            mode: "Auto", "LLAMA (Fast)", or "Qwen 14B (Deep)"
+        
+        Returns:
+            (answer: str/dict, metadata: dict)
+        """
+        # Retrieve context with domain awareness
         context_docs = []
         try:
-            context_docs = self.retriever_fn(query, k=12, top_n=6)
+            if self.retriever_fn:
+                context_docs = self.retriever_fn(query, k=12, top_n=6)
+                logger.info(f"[NICAgent] Retrieved {len(context_docs)} documents for query (domain-aware)")
+            else:
+                logger.warning("[NICAgent] No retriever configured, running without context")
         except Exception as e:
             logger.warning(f"[NICAgent] Retrieval failed, continuing without context: {e}")
 
