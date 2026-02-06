@@ -1,4 +1,4 @@
-flask==3.0.0
+flask==3.1.2
 flask-limiter==3.5.0
 waitress==3.0.2
 faiss-cpu==1.13.2
