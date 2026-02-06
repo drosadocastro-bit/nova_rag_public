@@ -22,7 +22,7 @@ datasets==4.4.2
 langchain==1.2.7
 langchain-openai==1.1.6
 pydantic==2.12.5
-numpy==2.4.1
+numpy==2.4.2
 requests==2.32.5
 pytest==8.3.3
 pytest-cov==6.0.0
