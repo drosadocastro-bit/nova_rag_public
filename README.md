@@ -116,7 +116,7 @@ This is not a product—it's a **reference architecture** showing that safety-aw
 | Property | Implementation |
 |----------|----------------|
 | **Offline / Air-Gapped** | All models, embeddings, and indexes run locally. Zero external API calls. No telemetry. |
-| **Safety-Oriented** | Multi-layer hallucination defenses: confidence gating, post-generation grounding gate, citation audit, extractive fallback. |
+| **Safety-Oriented** | 8-layer hallucination defense system (10 sublayers): confidence gating, post-generation grounding gate, citation audit, extractive fallback, and more. See [docs/safety/HALLUCINATION_DEFENSE.md](docs/safety/HALLUCINATION_DEFENSE.md). |
 | **Human-on-the-Loop** | Advisory only—no direct actuation. Operator retains decision authority. |
 | **Auditable** | Every query logged with question, answer, sources, confidence, and audit status. |
 | **Reproducible** | Locked dependencies, versioned corpus, deterministic retrieval. |
@@ -127,6 +127,10 @@ This is not a product—it's a **reference architecture** showing that safety-aw
 | **Injection Handling** | Hybrid "judge by intent, not syntax" approach: detects injection patterns, extracts core questions, assesses only clean content. Intent classifier blocks unsafe requests (e.g., disable ABS). See [Injection Handling Architecture](docs/INJECTION_HANDLING.md). |
 | **Production Scaling** | Async query pipeline, distributed caching (Redis), disk-based indexing (Tantivy BM25), background task queue with priority scheduling. 10M+ document capacity. |
 | **Circuit Breakers & Resilience** | Automatic service isolation on failures, request deduplication, graceful degradation, exponential backoff retry logic. |
+
+**Safety callout:** NIC uses **8 defensive layers (10 sublayers)** to prevent hallucinations, from injection/risk screening through post-generation grounding and output sanitization. See [docs/safety/HALLUCINATION_DEFENSE.md](docs/safety/HALLUCINATION_DEFENSE.md) for the authoritative list and evidence.
+
+![NIC Defense Layers Diagram](docs/safety/defense_layers.svg)
 
 Why hybrid: improves recall for exact terms, part names, and diagnostic codes in safety‑critical manuals.
 

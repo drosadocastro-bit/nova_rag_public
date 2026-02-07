@@ -1,0 +1,9 @@
+flowchart TD
+    A["User Query"] --> B["Layer 1: Input Sanitization + Injection/Multi-Query Guard"]
+    B --> C["Layer 2: Risk Assessment + Safety Triage"]
+    C --> D["Layer 3: Scope/Domain Refusal Gate"]
+    D --> E["Layer 4: Pre-LLM Retrieval Confidence Gate"]
+    E --> F["Layer 5: Grounded Generation Prompt Rules"]
+    F --> G["Layer 6: Citation Audit + CoVe (if enabled)"]
+    G --> H["Layer 7: Post-Generation Quality Gate"]
+    H --> I["Layer 8: Output Sanitization"]
