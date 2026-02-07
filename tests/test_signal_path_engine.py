@@ -20,7 +20,7 @@ from typing import Any, Dict, List
 
 import pytest
 
-from core.signal_path_engine import (
+from core.signal_path_engine_legacy import (
     DiagnosticPlan,
     DiagnosticStep,
     GraphEdge,
