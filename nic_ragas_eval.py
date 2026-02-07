@@ -31,6 +31,7 @@ from ragas.metrics._faithfulness import Faithfulness
 from ragas.metrics._answer_relevance import AnswerRelevancy
 from ragas.metrics._context_precision import ContextPrecision
 from ragas.metrics._context_recall import ContextRecall
+
 from ragas.llms import LangchainLLMWrapper
 from ragas.embeddings import LangchainEmbeddingsWrapper
 
@@ -233,7 +234,7 @@ def safe_mean(values: list[Any]) -> Optional[float]:
     return sum(vals) / len(vals) if vals else None
 
 
-def build_embeddings() -> Optional[LangchainEmbeddingsWrapper]:
+def build_embeddings() -> Optional[Any]:
     """Build HuggingFace embeddings for retrieval metrics (offline-friendly)."""
     embed_model = os.environ.get("RAGAS_EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
     try:
