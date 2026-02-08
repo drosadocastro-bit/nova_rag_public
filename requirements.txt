@@ -7,7 +7,7 @@ psutil==7.2.2
 
 # === Multilingual & Semantic Safety (Priority 3) ===
 langdetect==1.0.9           # Language detection for multilingual safety
-ftfy==6.1.1                 # Text normalization/cleaning for decoded content
+ftfy==6.3.1                 # Text normalization/cleaning for decoded content
 sentence-transformers==5.2.0
 torch==2.10.0               # Python 3.13 compatible; use +cpu wheels for smaller download
 # Optional: pip install torch==2.10.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
