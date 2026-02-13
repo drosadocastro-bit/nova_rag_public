@@ -5,7 +5,7 @@
 -r requirements.txt
 
 # === Code Quality & Linting ===
-ruff==0.15.0
+ruff==0.15.1
 bandit[toml]==1.9.0
 pip-audit==2.10.2
 
