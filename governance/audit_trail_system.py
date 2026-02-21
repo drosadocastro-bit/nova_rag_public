@@ -19,6 +19,7 @@ import sqlite3
 import threading
 import time
 import uuid
+import hashlib
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
@@ -109,6 +110,10 @@ class AuditEvent:
     severity: Severity = Severity.MEDIUM
     tags: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
+
+    # Tamper-evident chain
+    previous_event_hash: str = ""
+    event_hash: str = ""
     
     # Immutability marker
     created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
@@ -209,6 +214,8 @@ class AuditTrailSystem:
                     -- Metadata
                     tags TEXT,
                     metadata TEXT,
+                    previous_event_hash TEXT,
+                    event_hash TEXT,
                     
                     -- Indexes
                     UNIQUE(event_id)
@@ -232,6 +239,19 @@ class AuditTrailSystem:
                 CREATE INDEX IF NOT EXISTS idx_event_type 
                 ON audit_events(event_type);
             """)
+
+            # Backward-safe schema migration for existing DBs.
+            cursor.execute("PRAGMA table_info(audit_events)")
+            existing_columns = {row[1] for row in cursor.fetchall()}
+            if "previous_event_hash" not in existing_columns:
+                cursor.execute("ALTER TABLE audit_events ADD COLUMN previous_event_hash TEXT")
+            if "event_hash" not in existing_columns:
+                cursor.execute("ALTER TABLE audit_events ADD COLUMN event_hash TEXT")
+
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_event_hash
+                ON audit_events(event_hash);
+            """)
             
             # Incidents table for correlation
             cursor.execute("""
@@ -247,6 +267,159 @@ class AuditTrailSystem:
             """)
             
             conn.commit()
+
+    @staticmethod
+    def _compute_event_hash(event: AuditEvent, previous_event_hash: str) -> str:
+        """Compute deterministic SHA-256 hash for chain linking."""
+        payload = event.to_dict()
+        payload.pop("previous_event_hash", None)
+        payload.pop("event_hash", None)
+        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        data = f"{previous_event_hash}|{canonical}"
+        return hashlib.sha256(data.encode("utf-8", errors="ignore")).hexdigest()
+
+    def _get_latest_event_hash(self, cursor: sqlite3.Cursor) -> str:
+        """Return last event hash, or empty string for chain origin."""
+        row = cursor.execute(
+            """
+            SELECT event_hash
+            FROM audit_events
+            WHERE event_hash IS NOT NULL AND event_hash != ''
+            ORDER BY timestamp DESC, event_id DESC
+            LIMIT 1
+            """
+        ).fetchone()
+        if not row:
+            return ""
+        return row[0] or ""
+
+    @staticmethod
+    def _row_to_event(row: sqlite3.Row) -> AuditEvent:
+        """Convert DB row to AuditEvent for deterministic hash operations."""
+        return AuditEvent(
+            event_id=row["event_id"],
+            timestamp=row["timestamp"],
+            event_type=EventType(row["event_type"]),
+            session_id=row["session_id"],
+            query_hash=row["query_hash"] or "",
+            query_domain=row["query_domain"] or "",
+            query_severity=row["query_severity"] or "MEDIUM",
+            decision=row["decision"] or "allow",
+            authority=Authority(row["authority"] or Authority.SYSTEM.value),
+            confidence_score=row["confidence_score"] or 0.0,
+            risk_score=row["risk_score"] or 0.0,
+            control_layer=row["control_layer"] or 0,
+            control_name=row["control_name"] or "",
+            control_reason=row["control_reason"] or "",
+            control_effectiveness=row["control_effectiveness"] or 1.0,
+            citation_count=row["citation_count"] or 0,
+            citation_accuracy=row["citation_accuracy"] or 0.0,
+            citations_valid=bool(row["citations_valid"]),
+            response_length=row["response_length"] or 0,
+            response_latency_ms=row["response_latency_ms"] or 0.0,
+            hallucination_detected=bool(row["hallucination_detected"]),
+            escalated=bool(row["escalated"]),
+            escalation_reason=row["escalation_reason"] or "",
+            escalation_target=row["escalation_target"] or "",
+            user_role=row["user_role"] or "technician",
+            organization_unit=row["organization_unit"] or "",
+            severity=Severity(row["severity"]),
+            tags=json.loads(row["tags"] or "[]"),
+            metadata=json.loads(row["metadata"] or "{}"),
+            created_at=row["created_at"] or "",
+            previous_event_hash=row["previous_event_hash"] or "",
+            event_hash=row["event_hash"] or "",
+        )
+
+    def backfill_hash_chain(
+        self,
+        *,
+        rewrite_all: bool = True,
+        dry_run: bool = True,
+        limit: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Backfill or rewrite tamper-evident hash chain for audit events.
+
+        - rewrite_all=True recomputes chain from oldest to newest and updates all rows.
+        - rewrite_all=False computes hashes only for rows that are currently unhashed.
+        - dry_run=True reports impact without writing updates.
+        """
+        try:
+            with self._lock, sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+
+                query = """
+                    SELECT event_id, timestamp, event_type, session_id, query_hash, query_domain,
+                           query_severity, decision, authority, confidence_score, risk_score,
+                           control_layer, control_name, control_reason, control_effectiveness,
+                           citation_count, citation_accuracy, citations_valid, response_length,
+                           response_latency_ms, hallucination_detected, escalated, escalation_reason,
+                           escalation_target, user_role, organization_unit, severity, tags, metadata,
+                           created_at, previous_event_hash, event_hash
+                    FROM audit_events
+                    ORDER BY timestamp ASC, event_id ASC
+                """
+                params: list[Any] = []
+                if limit is not None and limit > 0:
+                    query += " LIMIT ?"
+                    params.append(limit)
+
+                rows = cursor.execute(query, params).fetchall()
+
+                updates: list[tuple[str, str, str]] = []
+                previous_hash = ""
+
+                for row in rows:
+                    event = self._row_to_event(row)
+                    existing_hash = row["event_hash"] or ""
+                    existing_previous = row["previous_event_hash"] or ""
+
+                    if rewrite_all:
+                        new_previous = previous_hash
+                        new_hash = self._compute_event_hash(event, new_previous)
+                        updates.append((new_previous, new_hash, row["event_id"]))
+                        previous_hash = new_hash
+                        continue
+
+                    if not existing_hash:
+                        new_previous = previous_hash
+                        new_hash = self._compute_event_hash(event, new_previous)
+                        updates.append((new_previous, new_hash, row["event_id"]))
+                        previous_hash = new_hash
+                    else:
+                        previous_hash = existing_hash if existing_hash else existing_previous
+
+                if not dry_run and updates:
+                    cursor.executemany(
+                        """
+                        UPDATE audit_events
+                        SET previous_event_hash = ?, event_hash = ?
+                        WHERE event_id = ?
+                        """,
+                        updates,
+                    )
+                    conn.commit()
+
+                return {
+                    "total_events": len(rows),
+                    "updated_events": len(updates),
+                    "rewrite_all": rewrite_all,
+                    "dry_run": dry_run,
+                    "updated": [u[2] for u in updates[:20]],
+                    "updated_truncated": len(updates) > 20,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+        except Exception as e:
+            logger.error(f"Failed to backfill hash chain: {e}")
+            return {
+                "total_events": 0,
+                "updated_events": 0,
+                "rewrite_all": rewrite_all,
+                "dry_run": dry_run,
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat(),
+            }
     
     def log_event(self, event: AuditEvent) -> bool:
         """
@@ -261,6 +434,10 @@ class AuditTrailSystem:
         try:
             with self._lock, sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
+
+                previous_hash = self._get_latest_event_hash(cursor)
+                event.previous_event_hash = previous_hash
+                event.event_hash = self._compute_event_hash(event, previous_hash)
                 
                 # Insert event (append-only)
                 cursor.execute("""
@@ -273,9 +450,10 @@ class AuditTrailSystem:
                         response_length, response_latency_ms, hallucination_detected,
                         escalated, escalation_reason, escalation_target,
                         user_role, organization_unit, tags, metadata
+                        , previous_event_hash, event_hash
                     ) VALUES (
                         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                     )
                 """, (
                     event.event_id, event.timestamp, event.created_at,
@@ -292,7 +470,8 @@ class AuditTrailSystem:
                     event.escalated, event.escalation_reason,
                     event.escalation_target,
                     event.user_role, event.organization_unit,
-                    json.dumps(event.tags), json.dumps(event.metadata)
+                    json.dumps(event.tags), json.dumps(event.metadata),
+                    event.previous_event_hash, event.event_hash
                 ))
                 
                 conn.commit()
@@ -390,6 +569,8 @@ class AuditTrailSystem:
                         escalated=bool(row["escalated"]),
                         tags=json.loads(row["tags"] or "[]"),
                         metadata=json.loads(row["metadata"] or "{}"),
+                        previous_event_hash=row["previous_event_hash"] or "",
+                        event_hash=row["event_hash"] or "",
                     )
                     events.append(event)
                 
@@ -398,6 +579,80 @@ class AuditTrailSystem:
         except Exception as e:
             logger.error(f"Failed to retrieve audit trail: {e}")
             return []
+
+    def verify_integrity(self, limit: Optional[int] = None) -> Dict[str, Any]:
+        """Verify tamper-evident hash chain integrity.
+
+        Returns summary including mismatches and unhashed legacy rows.
+        """
+        try:
+            query = """
+                SELECT event_id, timestamp, event_type, session_id, query_hash, query_domain,
+                       query_severity, decision, authority, confidence_score, risk_score,
+                       control_layer, control_name, control_reason, control_effectiveness,
+                       citation_count, citation_accuracy, citations_valid, response_length,
+                       response_latency_ms, hallucination_detected, escalated, escalation_reason,
+                       escalation_target, user_role, organization_unit, severity, tags, metadata,
+                       created_at, previous_event_hash, event_hash
+                FROM audit_events
+                ORDER BY timestamp ASC, event_id ASC
+            """
+            params: list[Any] = []
+            if limit is not None and limit > 0:
+                query += " LIMIT ?"
+                params.append(limit)
+
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.execute(query, params).fetchall()
+
+            previous_hash = ""
+            mismatches: List[Dict[str, Any]] = []
+            unhashed_count = 0
+
+            for row in rows:
+                row_previous_hash = row["previous_event_hash"] or ""
+                row_event_hash = row["event_hash"] or ""
+
+                if not row_event_hash:
+                    unhashed_count += 1
+                    continue
+
+                event = self._row_to_event(row)
+
+                expected_prev_hash = previous_hash
+                expected_hash = self._compute_event_hash(event, expected_prev_hash)
+
+                if row_previous_hash != expected_prev_hash or row_event_hash != expected_hash:
+                    mismatches.append(
+                        {
+                            "event_id": row["event_id"],
+                            "expected_previous_hash": expected_prev_hash,
+                            "actual_previous_hash": row_previous_hash,
+                            "expected_event_hash": expected_hash,
+                            "actual_event_hash": row_event_hash,
+                        }
+                    )
+
+                previous_hash = row_event_hash
+
+            return {
+                "valid": len(mismatches) == 0,
+                "total_events": len(rows),
+                "hashed_events": len(rows) - unhashed_count,
+                "unhashed_events": unhashed_count,
+                "mismatch_count": len(mismatches),
+                "mismatches": mismatches,
+                "verified_at": datetime.utcnow().isoformat(),
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to verify audit integrity: {e}")
+            return {
+                "valid": False,
+                "error": str(e),
+                "verified_at": datetime.utcnow().isoformat(),
+            }
     
     def get_metrics(self, use_cache: bool = True) -> Dict[str, Any]:
         """

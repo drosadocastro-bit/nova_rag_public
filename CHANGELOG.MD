@@ -19,6 +19,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pre-commit hooks configuration
 - Security policy (SECURITY.md)
 - Development dependencies in requirements-dev.txt
+- Runtime governance policy flags briefing: `docs/briefings/GOVERNANCE_POLICY_FLAGS_2026-02-21.md`
+- Focused tests for policy control-plane and stream deny behavior
+- Tamper-evident audit hash-chain fields (`previous_event_hash`, `event_hash`) and integrity verification API
+- Audit integrity unit tests in `tests/unit/test_audit_trail_integrity.py`
+- Offline integrity checker CLI: `scripts/check_audit_integrity.py`
+- Audit hash-chain backfill utility: `scripts/backfill_audit_hash_chain.py`
+
+### Changed
+- Query control-plane now supports explicit policy `deny` action (opt-in via `NOVA_POLICY_HARD_DENY=1`)
+- High-risk feature requests can require approval tokens with action-specific checks:
+	- `vision_reranker` → `system_config_change`
+	- auditor assistant elevation → `usecase_approve`
+- `/api/query` and `/api/query/stream` now enforce deny decisions before retrieval/generation
 
 ## [0.3.5] - 2026-01-25
 
