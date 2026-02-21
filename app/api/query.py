@@ -60,6 +60,19 @@ class QueryResponse(BaseModel):
 
 
 def _option_bool(options: dict | None, key: str, default: bool = False) -> bool:
+    """
+    Parse a boolean option value from an options dictionary with a safe default.
+    
+    Reads the value for `key` from `options`. If `options` is not a dict, returns `default`. Accepts boolean values directly, recognizes the strings "1", "true", "yes", and "on" (case-insensitive) as true, and otherwise falls back to Python's truthiness.
+    
+    Parameters:
+        options (dict | None): Mapping of option keys to values.
+        key (str): The key to look up in `options`.
+        default (bool): Value to return when `options` is not a dict or the key is missing.
+    
+    Returns:
+        `true` if the option value represents truth, `false` otherwise.
+    """
     if not isinstance(options, dict):
         return default
     value = options.get(key, default)
@@ -72,11 +85,18 @@ def _option_bool(options: dict | None, key: str, default: bool = False) -> bool:
 
 @contextmanager
 def _runtime_env(strict_mode: bool, assistant_enabled: bool):
-    """Apply per-request config via contextvars (no os.environ mutation).
-
-    H2 security fix: uses request-scoped ContextVar instead of mutating
-    process-global environment, eliminating race conditions between
-    concurrent requests and background LLM threads.
+    """
+    Set per-request runtime flags in context variables and clear them on exit.
+    
+    Uses a request-scoped ContextVar to apply `strict_mode` and a derived `best_effort`
+    flag (enabled when strict mode is disabled and the assistant is enabled), then
+    clears the request configuration when the context exits to avoid cross-request
+    state leakage.
+    
+    Parameters:
+        strict_mode (bool): When True, enable strict safety gates for the request.
+        assistant_enabled (bool): When True, allow assistant features which may
+            enable best-effort behavior when `strict_mode` is False.
     """
     best_effort = not strict_mode and assistant_enabled
     set_request_config(strict_mode=strict_mode, best_effort=best_effort)
@@ -87,7 +107,12 @@ def _runtime_env(strict_mode: bool, assistant_enabled: bool):
 
 
 def _index_version() -> str | None:
-    """Return index file mtime for debug display."""
+    """
+    Provide the modification timestamp of the domain-specific index file for debug display.
+    
+    Returns:
+        mtime_str (str | None): The index file's modification time as an integer-second Unix timestamp string, or `None` if the index file does not exist.
+    """
     domain = os.environ.get("NOVA_INDEX_DOMAIN", "").strip().lower()
     suffix = f"_{domain}" if domain and domain != "all" else ""
     index_path = INDEX_DIR / f"nic_index{suffix}.faiss"
@@ -97,6 +122,17 @@ def _index_version() -> str | None:
 
 
 def _determine_path(status: str, decision_tag: str, response_type: str) -> str:
+    """
+    Determine the response path category from processing status, routing decision tag, and response type.
+    
+    Parameters:
+        status (str): Processing status (e.g., "blocked").
+        decision_tag (str): Internal routing/decision tag that may indicate forced behaviors (e.g., contains "eval-blocked", "retrieval-only", or starts with "forced |").
+        response_type (str): Explicit response type hint (e.g., "extractive_fallback").
+    
+    Returns:
+        str: One of "blocked", "extractive_fallback", or "generative" indicating the chosen response path.
+    """
     if status == "blocked" or "eval-blocked" in decision_tag:
         return "blocked"
     if (
@@ -109,6 +145,17 @@ def _determine_path(status: str, decision_tag: str, response_type: str) -> str:
 
 
 def _infer_domain_hint(query: str) -> str | None:
+    """
+    Infer a domain hint from the user's query using simple radar-related keyword patterns.
+    
+    Matches the query (case-insensitive) against known keywords and returns one of the domain hint strings: "nexrad", "asr-8", or "beacon" when a corresponding pattern is found.
+    
+    Parameters:
+        query (str): The user query text to inspect for domain keywords.
+    
+    Returns:
+        str | None: A domain hint ("nexrad", "asr-8", or "beacon") if a keyword is matched, None otherwise.
+    """
     q = (query or "").lower()
     patterns = [
         (r"\bnexrad\b|\bwsr-?88d\b|\bweather radar\b", "nexrad"),
@@ -122,6 +169,15 @@ def _infer_domain_hint(query: str) -> str | None:
 
 
 def _build_sources(debug: dict | None) -> list[dict]:
+    """
+    Builds a consolidated list of source metadata extracted from debug retrieval information.
+    
+    Parameters:
+        debug (dict | None): Debug payload potentially containing retrieval details. If `debug` has a `retrieval.selected_chunks` list, those entries are returned directly.
+    
+    Returns:
+        list[dict]: A list of source dictionaries. If `retrieval.selected_chunks` is present in `debug`, that list is returned. Otherwise returns up to 10 entries assembled from the most recent retrieval debug's `ranked_chunks`, each containing keys like `id`, `source`, `page`, `domain`, `radar_system`, and `confidence`.
+    """
     if not debug:
         return []
     retrieval = debug.get("retrieval", {})
@@ -145,6 +201,15 @@ def _build_sources(debug: dict | None) -> list[dict]:
 
 
 def _extract_sources_from_answer_text(answer_text: str) -> list[dict]:
+    """
+    Extracts referenced PDF filenames and their page numbers from answer text.
+    
+    Parameters:
+        answer_text (str): Text to scan for references of the form "filename.pdf p<page>" (case-insensitive, whitespace allowed).
+    
+    Returns:
+        list[dict]: List of dictionaries with keys "source" (filename string as extracted) and "page" (int page number). Each (filename lowercased, page) pair appears only once in the returned list.
+    """
     if not answer_text:
         return []
     matches = re.findall(r"([\w\-./ ]+\.pdf)\s*p\s*(\d+)", answer_text, flags=re.IGNORECASE)
@@ -162,6 +227,20 @@ def _extract_sources_from_answer_text(answer_text: str) -> list[dict]:
 
 
 def _build_evidence_summary(*, path: str, confidence: float | None, sources: list[dict], strict_mode: bool) -> str:
+    """
+    Builds a concise human-readable evidence summary for a query response.
+    
+    The summary includes a label for the response path (generative synthesis or extractive fallback), whether strict mode was applied, a coarse confidence label (high/moderate/low or unavailable), and either a note that no sources were returned or the count of sources plus a top-evidence reference.
+    
+    Parameters:
+        path (str): Response path category; "generative" will be described as "generative synthesis", other values as "extractive fallback".
+        confidence (float | None): Model confidence score in [0.0, 1.0], or None if unavailable.
+        sources (list[dict]): List of source dictionaries; the first entry is treated as top evidence. Each source dict may contain "source" and optional "page".
+        strict_mode (bool): Whether strict mode was enabled.
+    
+    Returns:
+        str: A single-line summary string describing path, strictness, confidence label, and source information (either "no explicit source list returned" or "{N} source(s), top evidence: <source> [p<page>]").
+    """
     if confidence is None:
         confidence_label = "confidence unavailable"
     elif confidence >= 0.85:
@@ -189,6 +268,14 @@ def _build_evidence_summary(*, path: str, confidence: float | None, sources: lis
 
 
 def _normalize_text_artifacts(text: str) -> str:
+    """
+    Normalize common mis-encoded text artifacts and tidy up bullets/quotes in an answer string.
+    
+    Performs targeted replacements of frequent mojibake sequences (e.g., "Â±", "â€”", "â€˜", "â€™", "â€œ") with their correct Unicode equivalents, removes certain stray control bytes, and fixes common bullet/source rendering anomalies such as "ð Sources" -> "• Sources". Returns the resulting normalized string unchanged if the input is empty or no replacements are required.
+    
+    Returns:
+        str: The normalized text.
+    """
     if not text:
         return text
     normalized = text
@@ -216,7 +303,19 @@ def _normalize_text_artifacts(text: str) -> str:
 @router.post("/query", response_model=QueryResponse)
 @limiter.limit(_QUERY_RATE)
 def query(request: Request, payload: QueryRequest, debug: bool = Query(False)) -> QueryResponse:
-    """Run a NIC query via the authoritative core pipeline."""
+    """
+    Handle a user query through the NIC core pipeline and return a consolidated response.
+    
+    Processes intent classification, governance evaluation, feature gating, core retrieval/generation, source extraction and normalization, evidence summarization, and warning aggregation. When governance denies the request, returns a blocked response; when allowed, runs the core pipeline with effective feature toggles and assembles a QueryResponse including optional debug payload.
+    
+    Parameters:
+        request (Request): Incoming FastAPI request (used for session context extraction).
+        payload (QueryRequest): User query and per-request options (query text, strict_mode, assistant_enabled, options).
+        debug (bool): If true, include routing, index, policy and other debug information in the response.
+    
+    Returns:
+        QueryResponse: Consolidated response containing intent, domain, confidence, path, answer, sources, evidence_summary, warnings, trust_status, and optional debug info.
+    """
     state = get_app_state()
     state.ensure_initialized()
 
@@ -414,7 +513,14 @@ def query(request: Request, payload: QueryRequest, debug: bool = Query(False)) -
 @router.post("/query/stream")
 @limiter.limit(_QUERY_RATE)
 def query_stream(request: Request, payload: QueryRequest):
-    """Run a NIC query via the core pipeline with STREAMING response."""
+    """
+    Stream a NIC query result as plain-text chunks.
+    
+    If a governance policy denies the request the stream yields a single policy denial line; otherwise the stream may first yield a policy-reasons line and then successive plain-text chunks produced by the core streaming query pipeline. The runtime environment respects the effective strict-mode and assistant-enabled settings for the request.
+    
+    Returns:
+        StreamingResponse: An HTTP streaming response that yields policy messages or query chunks as plain text.
+    """
     from fastapi.responses import StreamingResponse
     from core.handlers.query_handler import nova_stream_query
 
@@ -437,6 +543,14 @@ def query_stream(request: Request, payload: QueryRequest):
 
     if policy_decision.action == "deny":
         def denied_stream():
+            """
+            Yield a single policy denial line for streaming responses.
+            
+            Yields a single string that begins with "[POLICY_DENY]" followed by the policy reasons joined with "; " or the default text "request denied by policy", terminated with a newline.
+            
+            Returns:
+                generator: Yields one `str` line suitable for streaming to a client (e.g. "[POLICY_DENY] reason1; reason2\n").
+            """
             reason_text = "; ".join(policy_decision.reasons) or "request denied by policy"
             yield f"[POLICY_DENY] {reason_text}\n"
 
@@ -447,6 +561,12 @@ def query_stream(request: Request, payload: QueryRequest):
     vision_reranker_enabled = policy_decision.allowed_features["vision_reranker"]
 
     def event_stream():
+        """
+        Generate the event stream for a streaming query response.
+        
+        Yields:
+            str: Text chunks to send to the client — if the policy contains reasons, yields a single policy message line prefixed with "[POLICY]" first, then yields each chunk produced by the core streaming query.
+        """
         with _runtime_env(effective_strict_mode, effective_assistant_enabled):
             if policy_decision.reasons:
                 reason_text = "; ".join(policy_decision.reasons)

@@ -11,6 +11,15 @@ pytestmark = pytest.mark.unit
 
 
 def _event(session_id: str) -> AuditEvent:
+    """
+    Create a default AuditEvent for tests using the given session ID.
+    
+    Parameters:
+        session_id (str): Session identifier to assign to the event and to embed in the event's `query_hash`.
+    
+    Returns:
+        AuditEvent: An AuditEvent with EventType.POLICY_CHECK, decision "allow", severity Severity.MEDIUM, and `query_hash` set to "q-{session_id}".
+    """
     return AuditEvent(
         event_type=EventType.POLICY_CHECK,
         session_id=session_id,

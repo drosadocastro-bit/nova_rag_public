@@ -1,4 +1,3 @@
-
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
@@ -52,12 +51,23 @@ def test_query_stream_policy_hard_deny_blocks_before_core(monkeypatch):
     class _State:
         @staticmethod
         def ensure_initialized():
+            """
+            Placeholder function representing an uninitialized application state.
+            
+            Intentionally performs no actions and returns None to indicate that initialization has not occurred.
+            """
             return None
 
     monkeypatch.setattr("app.api.query.get_app_state", lambda: _State())
     monkeypatch.setenv("NOVA_POLICY_HARD_DENY", "1")
 
     def _should_not_run(*args, **kwargs):
+        """
+        Fail the test if this stub is invoked.
+        
+        Raises:
+            AssertionError: Always raised with the message "nova_stream_query should not be called under hard deny".
+        """
         raise AssertionError("nova_stream_query should not be called under hard deny")
 
     monkeypatch.setattr("core.handlers.query_handler.nova_stream_query", _should_not_run)

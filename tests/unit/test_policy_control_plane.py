@@ -12,6 +12,12 @@ from core.session.session_manager import session_state
 
 class _DummyRequest:
     def __init__(self, headers: dict | None = None):
+        """
+        Initialize a minimal request stub with optional headers.
+        
+        Parameters:
+            headers (dict | None): Dictionary of HTTP headers to attach to the request. If None, an empty dict is used.
+        """
         self.headers = headers or {}
 
 
