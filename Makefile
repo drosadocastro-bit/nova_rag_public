@@ -1,7 +1,7 @@
 # NIC - Offline RAG System Makefile
 # Common development commands for ease of use
 
-.PHONY: help install test lint format docker-build docker-up docker-down clean coverage security eval-custom
+.PHONY: help install test lint format docker-build docker-up docker-down clean coverage security eval-custom etl-gate etl-compare audit-integrity audit-backfill
 
 # Default target
 help:
@@ -14,7 +14,11 @@ help:
 	@echo "  make lint           - Lint code with ruff"
 	@echo "  make format         - Format code with ruff"
 	@echo "  make security       - Run security scans"
+	@echo "  make etl-gate       - Run policy-enforced ETL quality gate before indexing"
+	@echo "  make etl-compare    - Compare baseline vs ETL and append markdown summary"
 	@echo "  make eval-custom    - Run deterministic custom evaluation suite"
+	@echo "  make audit-integrity - Run audit tamper-evident integrity checker"
+	@echo "  make audit-backfill  - Dry-run audit hash-chain backfill (legacy rows)"
 	@echo "  make docker-build   - Build Docker images"
 	@echo "  make docker-up      - Start Docker services"
 	@echo "  make docker-down    - Stop Docker services"
@@ -108,13 +112,13 @@ dev-setup: install
 	@echo "  2. Install Ollama: https://ollama.com"
 	@echo "  3. Pull models: ollama pull llama3.2:3b"
 	@echo "  4. Run tests: make test"
-	@echo "  5. Start app: python nova_flask_app.py"
+	@echo "  5. Start app: python -m uvicorn app.nic_fastapi_app:app --port 5000"
 
 # Quick validation
 validate:
 	@echo "Running quick validation..."
 	@echo "1. Python syntax check..."
-	python -m py_compile nova_flask_app.py backend.py cache_utils.py
+	python -m py_compile app/nic_fastapi_app.py backend.py cache_utils.py
 	@echo "2. Import check..."
 	python -c "import backend; import cache_utils; print('✓ Imports OK')"
 	@echo "3. Running unit tests..."
@@ -126,6 +130,22 @@ validate:
 eval-custom:
 	@echo "Running deterministic custom evaluation..."
 	python scripts/custom_eval_runner.py --run-stress --run-degradation --domain radar
+
+etl-gate:
+	@echo "Running ETL quality gate..."
+	python scripts/preindex_etl_gate.py --input-root data --no-jsonl
+
+etl-compare:
+	@echo "Comparing baseline vs ETL structuring..."
+	python scripts/compare_etl_vs_baseline.py --input-root data --max-files 10 --no-jsonl
+
+audit-integrity:
+	@echo "Running audit integrity checker..."
+	python scripts/check_audit_integrity.py --include-details
+
+audit-backfill:
+	@echo "Running audit hash-chain backfill (dry-run)..."
+	python scripts/backfill_audit_hash_chain.py --rewrite-all
 
 # CI simulation
 ci-local:
