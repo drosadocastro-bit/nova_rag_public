@@ -26,6 +26,20 @@ def run_check(
     include_details: bool,
     strict_unhashed: bool,
 ) -> tuple[dict, int]:
+    """
+    Run an integrity check of the audit trail and compute an exit code representing the result.
+    
+    Parameters:
+        db_path (str | None): Filesystem path to a local audit database; if None, the global audit system is used.
+        limit (int): Maximum number of events to verify; 0 means verify the entire trail.
+        include_details (bool): If False, remove mismatch details from the returned report.
+        strict_unhashed (bool): If True, treat the presence of legacy unhashed events as a failure condition.
+    
+    Returns:
+        tuple[dict, int]: A pair where the first element is the integrity report (a dictionary with keys such as
+        `valid` and `unhashed_events`), and the second element is the exit code: `0` for success,
+        `2` when the report is invalid, and `3` when `strict_unhashed` is enabled and unhashed events were found.
+    """
     if db_path:
         audit = AuditTrailSystem(db_path)
     else:
@@ -50,6 +64,12 @@ def run_check(
 
 
 def main() -> int:
+    """
+    Parse command-line arguments, run the audit integrity check, print the resulting report as pretty-printed JSON to stdout, and return an appropriate exit code.
+    
+    Returns:
+        int: 0 if the audit is valid; 2 if integrity verification failed; 3 if `--strict-unhashed` is set and unhashed events were found.
+    """
     parser = argparse.ArgumentParser(description="Check tamper-evident NIC audit chain integrity.")
     parser.add_argument("--db-path", default=None, help="Path to audit DB (defaults to AUDIT_DB_PATH/global config)")
     parser.add_argument("--limit", type=int, default=0, help="Optional max events to verify (0 = full scan)")

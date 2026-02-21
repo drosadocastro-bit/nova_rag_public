@@ -20,6 +20,14 @@ from governance.audit_trail_system import AuditTrailSystem, get_audit_system
 
 
 def main() -> int:
+    """
+    CLI entry point to backfill or rewrite the NIC audit hash chain and optionally verify integrity.
+    
+    Parses command-line arguments (--db-path, --limit, --rewrite-all, --apply), initializes the audit system (from the provided DB path or the global audit system), runs backfill_hash_chain with the requested options, and prints the backfill result as JSON. If --apply is used, runs verify_integrity afterward and prints a post-verify JSON object.
+    
+    Returns:
+        int: Process exit code: 0 on success; 2 if backfill returned an "error"; 3 if post-apply verification reports invalid integrity.
+    """
     parser = argparse.ArgumentParser(description="Backfill or rewrite NIC audit hash chain.")
     parser.add_argument("--db-path", default=None, help="Path to audit DB (defaults to AUDIT_DB_PATH/global config)")
     parser.add_argument("--limit", type=int, default=0, help="Optional max events to process (0 = full scan)")

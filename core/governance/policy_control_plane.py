@@ -51,6 +51,23 @@ class PolicyDecision:
     approval_requirements: Dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
+        """
+        Serialize the PolicyDecision into a plain dictionary suitable for logging or JSON encoding.
+        
+        Returns:
+            decision_dict (Dict[str, Any]): Dictionary with the following keys:
+                - "action" (str): Decision action, e.g. "allow", "degrade", or "deny".
+                - "role" (str): Resolved user role that produced the decision.
+                - "requested_features" (Dict[str, bool]): Features requested by the query.
+                - "allowed_features" (Dict[str, bool]): Features permitted for the role after policy evaluation.
+                - "degraded_features" (List[str]): Features that were downgraded.
+                - "denied_features" (List[str]): Features that were denied.
+                - "reasons" (List[str]): Human-readable reasons explaining the decision.
+                - "risk_level" (str): Risk classification, e.g. "low", "medium", or "high".
+                - "approval_required_features" (List[str]): Features requiring approval.
+                - "approval_verified" (bool): Whether required approvals were verified.
+                - "approval_requirements" (Dict[str, str]): Mapping of feature to required approval action or note.
+        """
         return {
             "action": self.action,
             "role": self.role,
@@ -67,7 +84,14 @@ class PolicyDecision:
 
 
 def extract_session_context(request: Request) -> SessionContext:
-    """Resolve session-based role context from request and active session state."""
+    """
+    Resolve session and user role context from an incoming Request.
+    
+    Determines session_id, user_id, role, and approval_request_id using request headers and the global session_state. When a request session ID matches an active session_state, values from the session_state take precedence; if no session ID is provided but session_state is active, session_state values are used. If a valid role is not obtained from session_state, a valid X-User-Role header is used; otherwise the role defaults to "operator".
+    
+    Returns:
+        SessionContext: Resolved session_id, user_id, role, and approval_request_id.
+    """
     default_role = os.environ.get("NOVA_DEFAULT_SESSION_ROLE", "operator").strip().lower() or "operator"
     session_id = request.headers.get("X-Session-Id")
     user_id = request.headers.get("X-User-Id")
@@ -109,10 +133,22 @@ def extract_session_context(request: Request) -> SessionContext:
 
 
 def _is_approval_verified_for_action(approval_request_id: str | None, required_action: str) -> bool:
-    """Best-effort verification of approval request status for a required action.
-
-    Verification is optional at this phase: if an approval id is present and
-    access-control DB is unavailable, the id is treated as unverified.
+    """
+    Verify whether an approval request is recorded as approved for a specific action.
+    
+    Performs a best-effort check against the access-control database referenced by the
+    NOVA_ACCESS_CONTROL_DB environment variable. If no approval_request_id is provided,
+    the access-control DB path is missing, the request is not found, or any error
+    occurs while fetching the request, the approval is treated as unverified and
+    the function returns False.
+    
+    Parameters:
+        approval_request_id (str | None): Approval request identifier to verify.
+        required_action (str): Action name that the approval must match.
+    
+    Returns:
+        bool: `True` if the approval request exists, has status `"approved"`, and its
+        `"action"` equals `required_action`; `False` otherwise.
     """
     if not approval_request_id:
         return False
@@ -141,7 +177,30 @@ def evaluate_query_policy(
     graph_rag_enabled: bool,
     vision_reranker_enabled: bool,
 ) -> PolicyDecision:
-    """Evaluate query capability policy using session role and safe-degrade rules."""
+    """
+    Determine allowed, degraded, or denied query features based on session role, requested capabilities, and configured approval and hard-deny rules.
+    
+    Parameters:
+        session_ctx (SessionContext): Resolved session context (includes role, user id, and optional approval_request_id) used to evaluate role-based capabilities and approval status.
+        strict_mode (bool): Whether strict mode was requested for the query (propagated into the decision).
+        assistant_enabled (bool): Whether assistant features were requested.
+        graph_rag_enabled (bool): Whether graph RAG features were requested.
+        vision_reranker_enabled (bool): Whether the vision re-ranker feature was requested.
+    
+    Returns:
+        PolicyDecision: A decision object containing:
+            - action: "allow", "degrade", or "deny" indicating the overall policy outcome.
+            - role: resolved role used for evaluation.
+            - requested_features: map of the original requested feature flags.
+            - allowed_features: map of which requested features are permitted after policy checks.
+            - degraded_features: list of features requested but disabled by policy (safe-degraded).
+            - denied_features: list of features explicitly denied (only in hard-deny mode).
+            - reasons: human-readable reasons for degradations/denials.
+            - risk_level: assessed risk level ("low", "medium", or "high").
+            - approval_required_features: features that require explicit approval for the session/role.
+            - approval_verified: whether an applicable approval was verified for the session.
+            - approval_requirements: mapping of features to the required approval action name.
+    """
     requested = {
         "strict_mode": strict_mode,
         "assistant_enabled": assistant_enabled,
@@ -262,7 +321,18 @@ def evaluate_query_policy(
 
 
 def log_policy_decision(*, query: str, session_ctx: SessionContext, decision: PolicyDecision) -> None:
-    """Write canonical policy decision audit event (best-effort)."""
+    """
+    Emit a canonical audit event recording a query policy decision.
+    
+    Parameters:
+    	query (str): The original query string; a SHA-256 hash of this value is stored in the audit event (query itself is not logged).
+    	session_ctx (SessionContext): Resolved session context containing session_id, user_id, role, and approval_request_id.
+    	decision (PolicyDecision): Policy decision describing action, requested/allowed features, degradations/denials, reasons, risk level, and approval details.
+    
+    Notes:
+    	This function maps decision.risk_level to a numeric risk_score, sets event severity to MEDIUM for degradations (LOW otherwise),
+    	includes decision fields in event metadata, and performs best-effort logging — any exceptions during audit emission are caught and logged locally.
+    """
     try:
         query_hash = hashlib.sha256((query or "").encode("utf-8", errors="ignore")).hexdigest()
         severity = Severity.MEDIUM if decision.action == "degrade" else Severity.LOW

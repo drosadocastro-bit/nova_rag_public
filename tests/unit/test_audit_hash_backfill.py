@@ -10,6 +10,15 @@ pytestmark = pytest.mark.unit
 
 
 def _event(session_id: str) -> AuditEvent:
+    """
+    Constructs a standardized AuditEvent for tests using the provided session_id.
+    
+    Parameters:
+        session_id (str): Identifier to assign to the event and to derive the `query_hash` (`"q-{session_id}"`).
+    
+    Returns:
+        AuditEvent: An AuditEvent with event_type `EventType.POLICY_CHECK`, decision `"allow"`, severity `Severity.MEDIUM`, the given `session_id`, and `query_hash` set to `"q-{session_id}"`.
+    """
     return AuditEvent(
         event_type=EventType.POLICY_CHECK,
         session_id=session_id,
@@ -20,6 +29,14 @@ def _event(session_id: str) -> AuditEvent:
 
 
 def test_backfill_rewrite_all_rehashes_legacy_rows(tmp_path):
+    """
+    Verifies that backfill_hash_chain rewrites missing hashes for legacy rows when invoked with rewrite_all=True.
+    
+    Creates a temporary audit database, logs two events, clears their hash fields to simulate legacy/uncorrupted rows, runs backfill_hash_chain with rewrite_all=True and dry_run=False, and asserts that both rows are updated and the audit integrity is valid afterwards.
+    
+    Parameters:
+        tmp_path (pathlib.Path): pytest-provided temporary directory for creating the test database.
+    """
     db_path = tmp_path / "audit_backfill.db"
     audit = AuditTrailSystem(str(db_path))
 
