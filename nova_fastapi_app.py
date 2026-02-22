@@ -10,13 +10,15 @@ Migrates Flask to FastAPI to leverage the existing AsyncQueryHandler for:
 Run: uvicorn nova_fastapi_app:app --host 127.0.0.1 --port 5678 --reload
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Query, Request
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 import asyncio
 import json
 import logging
 import os
+import re
 import time
 from typing import Optional, AsyncGenerator
 from pathlib import Path
@@ -356,13 +358,26 @@ async def get_sessions():
 
 @app.get("/health")
 async def health():
-    """Health check endpoint."""
-    ollama_ok, _ = check_ollama_connection()
-    
+    """Health check endpoint (fast, no LLM call)."""
+    force_offline = os.environ.get("NOVA_FORCE_OFFLINE", "0") == "1"
+
+    if force_offline:
+        ollama_status = "offline (NOVA_FORCE_OFFLINE=1)"
+        overall = "ok"
+    else:
+        try:
+            ollama_ok, _ = check_ollama_connection()
+            ollama_status = "connected" if ollama_ok else "disconnected"
+            overall = "ok" if ollama_ok else "degraded"
+        except Exception:
+            ollama_status = "unknown"
+            overall = "degraded"
+
     return JSONResponse({
-        "status": "healthy" if ollama_ok else "degraded",
-        "ollama": "connected" if ollama_ok else "disconnected",
+        "status": overall,
+        "ollama": ollama_status,
         "async_handler": "ready" if async_handler else "initializing",
+        "offline_mode": force_offline,
     })
 
 
@@ -372,6 +387,7 @@ async def metrics():
     return JSONResponse({
         "status": "healthy",
         "mode": "fastapi",
+        "offline_mode": os.environ.get("NOVA_FORCE_OFFLINE", "0") == "1",
     })
 
 
@@ -384,6 +400,8 @@ async def root():
         "mode": "async-streaming",
         "docs": "/docs",
         "endpoints": {
+            "ask": "POST /api/ask",
+            "ask_stream": "POST /api/ask/stream",
             "streaming": "/query/stream?q=...",
             "query": "/query?q=...",
             "batch": "/query/batch?queries=...",
@@ -397,6 +415,135 @@ async def root():
             "batch": "Run N queries concurrently",
         },
     })
+
+
+# ============================================================================
+# /api/ask — stable REST API (primary supported interface)
+# ============================================================================
+
+class AskRequest(BaseModel):
+    question: str = Field(..., min_length=1, max_length=5000)
+    mode: str = Field("Auto", description="Query mode (Auto/Diagnostic/etc)")
+    fallback: Optional[str] = Field(None, description="Fallback mode (e.g. retrieval-only)")
+
+
+@app.post("/api/ask")
+async def api_ask(payload: AskRequest):
+    """
+    Primary query endpoint.
+
+    Accepts a JSON body with ``question`` and optional ``mode`` / ``fallback``
+    fields and returns a structured answer with sources and confidence.
+
+    When ``NOVA_FORCE_OFFLINE=1`` any remote-LLM path is disabled; the
+    endpoint will fall back to retrieval-only mode automatically.
+
+    Example::
+
+        curl -X POST http://localhost:5678/api/ask \\
+          -H 'Content-Type: application/json' \\
+          -d '{"question": "How do I reset the battery?"}'
+    """
+    force_offline = os.environ.get("NOVA_FORCE_OFFLINE", "0") == "1"
+
+    # In offline mode always use retrieval-only to avoid remote LLM calls.
+    effective_fallback = payload.fallback
+    if force_offline and effective_fallback is None:
+        effective_fallback = "retrieval-only"
+
+    start_time = time.time()
+
+    try:
+        answer, model_info = backend_mod.nova_text_handler(
+            question=payload.question,
+            mode=payload.mode,
+            npc_name=None,
+            resume_session_id=None,
+            fallback_mode=effective_fallback,
+        )
+        elapsed_ms = int((time.time() - start_time) * 1000)
+
+        confidence_match = re.search(r"Confidence:\s*([\d.]+)%", str(model_info))
+        confidence_pct = (float(confidence_match.group(1)) / 100) if confidence_match is not None else 0.0
+
+        from backend import session_state as _session_state
+            "answer": answer,
+            "confidence": f"{confidence_pct * 100:.1f}%",
+            "model_used": str(model_info).split("|")[0].strip() if "|" in str(model_info) else "auto",
+            "latency_ms": elapsed_ms,
+            "session_id": _session_state.get("session_id"),
+            "session_active": _session_state.get("active", False),
+            "offline_mode": force_offline,
+        })
+    except Exception as e:
+        logger.error(f"/api/ask failed: {e}", exc_info=True)
+        return JSONResponse({"error": str(e), "question": payload.question}, status_code=500)
+
+
+async def _ask_sse_stream(question: str, mode: str, fallback: Optional[str]) -> AsyncGenerator[str, None]:
+    """Yield SSE-formatted lines for a query."""
+    force_offline = os.environ.get("NOVA_FORCE_OFFLINE", "0") == "1"
+    if force_offline and fallback is None:
+        fallback = "retrieval-only"
+
+    start_time = time.time()
+    try:
+        yield "data: " + json.dumps({"stage": "thinking", "progress": 10}) + "\n\n"
+        await asyncio.sleep(0)
+
+        # Run blocking backend call in thread pool to avoid blocking event loop.
+        import concurrent.futures
+        loop = asyncio.get_event_loop()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            answer, model_info = await loop.run_in_executor(
+                pool,
+                lambda: backend_mod.nova_text_handler(
+                    question=question,
+                    mode=mode,
+                    npc_name=None,
+                    resume_session_id=None,
+                    fallback_mode=fallback,
+                ),
+            )
+
+        elapsed_ms = int((time.time() - start_time) * 1000)
+        confidence_match = re.search(r"Confidence:\s*([\d.]+)%", str(model_info))
+        confidence_pct = (float(confidence_match.group(1)) / 100) if confidence_match is not None else 0.0
+
+        yield "data: " + json.dumps({
+            "stage": "complete",
+            "progress": 100,
+            "answer": answer,
+            "confidence": f"{confidence_pct * 100:.1f}%",
+            "model_used": str(model_info).split("|")[0].strip() if "|" in str(model_info) else "auto",
+            "latency_ms": elapsed_ms,
+            "offline_mode": force_offline,
+        }) + "\n\n"
+    except Exception as e:
+        logger.error(f"/api/ask/stream error: {e}")
+        yield "data: " + json.dumps({"stage": "error", "error": str(e)}) + "\n\n"
+
+
+@app.post("/api/ask/stream")
+async def api_ask_stream(payload: AskRequest):
+    """
+    Streaming query endpoint (Server-Sent Events).
+
+    Behaves like ``POST /api/ask`` but streams progress and the final answer
+    as SSE events.  Clients can fall back to ``/api/ask`` if streaming is not
+    required.
+
+    Example::
+
+        curl -X POST http://localhost:5678/api/ask/stream \\
+          -H 'Content-Type: application/json' \\
+          -d '{"question": "How do I reset the battery?"}'
+    """
+    return StreamingResponse(
+        _ask_sse_stream(payload.question, payload.mode, payload.fallback),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 if __name__ == "__main__":

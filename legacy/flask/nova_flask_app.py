@@ -1,21 +1,3 @@
-"""
-DEPRECATED: This file has moved to legacy/flask/nova_flask_app.py.
-
-The supported server is now FastAPI (nova_fastapi_app.py).
-
-Start the FastAPI server with:
-    uvicorn nova_fastapi_app:app --host 127.0.0.1 --port 5678 --reload
-
-See legacy/flask/README.md for details.
-"""
-import warnings
-warnings.warn(
-    "nova_flask_app.py is deprecated. Use 'uvicorn nova_fastapi_app:app' instead. "
-    "The Flask implementation has moved to legacy/flask/nova_flask_app.py.",
-    DeprecationWarning,
-    stacklevel=2,
-)
-
 from flask import Flask, render_template, request, jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address

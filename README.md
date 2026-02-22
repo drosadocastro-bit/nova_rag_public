@@ -95,7 +95,8 @@
 docker-compose up -d
 
 # Query with natural language
-curl -X POST http://localhost:5000/api/ask \
+curl -X POST http://localhost:5678/api/ask \
+  -H "Content-Type: application/json" \
   -d '{"question": "How do I troubleshoot RDA fault E-47?"}'
 
 # Get grounded answer with citations
@@ -391,11 +392,12 @@ See [PHASE2_IMPLEMENTATION.md](PHASE2_IMPLEMENTATION.md) for complete architectu
 
 ### Phase 3.5 Performance Benchmark
 
-Measure latency overhead of finetuned embeddings, anomaly detection, and compliance reporting against the `/api/ask` endpoint (default `NIC_API_URL=http://localhost:5000/api/ask`).
+Measure latency overhead of finetuned embeddings, anomaly detection, and compliance reporting against the `/api/ask` endpoint (default `NIC_API_URL=http://localhost:5678/api/ask`).
 
 ```bash
 # In one shell
-python nova_flask_app.py  # add NOVA_FORCE_OFFLINE=1 if you want to skip Ollama
+# In one shell
+uvicorn nova_fastapi_app:app --host 127.0.0.1 --port 5678 --reload  # add NOVA_FORCE_OFFLINE=1 if you want to skip Ollama
 
 # In another shell
 python scripts/benchmark_phase3_5_performance.py
@@ -526,9 +528,9 @@ pip install -r requirements.txt
 # Start Ollama with a local model
 ollama pull llama3.2:3b
 
-# Run NIC
-python nova_flask_app.py
-# → http://localhost:5000
+# Run NIC (FastAPI — recommended)
+uvicorn nova_fastapi_app:app --host 127.0.0.1 --port 5678 --reload
+# → http://localhost:5678  |  API docs: http://localhost:5678/docs
 ```
 
 ---
@@ -664,7 +666,7 @@ Minimal offline run steps:
 ```bash
 pip install -r requirements.txt
 ollama pull llama3.2:3b   # or: ollama run llama3.2:3b to verify
-python nova_flask_app.py
+uvicorn nova_fastapi_app:app --host 127.0.0.1 --port 5678 --reload
 ```
 
 See the [Documentation Index](docs/INDEX.md) for detailed guides.
@@ -1335,10 +1337,14 @@ See [docs/CACHE_ARCHITECTURE.md](docs/CACHE_ARCHITECTURE.md) for details.
 ```
 ├── README.md                 # This document
 ├── QUICKSTART.md            # Detailed setup instructions
-├── nova_flask_app.py        # Main application
+├── nova_fastapi_app.py      # Main application (FastAPI — primary entrypoint)
 ├── backend.py               # RAG pipeline
 ├── agents/                  # Query handlers
 ├── ollama/                  # Ollama Modelfiles for local LLMs
+├── legacy/
+│   └── flask/               # Deprecated Flask server (reference only)
+│       ├── nova_flask_app.py
+│       └── README.md        # Deprecation notice
 ├── docs/
 │   ├── architecture/        # System design
 │   ├── safety/              # Safety validation
@@ -1691,16 +1697,21 @@ python ingest_multi_domain.py
 
 ### Step 4: Start NIC (1 min)
 ```bash
-# Launch the server
-python nova_flask_app.py
+# Launch the FastAPI server
+uvicorn nova_fastapi_app:app --host 127.0.0.1 --port 5678 --reload
 
-# Opens at http://localhost:5000
+# Opens at http://localhost:5678  |  API docs: http://localhost:5678/docs
 ```
 
 ### Step 5: Ask a Question (2 min)
 ```bash
-# Open browser or use curl
-curl -X POST http://localhost:5000/api/ask \
+# Standard query
+curl -X POST http://localhost:5678/api/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "How do I troubleshoot a brake system failure?"}'
+
+# Streaming query (Server-Sent Events)
+curl -X POST http://localhost:5678/api/ask/stream \
   -H "Content-Type: application/json" \
   -d '{"question": "How do I troubleshoot a brake system failure?"}'
 
