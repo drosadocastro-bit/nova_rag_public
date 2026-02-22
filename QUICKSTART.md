@@ -39,12 +39,17 @@ If you prefer fully local:
 ### 2. Start the Server
 
 ```bash
-python nova_flask_app.py
+uvicorn nova_fastapi_app:app --host 127.0.0.1 --port 5678 --reload
 ```
 
-Open browser to: **http://localhost:5000**
+Open the interactive API docs at: **http://localhost:5678/docs**
 
-> **Note**: This uses Flask's development server (perfect for local testing & demos). For production use or multiple concurrent users, see [README.md → Deployment](README.md#-deployment) for Gunicorn/Waitress setup.
+> **Offline mode**: Add `NOVA_FORCE_OFFLINE=1` to skip Ollama connectivity and
+> disable remote-LLM calls (retrieval-only mode).
+>
+> ```bash
+> NOVA_FORCE_OFFLINE=1 uvicorn nova_fastapi_app:app --host 127.0.0.1 --port 5678 --reload
+> ```
 
 ### 3. Try These Queries
 
@@ -99,7 +104,7 @@ python run_safety_test.py  # When you create this
 Test all enhancements in one go:
 ```bash
 # Terminal 1: Start server
-python nova_flask_app.py
+uvicorn nova_fastapi_app:app --host 127.0.0.1 --port 5678 --reload
 
 # Terminal 2: Run validation tests
 python quick_validation.py
@@ -178,7 +183,7 @@ python ingest_vehicle_manual.py
 
 1. ✅ Verify retrieval works: `python test_retrieval.py`
 2. ✅ Set API key
-3. ✅ Start server: `python nova_flask_app.py`
+3. ✅ Start server: `uvicorn nova_fastapi_app:app --host 127.0.0.1 --port 5678 --reload`
 4. ✅ Test safety toggles with in-scope and out-of-scope queries
 5. ✅ Review governance policies in `governance/`
 6. ✅ Customize for your domain

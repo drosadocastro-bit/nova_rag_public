@@ -400,9 +400,11 @@ CI must pass before merge.
 ```
 .
 ├── backend.py              # Core RAG logic
-├── nova_flask_app.py       # Flask API server
+├── nova_fastapi_app.py     # FastAPI server (primary entrypoint)
 ├── cache_utils.py          # Caching utilities
 ├── agents/                 # Agent implementations
+├── legacy/
+│   └── flask/              # Deprecated Flask server (reference only)
 ├── tests/
 │   ├── unit/              # Unit tests
 │   ├── integration/       # Integration tests
