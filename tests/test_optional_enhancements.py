@@ -51,7 +51,7 @@ def test_graphrag_store_related_chunks(tmp_path):
     
     Seeds a GraphStore from two documents, queries for related chunks using a query and domain hint, and asserts the results include the expected document id.
     """
-    db_path = Path(tmp_path) / "graph.sqlite"
+    db_path = tmp_path / "graph.sqlite"
     store = GraphStore(db_path=db_path)
     docs = [
         {

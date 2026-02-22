@@ -88,9 +88,4 @@ def test_query_stream_policy_hard_deny_blocks_before_core(monkeypatch):
 
 @pytest.mark.skip(reason="Requires deeper mocking of nova_stream_query internal logic")
 def test_nova_stream_query_logic():
-    """
-    Test direct invocation of nova_stream_query logic.
-    Mocking inside complex function is tricky; this is a placeholder
-    to remind us to add unit tests for the handler logic itself.
-    """
     pass
