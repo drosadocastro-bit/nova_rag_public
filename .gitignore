@@ -389,6 +389,7 @@ data/
 *.docx
 docs/briefings/*FAA*
 docs/briefings/*faa*
+docs/briefings/ETL_BENCHMARK_SUMMARY.md
 
 # Local transient artifacts
 artifacts/
