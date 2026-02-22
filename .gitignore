@@ -383,3 +383,19 @@ search_history.pkl
 
 # Entire vector_db directory (all generated, regenerate from data/)
 vector_db/
+
+# User-requested upload exclusions
+data/
+*.docx
+docs/briefings/*FAA*
+docs/briefings/*faa*
+
+# Local transient artifacts
+artifacts/
+audit_trail.db
+tmpclaude-*
+nul
+_final_test.txt
+_test_out.txt
+test_results.txt
+test_results_v2.txt
