@@ -7,7 +7,7 @@ from .session_manager import *  # noqa: F401,F403
 
 # Redis session store (optional)
 try:
-    from .redis_session import (
+    from .redis_session import (  # noqa: F401
         RedisSessionStore,
         SessionConfig,
         Session,

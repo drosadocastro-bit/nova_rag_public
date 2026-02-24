@@ -19,7 +19,7 @@ from .query_cache import (
 
 # Redis distributed cache (optional)
 try:
-    from .redis_cache import (
+    from .redis_cache import (  # noqa: F401
         RedisDistributedCache,
         RedisCacheConfig,
         AsyncRedisCache,

@@ -26,8 +26,8 @@ class TestCriticalPathRetrieval:
     def test_safety_modules_import(self):
         """Test that safety modules can be imported."""
         try:
-            from core.safety import injection_handler
-            from core.safety import risk_assessment
+            from core.safety import injection_handler  # noqa: F401
+            from core.safety import risk_assessment  # noqa: F401
             assert True
         except ImportError as e:
             pytest.fail(f"Failed to import safety modules: {e}")
@@ -36,9 +36,9 @@ class TestCriticalPathRetrieval:
     def test_agent_modules_import(self):
         """Test that agent modules can be imported."""
         try:
-            from agents import agent_router
-            from agents import session_store
-            from agents import citation_auditor
+            from agents import agent_router  # noqa: F401
+            from agents import session_store  # noqa: F401
+            from agents import citation_auditor  # noqa: F401
             assert True
         except ImportError as e:
             pytest.fail(f"Failed to import agent modules: {e}")

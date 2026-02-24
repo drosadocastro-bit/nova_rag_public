@@ -16,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-from governance.audit_trail_system import AuditTrailSystem, get_audit_system
+from governance.audit_trail_system import AuditTrailSystem, get_audit_system  # noqa: E402
 
 
 def main() -> int:

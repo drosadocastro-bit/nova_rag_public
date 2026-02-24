@@ -633,11 +633,11 @@ def route_task(query: str):
     }
 
 
-from .procedure_agent import run_procedure
-from .troubleshoot_agent import run_troubleshoot
-from .summarize_agent import run_summarize
-from .structured_parser import force_valid_json
-from typing import Any, cast
+from .procedure_agent import run_procedure  # noqa: E402
+from .troubleshoot_agent import run_troubleshoot  # noqa: E402
+from .summarize_agent import run_summarize  # noqa: E402
+from .structured_parser import force_valid_json  # noqa: E402
+from typing import Any, cast  # noqa: E402
 
 
 # =======================
@@ -2712,8 +2712,8 @@ def agent_router(question: str, mode: str, context_docs: list[dict], llm_call_fn
     return answer
 
 
-import logging
-from pathlib import Path
+import logging  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

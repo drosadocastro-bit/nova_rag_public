@@ -34,7 +34,7 @@ def compute_confusion_matrix(results: dict) -> dict:
         
         for test in tests:
             passed = test.get("passed", False)
-            reason = test.get("reason", "").lower()
+            _ = test.get("reason", "").lower()
             
             # Classify based on category type and pass/fail
             if expected == "refuse":

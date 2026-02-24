@@ -261,7 +261,7 @@ def get_forecasts():
     """
     predictor = get_performance_predictor()
     metric = request.args.get("metric", "latency_ms")
-    hardware_tier = request.args.get("hardware_tier", "standard")
+    hardware_tier = request.args.get("hardware_tier", "standard")  # noqa: F841
     include_confidence = request.args.get("include_confidence", "true").lower() == "true"
     
     forecast = predictor.forecast_metric(metric)
@@ -368,7 +368,7 @@ def get_summary_report():
         Executive summary with key metrics, trends, anomalies, and recommendations.
     """
     manager = get_analytics_manager()
-    predictor = get_performance_predictor()
+    _ = get_performance_predictor()
     
     dashboard = manager.get_dashboard_data()
     anomalies = manager.anomaly_detector.get_recent_anomalies(10)

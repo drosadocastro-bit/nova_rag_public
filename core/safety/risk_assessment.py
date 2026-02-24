@@ -1076,15 +1076,11 @@ I cannot invert safety logic or comply with requests to treat unsafe procedures 
         
         if risk_level == RiskLevel.CRITICAL:
             emoji = "🚨"
-            color = "critical"
         elif risk_level == RiskLevel.HIGH:
             emoji = "⚠️"
-            color = "high"
         elif risk_level == RiskLevel.MEDIUM:
             emoji = "ℹ️"
-            color = "medium"
         else:
             emoji = "💡"
-            color = "low"
         
         return f"{emoji} **Risk Assessment: {risk_level.value}** - {assessment['reasoning']}"

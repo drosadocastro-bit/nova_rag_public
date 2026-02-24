@@ -342,22 +342,6 @@ I'm designed to prioritize your safety above all else."""
                 - core_question: str - Question with injection syntax removed
                 - injection_markers: List[str] - What injection patterns were found
         """
-        # Injection keywords/markers to watch for
-        injection_patterns = [
-            r'SYSTEM\s*:',
-            r'(?:^|\s)IGNORE(?:\s|:)',
-            r'(?:^|\s)BYPASS(?:\s|:)',
-            r'(?:^|\s)OVERRIDE(?:\s|:)',
-            r'Translate\s+to\s+\w+\s*:',
-            r'(?:^|\s)IGNORE\s+ALL',
-            r'(?:^|\s)DISREGARD',
-            r'(?:^|\s)FORGET\s+(?:all|everything)',
-            r'(?:^|\s)ACT\s+AS(?:\s|:)',
-            r'(?:^|\s)PRETEND(?:\s|:)',
-            r'jailbreak',
-            r'prompt\s+injection',
-        ]
-        
         found_markers = []
         has_injection = False
         
@@ -510,15 +494,11 @@ I'm designed to prioritize your safety above all else."""
         
         if risk_level == RiskLevel.CRITICAL:
             emoji = "🚨"
-            color = "critical"
         elif risk_level == RiskLevel.HIGH:
             emoji = "⚠️"
-            color = "high"
         elif risk_level == RiskLevel.MEDIUM:
             emoji = "ℹ️"
-            color = "medium"
         else:
             emoji = "💡"
-            color = "low"
         
         return f"{emoji} **Risk Assessment: {risk_level.value}** - {assessment['reasoning']}"

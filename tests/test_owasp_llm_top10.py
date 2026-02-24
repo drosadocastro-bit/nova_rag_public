@@ -73,7 +73,7 @@ HAS_NIC_API = False
 try:
     resp = requests.get(f"{NIC_API_URL}/health", timeout=2)
     HAS_NIC_API = resp.status_code == 200
-except:
+except Exception:
     pass
 
 

@@ -75,9 +75,7 @@ def _cached_retrieve(query: str, k: int = 12, top_n: int = 6, **kwargs):
 
 retrieve = _cached_retrieve
 
-import os
-
-# Log startup configuration
+import os  # noqa: E402
 log_startup_config()
 logger.info("Nova NIC starting", extra={
     "ollama_url": "http://127.0.0.1:11434",

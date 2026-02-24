@@ -104,7 +104,7 @@ class TestTaskQueueWithCallbacksIntegration:
         async def sample_task():
             return "Task completed"
         
-        task_id = queue.submit(
+        _ = queue.submit(
             sample_task,
             on_complete=on_complete,
         )
@@ -205,7 +205,7 @@ class TestCircuitBreakerIntegration:
         for _ in range(5):
             try:
                 await handler.query("test")
-            except:
+            except Exception:
                 pass
         
         # Circuit should be open or half-open

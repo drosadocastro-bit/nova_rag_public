@@ -16,24 +16,24 @@ warnings.warn(
     stacklevel=2,
 )
 
-from flask import Flask, render_template, request, jsonify
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-import os
-import backend as backend_mod
-from backend import (
+from flask import Flask, render_template, request, jsonify  # noqa: E402
+from flask_limiter import Limiter  # noqa: E402
+from flask_limiter.util import get_remote_address  # noqa: E402
+import os  # noqa: E402
+import backend as backend_mod  # noqa: E402
+from backend import (  # noqa: E402
     nova_text_handler, check_ollama_connection, session_state, retrieve as _retrieve_uncached
 )
-import analytics
-import re
-import html
-import hmac
-from pathlib import Path
-import time
-from collections import OrderedDict
-from core.safety import get_defense_layers
-from core.safety.output_sanitizer import strip_all_html  # LLM02 defense
-from core.monitoring import (
+import analytics  # noqa: E402
+import re  # noqa: E402
+import html  # noqa: E402
+import hmac  # noqa: E402
+from pathlib import Path  # noqa: E402
+import time  # noqa: E402
+from collections import OrderedDict  # noqa: E402
+from core.safety import get_defense_layers  # noqa: E402
+from core.safety.output_sanitizer import strip_all_html  # LLM02 defense  # noqa: E402
+from core.monitoring import (  # noqa: E402
     record_query,
     observe_query_latency,
     set_retrieval_confidence,
@@ -41,13 +41,13 @@ from core.monitoring import (
     record_cache_hit,
     record_cache_miss,
 )
-from core.monitoring.prometheus_metrics import generate_metrics, get_content_type
-from core.monitoring.logger_config import (
+from core.monitoring.prometheus_metrics import generate_metrics, get_content_type  # noqa: E402
+from core.monitoring.logger_config import (  # noqa: E402
     get_logger,
     log_query,
     log_startup_config,
 )
-from core.phase3_5.neural_advisory import get_neural_advisory_layer
+from core.phase3_5.neural_advisory import get_neural_advisory_layer  # noqa: E402
 
 # Initialize structured logger
 logger = get_logger("nova_flask_app")
@@ -92,8 +92,6 @@ def _cached_retrieve(query: str, k: int = 12, top_n: int = 6, **kwargs):
 
 
 retrieve = _cached_retrieve
-
-import os
 
 # Log startup configuration
 log_startup_config()

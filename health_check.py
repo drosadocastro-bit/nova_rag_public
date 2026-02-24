@@ -84,20 +84,20 @@ try:
     try:
         version = pytesseract.get_tesseract_version()
         print(f"   Tesseract OCR: v{version}")
-    except:
+    except Exception:
         print("   ⚠️  Tesseract binary NOT FOUND in PATH")
 except ImportError:
     print("❌ pytesseract: NOT INSTALLED")
 
 try:
-    from pdf2image import convert_from_path
+    from pdf2image import convert_from_path  # noqa: F401
     print("✅ pdf2image: installed")
     # Check poppler
     try:
-        from pdf2image.exceptions import PDFInfoNotInstalledError
+        from pdf2image.exceptions import PDFInfoNotInstalledError  # noqa: F401
         # Try to use it
         print("   ⚠️  Poppler status unknown (need to test conversion)")
-    except:
+    except Exception:
         pass
 except ImportError:
     print("❌ pdf2image: NOT INSTALLED")
@@ -107,7 +107,7 @@ print("\n🤖 4. EMBEDDING MODEL")
 print("-" * 70)
 
 try:
-    from sentence_transformers import SentenceTransformer
+    from sentence_transformers import SentenceTransformer  # noqa: F401
     import torch
     
     models_dir = Path("models")
@@ -190,7 +190,7 @@ except Exception as e:
 print("\n🔐 8. ENVIRONMENT VARIABLES")
 print("-" * 70)
 
-import os
+import os  # noqa: E402
 key_vars = [
     "NOVA_LLM_OSS",
     "NOVA_LLM_LLAMA",

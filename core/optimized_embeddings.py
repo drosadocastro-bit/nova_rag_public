@@ -119,9 +119,9 @@ class VectorizedEmbeddingProcessor:
             import torch
             if device != "cpu" and torch.cuda.is_available():
                 self.model = self.model.to(device)
-        except:
+        except Exception:
             pass
-    
+
     def encode_batch(
         self,
         texts: List[str],

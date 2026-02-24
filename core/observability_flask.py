@@ -268,7 +268,7 @@ def track_query_execution(observability_manager):
             from core.observability import QueryLog
             
             start_time = time.time()
-            start_memory = 0
+            _ = 0
             
             try:
                 result = func(*args, **kwargs)

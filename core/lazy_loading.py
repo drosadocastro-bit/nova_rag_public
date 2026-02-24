@@ -60,10 +60,8 @@ class HardwareProfile:
         try:
             import torch
             has_gpu = torch.cuda.is_available() or torch.backends.mps.is_available()
-        except:
+        except Exception:
             pass
-        
-        # Determine tier
         if total_gb < 2:
             tier = HardwareTier.ULTRA_LITE
         elif total_gb < 4:

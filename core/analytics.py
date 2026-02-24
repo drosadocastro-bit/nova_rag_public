@@ -567,7 +567,7 @@ class AnalyticsManager:
         self.query_analytics.track_query(feature)
         
         # Calculate and track cost
-        cost = self.cost_analytics.calculate_query_cost(
+        self.cost_analytics.calculate_query_cost(
             query_id=query_id,
             retrieval_time_ms=retrieval_time_ms,
             generation_time_ms=generation_time_ms,
@@ -577,7 +577,7 @@ class AnalyticsManager:
         )
         
         # Detect anomalies
-        anomaly = self.anomaly_detector.detect_statistical_anomaly(
+        self.anomaly_detector.detect_statistical_anomaly(
             f"{hardware_tier}_latency_ms",
             latency_ms
         )

@@ -476,7 +476,7 @@ def nova_query_core(
     
     q_raw = injection_result["cleaned_question"]
     q_lower = injection_result.get("q_lower", q_raw.lower())
-    multi_query_warning = injection_result.get("multi_query_warning")
+    _ = injection_result.get("multi_query_warning")
     
     # Agent routing: check for out-of-scope or unsafe intents
     intent_meta = None

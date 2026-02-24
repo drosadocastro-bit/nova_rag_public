@@ -189,18 +189,6 @@ class ComplianceReporter:
         incident_id = f"{category.value}_{int(time.time())}"
         reported_at = time.time()
         
-        incident = IncidentReport(
-            incident_id=incident_id,
-            category=category,
-            severity=severity,
-            title=title,
-            description=description,
-            reported_at=reported_at,
-            resource=resource,
-            affected_count=affected_count,
-            metadata=metadata or {},
-        )
-        
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
                 INSERT INTO incidents
