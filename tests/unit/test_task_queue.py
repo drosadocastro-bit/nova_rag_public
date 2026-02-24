@@ -426,7 +426,7 @@ class TestTaskDependencies:
         await queue.start()
         
         parent_id = queue.submit(parent_task, name="parent")
-        child_id = queue.submit(
+        _ = queue.submit(
             child_task,
             name="child",
             depends_on={parent_id},

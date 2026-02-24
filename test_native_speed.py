@@ -6,7 +6,7 @@ print("Testing native Qwen 4B speed directly (no HTTP)...")
 print("=" * 60)
 
 # Set environment to use 128 tokens max
-import os
+import os  # noqa: E402
 os.environ["NOVA_MAX_TOKENS_OSS"] = "128"
 
 # Simple question

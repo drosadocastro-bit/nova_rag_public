@@ -236,7 +236,7 @@ def main():
             print(f"[ERROR] Server not responding properly at {BASE_URL}")
             print("   Make sure FastAPI server is running: .\\start_fastapi_qwen4b.ps1")
             return
-    except:
+    except Exception:
         print(f"[ERROR] Cannot connect to {BASE_URL}")
         print("   Make sure FastAPI server is running: .\\start_fastapi_qwen4b.ps1")
         return

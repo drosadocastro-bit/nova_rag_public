@@ -99,10 +99,10 @@ class ResourceProfiler:
             for entry in path.rglob("*"):
                 if entry.is_file():
                     total += entry.stat().st_size
-        except:
+        except Exception:
             pass
         return total
-    
+
     def profile_component(
         self,
         component_name: str,
@@ -139,7 +139,7 @@ class ResourceProfiler:
         # Run component
         peak_memory = initial_rss
         try:
-            result = func(*args, **kwargs)
+            func(*args, **kwargs)
             rss, vms, pct = self.get_memory_info()
             snapshots.append({
                 "timestamp": datetime.now().isoformat(),

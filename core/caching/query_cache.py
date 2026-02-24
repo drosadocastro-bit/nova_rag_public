@@ -344,7 +344,7 @@ class QueryCache:
         """
         with self._lock:
             keys_to_remove = []
-            pattern_lower = pattern.lower()
+            _ = pattern.lower()
             
             for key, entry in self._cache.items():
                 # We need to re-extract query from the entry

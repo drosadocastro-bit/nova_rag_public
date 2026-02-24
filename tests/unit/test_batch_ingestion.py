@@ -280,7 +280,7 @@ class TestBatchIngestionPipeline:
         pipeline = BatchIngestionPipeline(config)
         
         # Run ingestion
-        progress = pipeline.ingest_batch(temp_docs, batch_id="test_batch")
+        _ = pipeline.ingest_batch(temp_docs, batch_id="test_batch")
         
         # Checkpoint should exist
         assert checkpoint_path.exists()

@@ -71,7 +71,7 @@ def sanitize_prompt_injection(text: str) -> Tuple[str, bool]:
 # LLM Engine - Native Python integration (llama-cpp-python)
 native_call_llm = None
 try:
-    from llm_engine import get_engine, call_llm as native_call_llm, LLAMA_CPP_AVAILABLE  # type: ignore
+    from llm_engine import get_engine, call_llm as native_call_llm, LLAMA_CPP_AVAILABLE  # type: ignore  # noqa: F401
 
     USE_NATIVE_ENGINE = os.environ.get("NOVA_USE_NATIVE_LLM", "0") == "1" and LLAMA_CPP_AVAILABLE
     if USE_NATIVE_ENGINE:

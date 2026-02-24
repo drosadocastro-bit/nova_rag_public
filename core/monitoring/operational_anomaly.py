@@ -551,7 +551,7 @@ class OperationalAnomalyDetector:
     
     def _log_anomaly(self, event: AnomalyEvent) -> None:
         """Log an anomaly event."""
-        log_level = "error" if event.severity == AnomalySeverity.CRITICAL else "warning"
+        _ = "error" if event.severity == AnomalySeverity.CRITICAL else "warning"
         log_safety_event(
             logger,
             "operational_anomaly",

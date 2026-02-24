@@ -312,7 +312,7 @@ def is_abstain(answer_text: str, answer_raw: Any) -> bool:
 def is_extractive_fallback(answer_text: str, contexts: list[str]) -> bool:
     if not answer_text or not contexts:
         return False
-    lines = [l.strip() for l in answer_text.splitlines() if l.strip()]
+    lines = [ln.strip() for ln in answer_text.splitlines() if ln.strip()]
     if not lines:
         return False
     matched = 0

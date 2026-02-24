@@ -20,7 +20,7 @@ def generate_engine_diagnostic_flowchart():
         font_large = ImageFont.truetype("arial.ttf", 24)
         font_medium = ImageFont.truetype("arial.ttf", 18)
         font_small = ImageFont.truetype("arial.ttf", 14)
-    except:
+    except Exception:
         font_large = ImageFont.load_default()
         font_medium = ImageFont.load_default()
         font_small = ImageFont.load_default()
@@ -85,7 +85,7 @@ def generate_brake_system_diagram():
     try:
         font_title = ImageFont.truetype("arial.ttf", 28)
         font_label = ImageFont.truetype("arial.ttf", 16)
-    except:
+    except Exception:
         font_title = ImageFont.load_default()
         font_label = ImageFont.load_default()
     
@@ -137,7 +137,7 @@ def generate_cooling_system_diagram():
     try:
         font_title = ImageFont.truetype("arial.ttf", 28)
         font_label = ImageFont.truetype("arial.ttf", 16)
-    except:
+    except Exception:
         font_title = ImageFont.load_default()
         font_label = ImageFont.load_default()
     
@@ -185,7 +185,7 @@ def generate_electrical_system_diagram():
     try:
         font_title = ImageFont.truetype("arial.ttf", 28)
         font_label = ImageFont.truetype("arial.ttf", 14)
-    except:
+    except Exception:
         font_title = ImageFont.load_default()
         font_label = ImageFont.load_default()
     

@@ -42,7 +42,7 @@ from .batch_ingestion import (
 
 # Tantivy BM25 (optional - requires tantivy-py)
 try:
-    from .tantivy_bm25 import (
+    from .tantivy_bm25 import (  # noqa: F401
         TantivyBM25Index,
         TantivyDocument,
         TantivySearchResult,

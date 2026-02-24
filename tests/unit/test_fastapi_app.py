@@ -70,11 +70,11 @@ os.environ.setdefault("NOVA_FORCE_OFFLINE", "1")
 # side-effects (backend init, FAISS loading, etc.).
 # ---------------------------------------------------------------------------
 
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel, Field
-from typing import Optional
-import asyncio
+from fastapi import FastAPI  # noqa: E402
+from fastapi.responses import JSONResponse, StreamingResponse  # noqa: E402
+from pydantic import BaseModel, Field  # noqa: E402
+from typing import Optional  # noqa: E402
+import asyncio  # noqa: E402
 
 
 _test_app = FastAPI()

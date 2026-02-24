@@ -282,7 +282,7 @@ class TestTrackMemory:
         
         with track_memory("test_operation") as tracker:
             # Allocate some memory
-            data = [{"x": i} for i in range(1000)]
+            _ = [{"x": i} for i in range(1000)]
         
         # Should have tracked something
         assert hasattr(tracker, 'delta_mb')

@@ -305,7 +305,7 @@ def test_performance_benchmark(reporter: ComplianceReporter) -> None:
     # Benchmark JSON generation
     start_time = time.time()
     for evidence in evidence_chains:
-        report = reporter.generate_report(
+        reporter.generate_report(
             session_id=evidence['session_id'],
             query=evidence['query'],
             answer=evidence['answer'],

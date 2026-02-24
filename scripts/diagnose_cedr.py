@@ -103,7 +103,7 @@ for label, passed in results.items():
     marker = "PASS" if passed else "FAIL"
     print(f"  [{marker}] {label}")
 print()
-cedr_total = sum(1 for l in results if "corruption" in l.lower())
-cedr_ok = sum(1 for l, p in results.items() if "corruption" in l.lower() and p)
+cedr_total = sum(1 for ln in results if "corruption" in ln.lower())
+cedr_ok = sum(1 for ln, p in results.items() if "corruption" in ln.lower() and p)
 print(f"  CEDR score (corruption cases): {cedr_ok}/{cedr_total}")
 print()

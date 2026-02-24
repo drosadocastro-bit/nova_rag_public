@@ -260,7 +260,7 @@ def parallel_embedding_retrieval(
     def _retrieve():
         """Inner function to run in thread."""
         # Encode query (usually fast, but parallelization helps on first request)
-        query_embedding = embedding_model.encode([query], convert_to_numpy=True)[0]
+        _ = embedding_model.encode([query], convert_to_numpy=True)[0]
         
         # If cross-encoder provided, rerank
         if cross_encoder and len(docs) > 0:

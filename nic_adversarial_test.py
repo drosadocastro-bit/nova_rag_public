@@ -292,7 +292,7 @@ def evaluate_response(response: Dict, expected_behavior: str, question: str) -> 
     if isinstance(data.get("confidence"), str):
         try:
             confidence = float(data.get("confidence", "0").rstrip("%")) / 100
-        except:
+        except Exception:
             confidence = 0.0
     elif isinstance(data.get("confidence"), (int, float)):
         confidence = float(data.get("confidence", 0))

@@ -88,11 +88,10 @@ class PotatoHardwareTestSuite:
         
         start_time = time.time()
         error = None
-        passed = False
-        
+
         try:
             result = test_func(*args, **kwargs)
-            passed = result is not False
+            _ = result is not False
             
         except MemoryError as e:
             error = f"MemoryError: {e}"
@@ -467,7 +466,7 @@ class PotatoHardwareTestSuite:
         try:
             model = lazy.load()
             return model == "fallback_model"
-        except:
+        except Exception:
             # Fallback handling varies based on logging
             return True
     
@@ -478,7 +477,7 @@ class PotatoHardwareTestSuite:
         from core.lazy_loading import ModelRegistry
         
         # Should initialize quickly
-        registry = ModelRegistry()
+        _ = ModelRegistry()
         
         duration = time.time() - start
         
