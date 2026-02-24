@@ -18,7 +18,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core.compliance.report_generator import ComplianceReport, ComplianceReporter
+from core.compliance.report_generator import ComplianceReporter
 
 logging.basicConfig(
     level=logging.INFO,
@@ -272,7 +272,7 @@ def test_aggregate_stats(reporter: ComplianceReporter) -> None:
     # Generate stats
     stats = reporter.generate_aggregate_stats(reports)
     
-    logger.info(f"\nAggregate Statistics:")
+    logger.info("\nAggregate Statistics:")
     logger.info(f"  Total queries: {stats['total_queries']}")
     logger.info(f"  Domain distribution: {stats['domains']}")
     logger.info(f"  Anomalies flagged: {stats['anomaly_detection']['total_flagged']} " +
@@ -315,7 +315,7 @@ def test_performance_benchmark(reporter: ComplianceReporter) -> None:
     
     avg_time_ms = (elapsed / num_reports) * 1000
     
-    logger.info(f"\nJSON Generation Benchmark:")
+    logger.info("\nJSON Generation Benchmark:")
     logger.info(f"  Total reports: {num_reports}")
     logger.info(f"  Total time: {elapsed:.2f}s")
     logger.info(f"  Average: {avg_time_ms:.2f} ms per report")
@@ -323,13 +323,13 @@ def test_performance_benchmark(reporter: ComplianceReporter) -> None:
     
     # Performance targets
     if avg_time_ms < 50:
-        logger.info(f"✓ EXCELLENT performance (< 50ms)")
+        logger.info("✓ EXCELLENT performance (< 50ms)")
     elif avg_time_ms < 100:
-        logger.info(f"✓ GOOD performance (< 100ms)")
+        logger.info("✓ GOOD performance (< 100ms)")
     elif avg_time_ms < 200:
-        logger.info(f"✓ ACCEPTABLE performance (< 200ms)")
+        logger.info("✓ ACCEPTABLE performance (< 200ms)")
     else:
-        logger.warning(f"⚠ SLOW performance (> 200ms)")
+        logger.warning("⚠ SLOW performance (> 200ms)")
     
     logger.info("✓ Performance benchmark complete")
 

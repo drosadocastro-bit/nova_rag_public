@@ -8,9 +8,7 @@ Tests the semantic similarity-based safety detection including:
 - Confidence scoring
 """
 
-from unittest.mock import Mock, patch, MagicMock
 
-import pytest
 
 
 class TestSemanticSafetyDetectorInit:

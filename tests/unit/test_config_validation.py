@@ -4,9 +4,6 @@ Tests for Configuration Validation Module.
 Tests config schema validation, profile requirements, and startup validation.
 """
 
-import pytest
-from unittest.mock import patch
-import os
 
 from core.config.validation import (
     validate_config,

@@ -25,7 +25,7 @@ from core.utils.text_processing import (
     load_pdf_text_with_pages,
     split_text,
 )
-from core.monitoring.logger_config import get_logger, log_retrieval_event
+from core.monitoring.logger_config import get_logger
 from core.async_wrapper import batch_encode_async  # Stage 2: ThreadPool for embeddings
 
 # Initialize structured logger
@@ -829,10 +829,10 @@ def _load_bm25_index() -> bool:
             from secure_cache import secure_pickle_load
             try:
                 data = secure_pickle_load(BM25_CACHE_PATH)
-            except ValueError as hmac_error:
+            except ValueError:
                 # HMAC verification failed - cache key changed or file corrupted
                 # Delete invalid cache and rebuild
-                print(f"[NovaRAG] BM25 cache verification failed (key changed); deleting and rebuilding...")
+                print("[NovaRAG] BM25 cache verification failed (key changed); deleting and rebuilding...")
                 BM25_CACHE_PATH.unlink(missing_ok=True)
                 BM25_CORPUS_HASH_PATH.unlink(missing_ok=True)
                 return False

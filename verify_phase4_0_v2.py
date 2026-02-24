@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from core.governance.model_registry import ModelRegistry, PerformanceMetrics
-from core.governance.use_case_registry import UseCaseRegistry, ImpactLevel
+from core.governance.use_case_registry import UseCaseRegistry
 from core.governance.access_control import AccessControl, Role, Permission, ApprovalAction
 from core.governance.compliance_reporting import ComplianceReporter, IncidentCategory, IncidentSeverity
 from core.governance.sla_management import SLAManager, SLAMetrics
@@ -242,9 +242,9 @@ def main():
         print("\n" + "=" * 70)
         print("  VERIFICATION COMPLETE")
         print("=" * 70)
-        print(f"\n✓ All components operational")
-        print(f"✓ All workflows tested")
-        print(f"✓ Integration verified")
+        print("\n✓ All components operational")
+        print("✓ All workflows tested")
+        print("✓ Integration verified")
         print(f"\nTotal time: {elapsed:.2f} seconds")
         print(f"Database directory: {TEMP_DIR}\n")
         

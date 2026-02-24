@@ -1,13 +1,10 @@
 """Tests for enhanced query cache module."""
 
-import os
 import tempfile
 import time
 from pathlib import Path
 from typing import Optional
-from unittest.mock import MagicMock, patch
 
-import pytest
 
 from core.caching.query_cache import (
     CacheEntry,

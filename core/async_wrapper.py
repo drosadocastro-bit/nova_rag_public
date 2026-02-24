@@ -17,7 +17,7 @@ Operations:
 from __future__ import annotations
 
 import threading
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError, as_completed
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from typing import Optional, Any, Callable, List, Dict
 import logging
 from time import time

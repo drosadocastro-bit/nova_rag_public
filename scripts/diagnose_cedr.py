@@ -2,8 +2,6 @@
 """Quick diagnostic for CORRUPT-001 CEDR scoring — tests the quality gate."""
 import requests
 import json
-import re
-import sys
 
 ABSTAIN_MARKERS = [
     "provided manual does not specify",
@@ -73,7 +71,7 @@ def diagnose_case(label, query):
     if isinstance(answer_raw, dict):
         print(f"  response_type: {answer_raw.get('response_type', 'N/A')}")
     print()
-    print(f"  Answer (first 300 chars):")
+    print("  Answer (first 300 chars):")
     print(f"    {answer_text[:300]}")
     print()
 

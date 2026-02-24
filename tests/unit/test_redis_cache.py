@@ -11,7 +11,7 @@ Tests the Redis caching layer including:
 
 import json
 import time
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -408,4 +408,3 @@ class TestGlobalCacheFunctions:
                 assert retrieved is cache
 
 
-import asyncio  # Import for async tests

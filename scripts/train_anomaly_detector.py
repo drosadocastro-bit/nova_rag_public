@@ -370,7 +370,7 @@ def train_autoencoder(
                 f"Val Loss: {val_loss:.6f}"
             )
     
-    logging.info(f"\nTraining complete!")
+    logging.info("\nTraining complete!")
     logging.info(f"Best validation loss: {metrics['best_val_loss']:.6f} at epoch {metrics['best_epoch']+1}")
     
     return model, metrics
@@ -404,7 +404,7 @@ def compute_anomaly_threshold(
     
     threshold = np.percentile(errors, percentile)
     
-    logging.info(f"\nAnomaly Detection Threshold:")
+    logging.info("\nAnomaly Detection Threshold:")
     logging.info(f"  Percentile: {percentile}%")
     logging.info(f"  Threshold: {threshold:.6f}")
     logging.info(f"  Mean error: {np.mean(errors):.6f}")
@@ -530,7 +530,7 @@ def main():
     logging.info(f"   ✓ Model loaded (dimension: {embedder.get_sentence_embedding_dimension()})")
     
     # Load normal queries
-    logging.info(f"\n2. Loading normal queries...")
+    logging.info("\n2. Loading normal queries...")
     queries = load_normal_queries(args.query_files)
     
     # Add synthetic queries
@@ -541,11 +541,11 @@ def main():
         logging.info(f"   ✓ Total queries: {len(queries)}")
     
     # Embed queries
-    logging.info(f"\n4. Embedding queries...")
+    logging.info("\n4. Embedding queries...")
     embeddings = embed_queries(queries, embedder)
     
     # Train autoencoder
-    logging.info(f"\n5. Training autoencoder...")
+    logging.info("\n5. Training autoencoder...")
     model, metrics = train_autoencoder(
         embeddings,
         epochs=args.epochs,
@@ -555,7 +555,7 @@ def main():
     )
     
     # Compute threshold
-    logging.info(f"\n6. Computing anomaly detection threshold...")
+    logging.info("\n6. Computing anomaly detection threshold...")
     threshold = compute_anomaly_threshold(
         model,
         embeddings,
@@ -564,7 +564,7 @@ def main():
     )
     
     # Test on anomalous queries
-    logging.info(f"\n7. Testing on anomalous queries...")
+    logging.info("\n7. Testing on anomalous queries...")
     test_results = test_on_anomalous_queries(model, embedder, threshold, args.device)
     
     # Save model
@@ -572,7 +572,7 @@ def main():
     config_path = Path(args.output_dir) / "anomaly_detector_v1.0_config.json"
     metrics_path = Path(args.output_dir) / "anomaly_detector_v1.0_metrics.json"
     
-    logging.info(f"\n8. Saving model and config...")
+    logging.info("\n8. Saving model and config...")
     
     # Save model weights
     torch.save(model.state_dict(), output_path)
@@ -610,16 +610,16 @@ def main():
     logging.info("\n" + "=" * 70)
     logging.info("✓ TASK 8 COMPLETE")
     logging.info("=" * 70)
-    logging.info(f"\nModel Performance:")
+    logging.info("\nModel Performance:")
     logging.info(f"  Training queries: {len(queries)}")
     logging.info(f"  Best validation loss: {metrics['best_val_loss']:.6f}")
     logging.info(f"  Anomaly threshold: {threshold:.6f}")
     logging.info(f"  Detection rate on test anomalies: {test_results['detection_rate']:.1f}%")
-    logging.info(f"\nUsage:")
-    logging.info(f"  from scripts.train_anomaly_detector import QueryAutoencoder")
-    logging.info(f"  model = QueryAutoencoder()")
+    logging.info("\nUsage:")
+    logging.info("  from scripts.train_anomaly_detector import QueryAutoencoder")
+    logging.info("  model = QueryAutoencoder()")
     logging.info(f"  model.load_state_dict(torch.load('{output_path}'))")
-    logging.info(f"  model.eval()")
+    logging.info("  model.eval()")
     logging.info("=" * 70)
 
 

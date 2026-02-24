@@ -14,7 +14,6 @@ import hashlib
 import json
 import logging
 import os
-import queue
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed

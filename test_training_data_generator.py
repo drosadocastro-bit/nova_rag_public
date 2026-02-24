@@ -139,7 +139,7 @@ Symptoms of brake fade include:
         print(f"\n✅ Generated {len(pairs)} training pairs")
         
         if pairs:
-            print(f"\n📊 Sample pairs:")
+            print("\n📊 Sample pairs:")
             for i, pair in enumerate(pairs[:3], 1):
                 print(f"\n   Pair {i}:")
                 print(f"      Query: {pair['query'][:60]}...")

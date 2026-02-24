@@ -9,7 +9,7 @@ Tests the distributed session management including:
 """
 
 import time
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -202,7 +202,6 @@ class TestRedisSessionStoreMocked:
         
         # Create serialized session data
         import pickle
-        import zlib
         
         original = Session(
             session_id="test-123",

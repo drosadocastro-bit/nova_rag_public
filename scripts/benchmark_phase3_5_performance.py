@@ -17,7 +17,7 @@ import json
 import time
 import statistics
 import requests
-from typing import Dict, List, Tuple
+from typing import Dict
 from datetime import datetime
 
 # Configuration

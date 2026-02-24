@@ -9,7 +9,6 @@ Usage:
     python scripts/test_potato_hardware.py [--memory-limit-mb 512] [--slow-storage]
 """
 
-import os
 import sys
 import json
 import time
@@ -17,7 +16,7 @@ import psutil
 import argparse
 from pathlib import Path
 from dataclasses import dataclass
-from typing import List, Tuple, Optional
+from typing import List, Optional
 
 # Add project root
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -52,12 +51,12 @@ class PotatoHardwareTestSuite:
         self.process = psutil.Process()
         
         print(f"\n{'='*70}")
-        print(f"NOVA NIC - POTATO HARDWARE TEST SUITE")
+        print("NOVA NIC - POTATO HARDWARE TEST SUITE")
         print(f"{'='*70}")
-        print(f"\nTest Configuration:")
+        print("\nTest Configuration:")
         print(f"  Memory Limit: {memory_limit_mb}MB")
         print(f"  Slow Storage Simulation: {slow_storage}")
-        print(f"\nSystem Info:")
+        print("\nSystem Info:")
         print(f"  Total RAM: {psutil.virtual_memory().total / 1024 / 1024 / 1024:.1f}GB")
         print(f"  Available RAM: {psutil.virtual_memory().available / 1024 / 1024 / 1024:.1f}GB")
         print(f"  CPU Cores: {psutil.cpu_count()}")
@@ -97,10 +96,10 @@ class PotatoHardwareTestSuite:
             
         except MemoryError as e:
             error = f"MemoryError: {e}"
-            print(f"ERROR (OOM)")
+            print("ERROR (OOM)")
         except Exception as e:
             error = f"{type(e).__name__}: {e}"
-            print(f"ERROR")
+            print("ERROR")
         else:
             duration = time.time() - start_time
             mem_info = self.process.memory_info()
@@ -386,7 +385,6 @@ class PotatoHardwareTestSuite:
     def _test_tiered_cache(self):
         """Test tiered cache (L1/L2)."""
         from core.hardware_aware_cache import TieredCache
-        import json
         
         cache = TieredCache("lite")
         
@@ -509,19 +507,19 @@ class PotatoHardwareTestSuite:
         total_duration = sum(r.duration_seconds for r in self.results)
         total_memory = sum(r.memory_delta_mb for r in self.results)
         
-        print(f"Performance Summary:")
+        print("Performance Summary:")
         print(f"  Total Duration: {total_duration:.2f}s")
         print(f"  Total Memory Delta: +{total_memory:.1f}MB")
         print(f"  Average per Test: {total_duration/total:.2f}s, +{total_memory/total:.1f}MB")
         
         # Acceptance criteria for potato hardware
-        print(f"\nAcceptance Criteria (Potato Hardware: <512MB, <1GB RAM):")
+        print("\nAcceptance Criteria (Potato Hardware: <512MB, <1GB RAM):")
         max_memory = max((r.memory_delta_mb for r in self.results), default=0)
         print(f"  [OK] Max per-test memory: {max_memory:.1f}MB")
         print(f"  [OK] Total runtime: {total_duration:.2f}s")
         
         if passed == total:
-            print(f"\n[PASS] ALL TESTS PASSED - NIC READY FOR POTATO HARDWARE")
+            print("\n[PASS] ALL TESTS PASSED - NIC READY FOR POTATO HARDWARE")
         else:
             print(f"\n[WARN] {failed} tests failed - review before deployment")
         

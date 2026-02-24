@@ -18,7 +18,7 @@ import tracemalloc
 import traceback
 from pathlib import Path
 from dataclasses import dataclass, asdict
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List
 from datetime import datetime
 
 # Add project root
@@ -191,7 +191,7 @@ class ResourceProfiler:
         self.profiles.append(profile)
         
         # Print summary
-        print(f"\nProfile Summary:")
+        print("\nProfile Summary:")
         print(f"  Duration:     {duration:.2f}s")
         print(f"  Peak Memory:  {peak_memory:.1f} MB")
         print(f"  Memory Delta: {final_rss - initial_rss:+.1f} MB")
@@ -394,9 +394,9 @@ def main():
     args = parser.parse_args()
     
     print(f"\n{'='*70}")
-    print(f"NOVA NIC - RESOURCE USAGE PROFILER")
+    print("NOVA NIC - RESOURCE USAGE PROFILER")
     print(f"{'='*70}")
-    print(f"\nTarget: Potato Hardware Optimization")
+    print("\nTarget: Potato Hardware Optimization")
     print(f"Mode: {args.mode.upper()}")
     print(f"Output: {args.output}")
     
@@ -434,7 +434,7 @@ def main():
     
     # Print summary
     print(f"\n{'='*70}")
-    print(f"PROFILING SUMMARY")
+    print("PROFILING SUMMARY")
     print(f"{'='*70}")
     
     summary = report["summary"]
@@ -444,11 +444,11 @@ def main():
         print(f"Total Memory Overhead: {summary['total_memory_overhead_mb']:.1f}MB")
         print(f"Peak Memory Overall: {summary['peak_memory_overall_mb']:.1f}MB")
         
-        print(f"\nHeaviest Components:")
+        print("\nHeaviest Components:")
         for comp in summary["heaviest_components"]:
             print(f"  • {comp['name']}: {comp['memory_mb']:.1f}MB ({comp['duration_s']:.2f}s)")
         
-        print(f"\nOptimization Recommendations:")
+        print("\nOptimization Recommendations:")
         for rec in summary["recommendations"]:
             print(f"  {rec}")
     

@@ -9,12 +9,9 @@ Provides memory-efficient embedding operations including:
 - Fallback mechanisms for potato hardware
 """
 
-import os
 import logging
 import numpy as np
 from typing import List, Optional, Tuple, Union
-from pathlib import Path
-import json
 
 logger = logging.getLogger(__name__)
 

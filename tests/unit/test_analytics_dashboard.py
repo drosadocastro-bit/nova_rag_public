@@ -4,9 +4,7 @@ Tests for Analytics Dashboard Module.
 Tests dashboard summary, latency breakdown, and domain analytics functions.
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
-from datetime import datetime
 
 from core.monitoring.analytics_dashboard import (
     get_dashboard_summary,

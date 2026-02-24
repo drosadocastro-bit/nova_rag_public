@@ -8,7 +8,6 @@ import json
 import time
 import requests
 from datetime import datetime
-from pathlib import Path
 
 # Configuration
 BASE_URL = "http://localhost:5678"
@@ -83,7 +82,7 @@ def test_question(question: str, domain: str, question_id: str):
             }
             
     except requests.exceptions.Timeout:
-        print(f"  ⏱️ Timeout (>180s)")
+        print("  ⏱️ Timeout (>180s)")
         return {
             "question_id": question_id,
             "question": question,
@@ -186,31 +185,31 @@ def analyze_results(all_results):
     with_citations = sum(1 for r in successful if r.get("has_citations", False))
     with_unknown = sum(1 for r in successful if r.get("has_unknown_sources", False))
     
-    print(f"\n[METRICS] PERFORMANCE METRICS")
+    print("\n[METRICS] PERFORMANCE METRICS")
     print(f"  Total Questions: {len(all_results)}")
     print(f"  Successful: {len(successful)}")
     print(f"  Failed: {len(all_results) - len(successful)}")
-    print(f"\n⏱️ LATENCY")
+    print("\n⏱️ LATENCY")
     print(f"  Average: {avg_latency:.0f}ms")
     print(f"  Min: {min_latency}ms")
     print(f"  Max: {max_latency}ms")
-    print(f"\n📚 CITATIONS")
+    print("\n📚 CITATIONS")
     print(f"  With Citations: {with_citations}/{len(successful)} ({with_citations/len(successful)*100:.0f}%)")
     print(f"  With 'unknown': {with_unknown}/{len(successful)} ({with_unknown/len(successful)*100:.0f}%)")
     
     # Viability assessment
-    print(f"\n🎯 VIABILITY ASSESSMENT")
+    print("\n🎯 VIABILITY ASSESSMENT")
     viable = avg_latency < 1200 and len(successful) >= 12
     print(f"  Potato Hardware Viable: {'[YES]' if viable else '[NO]'}")
     
     if avg_latency < 1000:
-        print(f"  Latency Grade: 🟢 Excellent (< 1s)")
+        print("  Latency Grade: 🟢 Excellent (< 1s)")
     elif avg_latency < 1500:
-        print(f"  Latency Grade: 🟡 Good (1-1.5s)")
+        print("  Latency Grade: 🟡 Good (1-1.5s)")
     elif avg_latency < 2000:
-        print(f"  Latency Grade: 🟠 Acceptable (1.5-2s)")
+        print("  Latency Grade: 🟠 Acceptable (1.5-2s)")
     else:
-        print(f"  Latency Grade: 🔴 Poor (> 2s)")
+        print("  Latency Grade: 🔴 Poor (> 2s)")
     
     return {
         "total_questions": len(all_results),

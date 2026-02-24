@@ -10,7 +10,7 @@ import json
 import time
 import os
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 
 
 def _safe_console_text(text: str) -> str:

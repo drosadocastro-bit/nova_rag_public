@@ -9,7 +9,6 @@ Usage:
 """
 
 import sys
-import os
 import argparse
 from pathlib import Path
 
@@ -33,7 +32,7 @@ def main():
     app.config["ENV"] = "production"
     
     print("\n" + "=" * 80)
-    print(f"Starting NIC with Waitress WSGI server")
+    print("Starting NIC with Waitress WSGI server")
     print("=" * 80)
     print(f"Host:        {args.host}")
     print(f"Port:        {args.port}")

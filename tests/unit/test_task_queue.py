@@ -11,7 +11,6 @@ Tests async task processing including:
 
 import asyncio
 import time
-from unittest.mock import Mock, patch
 
 import pytest
 
@@ -21,7 +20,6 @@ from core.async_pipeline.task_queue import (
     TaskResult,
     TaskPriority,
     TaskProgress,
-    TaskDefinition,
     background_task,
 )
 

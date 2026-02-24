@@ -8,9 +8,8 @@ Tests the troubleshooting agent including:
 - JSON schema compliance
 """
 
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 
-import pytest
 
 from agents.troubleshoot_agent import run_troubleshoot
 

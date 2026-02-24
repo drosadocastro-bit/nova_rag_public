@@ -3,7 +3,6 @@ Quick verification script to check for legacy/sensitive references
 Run this to verify the cleanup was successful
 """
 
-import os
 import re
 from pathlib import Path
 
@@ -17,7 +16,7 @@ def check_file(filepath, patterns):
                 if re.search(pattern, content, re.IGNORECASE):
                     count = len(re.findall(pattern, content, re.IGNORECASE))
                     matches.append((pattern_name, count))
-    except Exception as e:
+    except Exception:
         pass
     return matches
 

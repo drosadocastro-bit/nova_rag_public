@@ -16,7 +16,6 @@ try:
 
     SECURE_CACHE_AVAILABLE = True
 except ImportError:  # pragma: no cover - fallback path
-    import pickle  # type: ignore
 
     SECURE_CACHE_AVAILABLE = False
     secure_pickle_dump = None  # type: ignore

@@ -4,9 +4,7 @@ Tests for Operational Anomaly Detection Module.
 Tests anomaly detection for latency spikes, error rates, and traffic patterns.
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
-from datetime import datetime
 
 from core.monitoring.operational_anomaly import (
     OperationalAnomalyDetector,

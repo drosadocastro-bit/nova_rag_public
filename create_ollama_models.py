@@ -1,5 +1,4 @@
 import requests
-import json
 import glob
 
 # Find the actual GGUF files in the new locations

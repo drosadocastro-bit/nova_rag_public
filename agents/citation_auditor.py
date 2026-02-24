@@ -11,9 +11,7 @@ Key Features:
 - Supports "strict mode" where uncited answers are rejected
 """
 
-import json
 import re
-from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 import logging
 

@@ -5,8 +5,6 @@ Session management utilities shared between Flask/Gradio frontends.
 from __future__ import annotations
 
 from datetime import datetime
-from pathlib import Path
-from typing import Optional
 
 from agents.session_store import (
     generate_session_id,

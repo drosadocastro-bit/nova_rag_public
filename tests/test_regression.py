@@ -5,7 +5,6 @@ Tests core functionality and known edge cases.
 import pytest
 import os
 import sys
-from unittest.mock import patch, MagicMock
 
 # Ensure project root is in path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
@@ -317,7 +316,6 @@ class TestBackwardsCompatibility:
         try:
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always")
-                import cache_utils
                 
                 # Should have raised deprecation warning
                 deprecation_warnings = [

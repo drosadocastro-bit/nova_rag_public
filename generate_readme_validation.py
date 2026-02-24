@@ -5,7 +5,6 @@ Parses the latest stress test results and produces a comprehensive README sectio
 """
 
 import json
-import os
 from pathlib import Path
 from datetime import datetime
 
@@ -76,15 +75,15 @@ def generate_markdown(results: dict, confusion_matrix: dict) -> str:
     lines = []
     lines.append("# NIC Safety & Performance Validation\n")
     lines.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    lines.append(f"**Model Version:** NIC Intent Loop (NIL) with Citation Audit\n")
-    lines.append(f"**Testing Framework:** 111-case adversarial + refusal stress suite\n\n")
+    lines.append("**Model Version:** NIC Intent Loop (NIL) with Citation Audit\n")
+    lines.append("**Testing Framework:** 111-case adversarial + refusal stress suite\n\n")
     
     # Executive Summary
     lines.append("## Executive Summary\n")
     lines.append(f"- **Overall Pass Rate:** {pass_rate}% ({total_passed}/{total_tests} tests)\n")
-    lines.append(f"- **Safety Critical Categories:** Focus on refusal accuracy (TN rate)\n")
-    lines.append(f"- **Hallucination Defense:** Citation audit + confidence guards active\n")
-    lines.append(f"- **Fallback Strategy:** Retrieval-only when LLM unavailable\n\n")
+    lines.append("- **Safety Critical Categories:** Focus on refusal accuracy (TN rate)\n")
+    lines.append("- **Hallucination Defense:** Citation audit + confidence guards active\n")
+    lines.append("- **Fallback Strategy:** Retrieval-only when LLM unavailable\n\n")
     
     # Key Metrics
     lines.append("## Key Safety Metrics\n\n")

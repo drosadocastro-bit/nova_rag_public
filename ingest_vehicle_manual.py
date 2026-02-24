@@ -2,9 +2,7 @@
 Ingest technical manuals (PDFs) into FAISS vector database for NIC Public.
 """
 
-import os
 import sys
-import json
 from pathlib import Path
 
 # Add project root to path
@@ -20,14 +18,14 @@ def main():
     
     # Scan for PDFs
     print(f"\n📂 Scanning for PDFs in: {DOCS_DIR}")
-    print(f"   (Searching recursively in all subdirectories)")
+    print("   (Searching recursively in all subdirectories)")
     
     # List all PDFs found
     pdf_files = sorted(DOCS_DIR.rglob("*.pdf"))
     
     if not pdf_files:
         print(f"\n❌ ERROR: No PDF files found in {DOCS_DIR}")
-        print(f"   Please add PDF manuals to the data/ directory")
+        print("   Please add PDF manuals to the data/ directory")
         return
     
     print(f"\n✅ Found {len(pdf_files)} PDF files:")
@@ -41,7 +39,7 @@ def main():
     print(f"\n📊 Total: {len(pdf_files)} files, {total_size:.1f} MB")
     
     # Build index
-    print(f"\n🔨 Building FAISS vector index...")
+    print("\n🔨 Building FAISS vector index...")
     print(f"   Index will be saved to: {INDEX_PATH}")
     print(f"   Metadata will be saved to: {DOCS_PATH}")
     
@@ -52,13 +50,13 @@ def main():
             print("\n⚠️  WARNING: No embeddings created (fallback mode)")
             print(f"   Created {len(chunks)} text chunks for lexical search only")
         else:
-            print(f"\n✅ Index built successfully!")
+            print("\n✅ Index built successfully!")
             print(f"   Total vectors: {index.ntotal}")
             print(f"   Total chunks: {len(chunks)}")
             print(f"   Vector dimension: {index.d}")
         
         # Show sample documents
-        print(f"\n📄 Sample indexed documents:")
+        print("\n📄 Sample indexed documents:")
         for i, doc in enumerate(chunks[:3]):
             source = doc.get('source', 'unknown')
             page = doc.get('page', '?')
@@ -72,10 +70,10 @@ def main():
         print(f"📁 Index location: {INDEX_PATH}")
         print(f"📁 Docs location: {DOCS_PATH}")
         print(f"📊 Total chunks: {len(chunks)}")
-        print(f"\n🚀 Next step: Start the FastAPI server:")
-        print(f"   .\\start_fastapi_qwen4b.ps1")
-        print(f"   OR")
-        print(f"   python -m uvicorn nova_fastapi_app:app --host 127.0.0.1 --port 5678")
+        print("\n🚀 Next step: Start the FastAPI server:")
+        print("   .\\start_fastapi_qwen4b.ps1")
+        print("   OR")
+        print("   python -m uvicorn nova_fastapi_app:app --host 127.0.0.1 --port 5678")
         print("="*70)
         
     except Exception as e:

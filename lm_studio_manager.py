@@ -13,7 +13,6 @@ import time
 import os
 import requests
 import sys
-from pathlib import Path
 
 LM_STUDIO_PORT = 1234
 LM_STUDIO_HOST = "127.0.0.1"
@@ -85,7 +84,7 @@ def start_lm_studio_server():
         print(f"[LMStudioManager] LM Studio process started (PID: {process.pid})")
         
         # Wait for server to be ready
-        print(f"[LMStudioManager] Waiting for LM Studio to be ready...", end="", flush=True)
+        print("[LMStudioManager] Waiting for LM Studio to be ready...", end="", flush=True)
         for attempt in range(LM_STUDIO_MAX_RETRIES):
             if is_lm_studio_running():
                 print(" ✓ Ready!")

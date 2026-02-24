@@ -16,8 +16,7 @@ import logging
 import json
 import time
 import zlib
-from typing import Any, Optional, Dict, Tuple
-from collections import OrderedDict
+from typing import Any, Optional, Dict
 from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)

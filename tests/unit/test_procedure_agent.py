@@ -8,9 +8,8 @@ Tests the procedure extraction agent including:
 - JSON schema compliance
 """
 
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 
-import pytest
 
 from agents.procedure_agent import run_procedure
 

@@ -2,7 +2,6 @@
 Unit tests for health check endpoints.
 Tests /health, /health/ready, and /health/live endpoints.
 """
-import pytest
 import os
 import sys
 from unittest.mock import patch, MagicMock

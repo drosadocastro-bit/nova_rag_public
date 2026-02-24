@@ -25,7 +25,6 @@ if os.environ.get("NOVA_SUPPRESS_CACHE_UTILS_DEPRECATION", "0") != "1":
         stacklevel=2,
     )
 import hashlib
-import json
 from pathlib import Path
 from functools import wraps
 from typing import List, Dict, Any, Optional, Callable
@@ -39,7 +38,6 @@ try:
     SECURE_CACHE_AVAILABLE = True
 except ImportError:
     # Fallback to regular pickle if secure_cache not available
-    import pickle
     SECURE_CACHE_AVAILABLE = False
     print("[WARNING] secure_cache module not found, using standard pickle (less secure)")
 
@@ -116,7 +114,7 @@ def load_retrieval_cache():
             print(f"[Cache] Loaded {len(_retrieval_cache)} retrieval cache entries")
         except Exception as e:
             print(f"[Cache] Failed to load retrieval cache: {e}")
-            print(f"[Cache] Cache file may be corrupted or from different SECRET_KEY. Clearing cache.")
+            print("[Cache] Cache file may be corrupted or from different SECRET_KEY. Clearing cache.")
             # Clear corrupted cache
             _retrieval_cache = {}
             if _retrieval_cache_file.exists():

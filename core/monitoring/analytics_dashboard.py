@@ -32,9 +32,7 @@ import sqlite3
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional
-import json
-import os
+from typing import Any
 
 # Database path (same as analytics.py)
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -186,7 +184,7 @@ def get_dashboard_summary(hours: int = 24) -> DashboardSummary:
             generated_at=datetime.now().isoformat(),
         )
         
-    except Exception as e:
+    except Exception:
         # Return empty summary on error
         return DashboardSummary(
             period_hours=hours,

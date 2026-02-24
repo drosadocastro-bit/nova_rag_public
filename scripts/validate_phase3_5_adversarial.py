@@ -16,7 +16,7 @@ import sys
 import json
 import time
 import requests
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 from datetime import datetime
 
 # Configuration

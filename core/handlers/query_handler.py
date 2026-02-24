@@ -15,8 +15,7 @@ Stage 3 Goal: Separate business logic from web framework adapter code.
 """
 
 from __future__ import annotations
-from typing import Any, Dict, Optional, Tuple, Callable
-from pathlib import Path
+from typing import Any, Dict, Optional
 
 import os
 import re
@@ -24,7 +23,7 @@ import re
 from agents import agent_router
 from core.safety import handle_injection_and_multi_query
 from core.safety.output_sanitizer import sanitize_output  # LLM02 defense: post-generation sanitization
-from core.signal_path_engine_legacy import SignalPathEngine, run_signal_path_diagnosis
+from core.signal_path_engine_legacy import run_signal_path_diagnosis
 from core.utils.search_history import SearchHistory
 from response_normalizer import normalize_response
 

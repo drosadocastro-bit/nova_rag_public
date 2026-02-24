@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Remove all Unicode emojis from agent_router.py"""
 
-import re
 
 file_path = r'c:\nova_rag_public\agents\agent_router.py'
 

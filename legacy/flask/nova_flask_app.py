@@ -4,10 +4,7 @@ from flask_limiter.util import get_remote_address
 import os
 import backend as backend_mod
 from backend import (
-    nova_text_handler, check_ollama_connection, export_session_to_text,
-    save_session_report, session_state, list_recent_sessions,
-    reset_session, start_new_session, retrieve as _retrieve_uncached, build_index,
-    vision_model, vision_embeddings, vision_paths
+    nova_text_handler, check_ollama_connection, session_state, retrieve as _retrieve_uncached
 )
 import analytics
 import re
@@ -16,23 +13,20 @@ import hmac
 from pathlib import Path
 import time
 from collections import OrderedDict
-from core.safety import risk_assessment as safety_metrics, get_defense_layers
+from core.safety import get_defense_layers
 from core.safety.output_sanitizer import strip_all_html  # LLM02 defense
 from core.monitoring import (
     record_query,
     observe_query_latency,
     set_retrieval_confidence,
     record_hallucination_prevention,
-    set_active_sessions,
     record_cache_hit,
     record_cache_miss,
 )
 from core.monitoring.prometheus_metrics import generate_metrics, get_content_type
 from core.monitoring.logger_config import (
     get_logger,
-    QueryContext,
     log_query,
-    log_safety_event,
     log_startup_config,
 )
 from core.phase3_5.neural_advisory import get_neural_advisory_layer
@@ -93,7 +87,6 @@ logger.info("Nova NIC starting", extra={
 
 if os.environ.get("NOVA_WARMUP_ON_START", "0") == "1":
     try:
-        import warmup_backend  # type: ignore[import-not-found]  # Optional module
         logger.info("Backend warmup complete")
     except Exception as e:
         logger.warning("Backend warmup skipped", extra={"reason": str(e)})
@@ -737,7 +730,6 @@ def run_startup_validation():
     # 3. Check FAISS index existence and integrity
     print("\n[3/5] Checking FAISS index...")
     try:
-        from pathlib import Path
         index_path = BASE_DIR / "vector_db" / "nic_index.faiss"
         docs_path = BASE_DIR / "vector_db" / "nic_docs.jsonl"
         

@@ -11,7 +11,6 @@ Tests the async query pipeline including:
 
 import asyncio
 import time
-from unittest.mock import Mock, patch
 
 import pytest
 

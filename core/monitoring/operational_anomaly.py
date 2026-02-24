@@ -32,8 +32,6 @@ from enum import Enum
 from pathlib import Path
 from threading import Lock
 from typing import Any, Optional
-import json
-import os
 
 from core.monitoring.logger_config import get_logger, log_safety_event
 

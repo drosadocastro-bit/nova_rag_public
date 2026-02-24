@@ -15,7 +15,6 @@ import json
 
 from core.indexing import (
     CorpusManifest,
-    FileChange,
     ChangeType,
     compute_file_hash,
     detect_changes,

@@ -10,10 +10,7 @@ Comprehensive tests for:
 """
 
 import pytest
-import json
 import time
-from pathlib import Path
-from datetime import datetime, timedelta
 
 # Import observability components
 from core.observability import (
@@ -23,7 +20,6 @@ from core.observability import (
     AlertRule,
     AlertSeverity,
     QueryLog,
-    MetricPoint,
 )
 from core.notifications import (
     NotificationManager,

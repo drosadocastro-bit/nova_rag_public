@@ -186,7 +186,7 @@ class TestCircuitBreakerIntegration:
     @pytest.mark.asyncio
     async def test_circuit_opens_after_failures(self):
         """Test circuit breaker opens after threshold failures."""
-        from core.async_pipeline.query_handler import AsyncQueryHandler, CircuitBreakerState
+        from core.async_pipeline.query_handler import AsyncQueryHandler
         
         fail_count = 0
         

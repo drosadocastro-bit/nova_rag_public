@@ -120,7 +120,7 @@ def test_access_control():
         # Create user
         print("✓ Creating user...")
         ac.create_user("user_1", "user1@example.com")
-        print(f"  User ID: user_1")
+        print("  User ID: user_1")
         
         # Assign role
         print("✓ Assigning role...")
@@ -312,9 +312,9 @@ def main():
         print("\n" + "=" * 70)
         print("  VERIFICATION COMPLETE")
         print("=" * 70)
-        print(f"\n✓ All components operational")
-        print(f"✓ All workflows tested")
-        print(f"✓ Integration verified")
+        print("\n✓ All components operational")
+        print("✓ All workflows tested")
+        print("✓ Integration verified")
         print(f"\nTotal time: {elapsed:.2f} seconds\n")
         
         return 0

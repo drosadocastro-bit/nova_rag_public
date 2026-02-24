@@ -101,11 +101,11 @@ def main():
     normal_flagged = sum(1 for score in normal_scores if score > detector.config['threshold'])
     anomalous_detected = sum(1 for score in anomalous_scores if score > detector.config['threshold'])
     
-    logger.info(f"\nNormal Queries:")
+    logger.info("\nNormal Queries:")
     logger.info(f"  Average score: {normal_avg:.6f}")
     logger.info(f"  False positives: {normal_flagged}/{len(normal_queries)} ({normal_flagged/len(normal_queries)*100:.1f}%)")
     
-    logger.info(f"\nAnomalous Queries:")
+    logger.info("\nAnomalous Queries:")
     logger.info(f"  Average score: {anomalous_avg:.6f}")
     logger.info(f"  Detection rate: {anomalous_detected}/{len(anomalous_queries)} ({anomalous_detected/len(anomalous_queries)*100:.1f}%)")
     

@@ -7,7 +7,6 @@ Downloads key Arduino hardware reference pages as HTML files for ingestion.
 import requests
 from pathlib import Path
 import logging
-from typing import List, Dict
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)

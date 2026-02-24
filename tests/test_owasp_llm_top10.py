@@ -34,7 +34,7 @@ import time
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple, Any, Optional, Union, TYPE_CHECKING
+from typing import Dict, List, Any, Optional, Union, TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
 import requests
@@ -838,7 +838,7 @@ class OWASPLLMTestSuite:
         print("=" * 80)
         
         # Overall stats
-        print(f"\n🎯 OVERALL RESULTS")
+        print("\n🎯 OVERALL RESULTS")
         print(f"   Total Tests: {summary['total_tests']}")
         print(f"   ✅ Passed: {summary['results'].get('PASS', 0)}")
         print(f"   ❌ Failed: {summary['results'].get('FAIL', 0)}")
@@ -852,10 +852,10 @@ class OWASPLLMTestSuite:
             for test_id in summary['critical_failure_ids']:
                 print(f"   ❌ {test_id}")
         else:
-            print(f"\n✅ No critical vulnerabilities detected")
+            print("\n✅ No critical vulnerabilities detected")
         
         # Category breakdown
-        print(f"\n📋 RESULTS BY CATEGORY:")
+        print("\n📋 RESULTS BY CATEGORY:")
         for cat, results in sorted(summary['category_results'].items()):
             total = results['pass'] + results['fail'] + results['partial'] + results['error']
             pct = (results['pass'] / total * 100) if total > 0 else 0
@@ -863,7 +863,7 @@ class OWASPLLMTestSuite:
             print(f"   {status} {cat}: {results['pass']}/{total} passed ({pct:.0f}%)")
         
         # Severity breakdown
-        print(f"\n🎚️  RESULTS BY SEVERITY:")
+        print("\n🎚️  RESULTS BY SEVERITY:")
         for sev in ["critical", "high", "medium", "low"]:
             if sev in summary['severity_results']:
                 data = summary['severity_results'][sev]

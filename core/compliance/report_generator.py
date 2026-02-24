@@ -328,7 +328,7 @@ class ComplianceReporter:
         
         # Response section
         story.append(Paragraph("System Response", heading_style))
-        story.append(Paragraph(f"<b>Answer:</b>", styles['Normal']))
+        story.append(Paragraph("<b>Answer:</b>", styles['Normal']))
         story.append(Spacer(1, 0.05 * inch))
         
         # Wrap long answer text

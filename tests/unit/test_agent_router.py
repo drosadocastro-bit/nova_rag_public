@@ -2,7 +2,6 @@
 Unit tests for agents/agent_router.py
 Tests intent classification, domain detection, and routing logic.
 """
-import pytest
 import os
 import sys
 

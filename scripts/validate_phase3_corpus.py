@@ -228,7 +228,7 @@ class CorpusValidator:
             logger.info(f"      SHA-256: {result.sha256[:16]}...")
         
         if result.requires_ocr:
-            logger.warning(f"      ⚠ Requires OCR")
+            logger.warning("      ⚠ Requires OCR")
         
         if result.errors:
             for error in result.errors:

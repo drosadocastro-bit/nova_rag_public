@@ -4,7 +4,7 @@ Run against a small labeled dataset of unsafe vs. safe queries to find a
 threshold that balances precision and recall.
 """
 
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List
 
 from core.safety.semantic_safety import SemanticSafetyDetector
 

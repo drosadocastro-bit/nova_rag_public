@@ -1,6 +1,5 @@
 import base64
 
-import pytest
 
 from core.safety.risk_assessment import RiskAssessment, RiskLevel
 
