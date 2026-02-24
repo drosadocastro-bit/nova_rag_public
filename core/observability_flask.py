@@ -11,9 +11,8 @@ Integrates observability components into Flask application:
 import time
 import uuid
 from functools import wraps
-from typing import Optional, Dict, Any
 
-from flask import Blueprint, request, jsonify, render_template_string, g
+from flask import Blueprint, request, jsonify, g
 import logging
 
 logger = logging.getLogger(__name__)

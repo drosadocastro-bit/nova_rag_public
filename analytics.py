@@ -7,7 +7,6 @@ import json
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Any
-import time
 
 # Analytics database path
 BASE_DIR = Path(__file__).parent.resolve()

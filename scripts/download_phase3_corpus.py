@@ -13,7 +13,6 @@ import argparse
 import hashlib
 import json
 import logging
-import requests
 from pathlib import Path
 from typing import List, Dict, Optional
 from dataclasses import dataclass, asdict

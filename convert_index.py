@@ -81,7 +81,7 @@ for doc in docs:
     domain_counts[domain] = domain_counts.get(domain, 0) + 1
 
 print(f"\n✅ Converted {len(docs)} chunks to vehicle_docs.jsonl")
-print(f"✅ Copied FAISS index to vehicle_index.faiss")
+print("✅ Copied FAISS index to vehicle_index.faiss")
 print("\nDomain distribution:")
 for domain, count in sorted(domain_counts.items()):
     print(f"  {domain}: {count} chunks")

@@ -63,7 +63,7 @@ def sanitize_prompt_injection(text: str) -> Tuple[str, bool]:
             sanitized = pattern.sub(lambda m: f'[BLOCKED: "{m.group(0).strip()}"]', sanitized)
     
     if injection_detected:
-        logging.warning(f"[SECURITY] Role injection attempt detected and neutralized")
+        logging.warning("[SECURITY] Role injection attempt detected and neutralized")
     
     return sanitized, injection_detected
 

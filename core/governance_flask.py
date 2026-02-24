@@ -13,13 +13,13 @@ from flask import Blueprint, jsonify, request
 from flask.typing import ResponseReturnValue
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from core.governance.access_control import AccessControl, Permission, Role
 from core.governance.compliance_reporting import ComplianceReporter, IncidentCategory, IncidentSeverity
-from core.governance.model_registry import ModelRegistry, DeploymentStatus, ApprovalStatus
-from core.governance.sla_management import SLAManager, SLAMetrics
-from core.governance.use_case_registry import UseCaseRegistry, UseCaseStatus, ImpactLevel
+from core.governance.model_registry import ModelRegistry
+from core.governance.sla_management import SLAManager
+from core.governance.use_case_registry import UseCaseRegistry, ImpactLevel
 
 logger = logging.getLogger(__name__)
 

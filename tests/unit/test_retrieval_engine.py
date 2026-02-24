@@ -9,10 +9,7 @@ Tests the retrieval pipeline including:
 - Hybrid search
 """
 
-import re
-from unittest.mock import Mock, patch, MagicMock
 
-import pytest
 
 
 class TestTokenization:
@@ -265,7 +262,7 @@ class TestIndexManagement:
     
     def test_index_exists(self):
         """Test that index variable exists."""
-        from core.retrieval.retrieval_engine import index, docs
+        from core.retrieval.retrieval_engine import docs
         
         # Index may be None in test environment
         assert docs is not None

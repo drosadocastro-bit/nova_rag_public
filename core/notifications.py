@@ -11,8 +11,7 @@ import json
 import logging
 import aiohttp
 import asyncio
-from typing import Callable, List, Optional, Dict, Any
-from pathlib import Path
+from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 from datetime import datetime
 

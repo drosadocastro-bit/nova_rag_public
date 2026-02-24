@@ -16,7 +16,8 @@ Threat tiers:
   T6 - Hallucinated extra (correct base + fabricated additional claims)
 """
 
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.handlers.query_handler import (
@@ -24,7 +25,6 @@ from core.handlers.query_handler import (
     _statement_is_grounded,
     _compute_grounding_ratio,
     _post_generation_quality_gate,
-    _build_extractive_response,
 )
 
 # ---------------------------------------------------------------------------
@@ -205,9 +205,9 @@ def main():
     print("=" * 78)
     print("ADVERSARIAL QUALITY GATE TEST")
     print("=" * 78)
-    print(f"Grounding threshold: 40% (default), 70% (procedural/safety)")
-    print(f"Overlap minimum per statement: 40%")
-    print(f"Confidence injected: 90%")
+    print("Grounding threshold: 40% (default), 70% (procedural/safety)")
+    print("Overlap minimum per statement: 40%")
+    print("Confidence injected: 90%")
     print()
 
     results = []
@@ -222,7 +222,7 @@ def main():
         print(f"  Gate action: {result['gate_action']}")
         print(f"  Expected:    {result['expected_gate']}")
         print(f"  Result:      {match_str}")
-        print(f"  Statements:")
+        print("  Statements:")
         for sd in result["statement_details"]:
             g = "GROUNDED" if sd["grounded"] else "UNGROUNDED"
             print(f"    [{g:10s}] overlap={sd['best_overlap']:.2%} tokens={sd['tokens']} → \"{sd['text']}\"")

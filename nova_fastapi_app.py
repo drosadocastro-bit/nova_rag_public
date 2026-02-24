@@ -10,35 +10,31 @@ Migrates Flask to FastAPI to leverage the existing AsyncQueryHandler for:
 Run: uvicorn nova_fastapi_app:app --host 127.0.0.1 --port 5678 --reload
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Query, Request
+from fastapi import FastAPI, Query
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import asyncio
 import json
-import logging
 import os
 import re
 import time
 from typing import Optional, AsyncGenerator
-from pathlib import Path
 
 # Import existing Nova modules
 import backend as backend_mod
 from backend import (
-    nova_text_handler, check_ollama_connection, session_state,
-    list_recent_sessions, reset_session, start_new_session,
+    check_ollama_connection, list_recent_sessions, reset_session, start_new_session,
 )
 from core.async_pipeline.query_handler import (
-    AsyncQueryHandler, QueryPriority, QueryStatus
+    AsyncQueryHandler, QueryPriority
 )
 from core.monitoring import (
-    record_query, observe_query_latency, set_retrieval_confidence,
+    record_query, observe_query_latency,
 )
 from core.monitoring.logger_config import (
-    get_logger, QueryContext, log_query, log_startup_config,
+    get_logger, log_startup_config,
 )
-import analytics
 
 # Initialize
 logger = get_logger("nova_fastapi_app")
@@ -467,6 +463,7 @@ async def api_ask(payload: AskRequest):
         confidence_pct = (float(confidence_match.group(1)) / 100) if confidence_match is not None else 0.0
 
         from backend import session_state as _session_state
+        return JSONResponse({
             "answer": answer,
             "confidence": f"{confidence_pct * 100:.1f}%",
             "model_used": str(model_info).split("|")[0].strip() if "|" in str(model_info) else "auto",

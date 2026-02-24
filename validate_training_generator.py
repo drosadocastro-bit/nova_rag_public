@@ -46,7 +46,7 @@ inner mechanism.
     
     sections = extractor.extract_from_text(sample_text, 'vehicle_civilian')
     
-    print(f"\n✅ Test 1 PASSED")
+    print("\n✅ Test 1 PASSED")
     print(f"   Extracted {len(sections)} sections from sample text")
     
     for i, (heading, content) in enumerate(sections, 1):
@@ -80,7 +80,7 @@ def test_2_query_generator():
             print(f"      {i}. {q}")
         assert len(questions) > 0, f"No questions generated for {heading}"
     
-    print(f"\n✅ Test 2 PASSED")
+    print("\n✅ Test 2 PASSED")
     return True
 
 def test_3_training_pair_serialization():
@@ -112,7 +112,7 @@ def test_3_training_pair_serialization():
     assert restored['query'] == pair.query
     assert restored['domain'] == 'vehicle_civilian'
     
-    print(f"\n✅ Test 3 PASSED")
+    print("\n✅ Test 3 PASSED")
     print(f"   JSON serialization successful: {len(json_str)} bytes")
     
     return True
@@ -137,7 +137,7 @@ def test_4_section_classification():
         print(f"\n   {status} {heading}")
         print(f"      Expected: {expected_type}, Got: {detected_type}")
     
-    print(f"\n✅ Test 4 PASSED")
+    print("\n✅ Test 4 PASSED")
     return True
 
 def test_5_duplicate_detection():
@@ -163,7 +163,7 @@ def test_5_duplicate_detection():
     common = set(questions_set1) & set(questions_set2)
     print(f"   Common questions: {len(common)}")
     
-    print(f"\n✅ Test 5 PASSED")
+    print("\n✅ Test 5 PASSED")
     return True
 
 def main():

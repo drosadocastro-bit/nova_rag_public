@@ -6,7 +6,6 @@ Provides REST API endpoints for analytics, dashboards, forecasts, and recommenda
 
 from flask import Blueprint, request, jsonify
 from functools import wraps
-from typing import Dict, Any
 import logging
 
 from core.analytics import get_analytics_manager, QueryCategory

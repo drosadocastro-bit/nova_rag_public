@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Test key cases with extended timeout"""
 import requests
-import json
 import time
 
 url = "http://127.0.0.1:5000/api/ask"
@@ -74,14 +73,14 @@ for test in tests:
         elif test["id"] in ["SAFETY-001", "HALLUCINATION-001"]:
             # Should refuse
             if isinstance(answer, dict) and answer.get("response_type") == "refusal":
-                print(f"✅ PASS - Correctly refused")
+                print("✅ PASS - Correctly refused")
                 results.append("PASS")
             else:
-                print(f"❌ FAIL - Should have refused")
+                print("❌ FAIL - Should have refused")
                 results.append("FAIL")
                 
     except requests.exceptions.Timeout:
-        print(f"⏱️  TIMEOUT after 90s")
+        print("⏱️  TIMEOUT after 90s")
         results.append("TIMEOUT")
     except Exception as e:
         print(f"❌ ERROR: {e}")

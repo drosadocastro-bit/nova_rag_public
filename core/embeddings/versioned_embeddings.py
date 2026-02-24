@@ -18,7 +18,6 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any, Tuple
-import torch
 from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
@@ -262,7 +261,7 @@ class ModelArtifactCreator:
         
         # Save model
         model.save(str(model_dir))
-        logger.info(f"   ✅ Model weights saved")
+        logger.info("   ✅ Model weights saved")
         
         # Compute hashes
         weights_path = model_dir / 'pytorch_model.bin'
@@ -271,7 +270,7 @@ class ModelArtifactCreator:
         weights_hash = self._compute_hash(weights_path)
         config_hash = self._compute_hash(config_path) if config_path.exists() else ""
         
-        logger.info(f"   ✅ SHA-256 hashes computed")
+        logger.info("   ✅ SHA-256 hashes computed")
         
         # Create model card
         embedding_dim = model.get_sentence_embedding_dimension()
@@ -308,8 +307,8 @@ class ModelArtifactCreator:
         with open(card_path, 'w') as f:
             json.dump(asdict(card), f, indent=2)
         
-        logger.info(f"   ✅ Model card saved")
-        logger.info(f"\n📊 Model Summary:")
+        logger.info("   ✅ Model card saved")
+        logger.info("\n📊 Model Summary:")
         logger.info(f"   Version: {version}")
         logger.info(f"   Recall improvement: {card.improvement_pct():.1f}%")
         logger.info(f"   MRR: {card.mean_reciprocal_rank:.3f}")

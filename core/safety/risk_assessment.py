@@ -7,12 +7,12 @@ to ensure appropriate prioritization of user safety.
 
 import re
 from collections import Counter
-from typing import Dict, List, Optional, Any
+from typing import Dict, Optional, Any
 from enum import Enum
 
 from core.safety.multilingual import MultilingualSafetyDetector
 from core.safety.semantic_safety import SemanticSafetyDetector
-from core.monitoring.logger_config import get_logger, log_safety_event
+from core.monitoring.logger_config import get_logger
 
 logger = get_logger("core.safety.risk_assessment")
 

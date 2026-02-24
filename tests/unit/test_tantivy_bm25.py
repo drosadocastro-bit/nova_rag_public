@@ -9,10 +9,7 @@ Tests the scalable full-text search including:
 """
 
 import json
-import shutil
-import tempfile
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 

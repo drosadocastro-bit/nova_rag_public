@@ -13,7 +13,6 @@ RAGAS failure analysis identified:
 """
 
 import re
-from typing import Any, Optional
 
 # Generic phrases/patterns that shouldn't appear without explicit citation
 GENERIC_SAFETY_PATTERNS = [

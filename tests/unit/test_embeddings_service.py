@@ -10,7 +10,6 @@ Tests the embedding service including:
 
 import asyncio
 import time
-from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest

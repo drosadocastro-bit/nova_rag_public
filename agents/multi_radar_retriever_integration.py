@@ -6,7 +6,6 @@ Provides domain-filtered retrieval with automatic domain detection from queries.
 """
 
 import logging
-import re
 import sys
 import os
 from typing import Optional, List, Dict
@@ -86,7 +85,7 @@ class MultiRadarRetrieverAdapter:
                     return domain
         
         # No domain detected - return None for unfiltered search
-        logger.debug(f"[DOMAIN-DETECT] No domain detected in query")
+        logger.debug("[DOMAIN-DETECT] No domain detected in query")
         return None
     
     def retrieve(

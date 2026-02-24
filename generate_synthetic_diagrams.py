@@ -4,7 +4,6 @@ Creates simple vehicle maintenance diagrams programmatically.
 """
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
-import os
 
 BASE_DIR = Path(__file__).parent.resolve()
 DIAGRAMS_DIR = BASE_DIR / "data" / "diagrams"

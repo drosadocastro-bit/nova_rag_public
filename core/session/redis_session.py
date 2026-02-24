@@ -8,7 +8,6 @@ Distributed session storage for horizontal scaling with:
 - Session data compression
 """
 
-import json
 import logging
 import os
 import pickle
@@ -17,8 +16,7 @@ import time
 import uuid
 import zlib
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Set, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 logger = logging.getLogger(__name__)
 

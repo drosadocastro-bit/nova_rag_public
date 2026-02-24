@@ -17,7 +17,7 @@ hallucination by independently verifying claims against the retrieved context.
 import logging
 import re
 import json
-from .citation_auditor import build_audit_trail, should_reject_answer, format_audit_report, validate_citation
+from .citation_auditor import build_audit_trail, should_reject_answer, validate_citation
 import os
 
 logger = logging.getLogger(__name__)
@@ -637,8 +637,6 @@ from .procedure_agent import run_procedure
 from .troubleshoot_agent import run_troubleshoot
 from .summarize_agent import run_summarize
 from .structured_parser import force_valid_json
-import json
-import re
 from typing import Any, cast
 
 
@@ -2298,7 +2296,7 @@ def nic_self_refine(
         try:
             sanitized_question, sanitization_meta = sanitize_user_input(question, "user_query")
             if sanitization_meta.get("injection_detected"):
-                logger.warning(f"[NIC-SANITIZE] Prompt injection detected and blocked")
+                logger.warning("[NIC-SANITIZE] Prompt injection detected and blocked")
                 # Use sanitized version
                 question = sanitized_question
         except Exception as e:
@@ -2565,7 +2563,7 @@ def nic_self_refine(
         
         # Mid-confidence (0.40-threshold) - escalate to deep model
         if 0.40 <= confidence < threshold and plan.get("escalation_allowed", True):
-            logger.info(f"[NIC-REFINE] Escalating to GPT-OSS (deep model)")
+            logger.info("[NIC-REFINE] Escalating to GPT-OSS (deep model)")
             plan["model"] = "gpt-oss"
             # Continue to next iteration
         

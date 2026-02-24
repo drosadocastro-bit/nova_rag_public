@@ -8,15 +8,14 @@ pull irrelevant results from other domains.
 import json
 import sys
 import pickle
-import requests
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
 
 sys.path.insert(0, '.')
 sys.path.insert(0, str(Path(__file__).parent))
-from backend import retrieve, nova_text_handler
+from backend import retrieve
 
 # Import Chunk class for pickle loading
 try:
@@ -407,7 +406,7 @@ class CrossContaminationTester:
 
         # Test ambiguous queries
         print(f"\n{'-'*70}")
-        print(f"[AMBIGUOUS QUERIES]")
+        print("[AMBIGUOUS QUERIES]")
         print(f"{'-'*70}")
         ambiguous_results = []
         for test_case in AMBIGUOUS_TESTS:
@@ -430,13 +429,13 @@ class CrossContaminationTester:
             for domain_results in results.values()
         )
 
-        print(f"\n[SUMMARY]")
+        print("\n[SUMMARY]")
         print(f"{'-'*70}")
         print(f"Total tests run: {total_tests}")
         print(f"Contamination detected: {total_contaminated}/{total_tests} ({100*total_contaminated/total_tests:.1f}%)")
 
         # Details by domain
-        print(f"\n[RESULTS BY DOMAIN]")
+        print("\n[RESULTS BY DOMAIN]")
         print(f"{'-'*70}")
 
         for domain, domain_results in sorted(results.items()):
@@ -451,7 +450,7 @@ class CrossContaminationTester:
             print(f"  Avg contamination: {avg_contamination*100:.1f}%")
 
             if contaminated > 0:
-                print(f"  [WARN] Issues found:")
+                print("  [WARN] Issues found:")
                 for result in domain_results:
                     if result.contamination_detected:
                         print(
@@ -501,7 +500,7 @@ def main():
         total = sum(len(r) for r in results.values())
 
         if contaminated == 0:
-            print(f"\n[OK] All tests passed! No cross-contamination detected.")
+            print("\n[OK] All tests passed! No cross-contamination detected.")
             return 0
         elif contaminated <= total * 0.2:  # <= 20% contamination
             print(f"\n[WARN] Minor contamination detected ({100*contaminated/total:.1f}%). System acceptable.")

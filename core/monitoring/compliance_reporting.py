@@ -35,7 +35,6 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Optional
-import os
 
 from core.monitoring.logger_config import get_logger
 
@@ -575,12 +574,12 @@ class ComplianceReporter:
             Markdown string
         """
         lines = [
-            f"# Compliance Report",
-            f"",
+            "# Compliance Report",
+            "",
             f"**Report Type:** {report.report_type}",
             f"**Period:** {report.period_start} to {report.period_end}",
             f"**Generated:** {report.generated_at}",
-            f"",
+            "",
         ]
         
         # SLA Section
@@ -589,36 +588,36 @@ class ComplianceReporter:
             status = "✅ COMPLIANT" if sla.overall_compliant else "❌ NON-COMPLIANT"
             lines.extend([
                 f"## SLA Compliance {status}",
-                f"",
-                f"| Metric | Value | Target | Status |",
-                f"|--------|-------|--------|--------|",
+                "",
+                "| Metric | Value | Target | Status |",
+                "|--------|-------|--------|--------|",
                 f"| Uptime | {sla.uptime_percentage:.2f}% | {sla.uptime_target}% | {'✅' if sla.uptime_compliant else '❌'} |",
                 f"| P95 Latency | {sla.p95_response_time_ms:.0f}ms | {sla.latency_target_ms:.0f}ms | {'✅' if sla.latency_compliant else '❌'} |",
                 f"| Error Rate | {sla.error_rate*100:.2f}% | {sla.error_rate_target*100:.1f}% | {'✅' if sla.error_rate_compliant else '❌'} |",
-                f"",
+                "",
                 f"**Total Requests:** {sla.total_requests:,}",
-                f"",
+                "",
             ])
         
         # Safety Section
         if report.safety_audit:
             safety = report.safety_audit
             lines.extend([
-                f"## Safety Audit",
-                f"",
-                f"| Metric | Count |",
-                f"|--------|-------|",
+                "## Safety Audit",
+                "",
+                "| Metric | Count |",
+                "|--------|-------|",
                 f"| Total Events | {safety.total_events} |",
                 f"| Blocked Queries | {safety.blocked_queries} |",
                 f"| Injection Attempts | {safety.injection_attempts} |",
                 f"| Low Confidence Responses | {safety.low_confidence_responses} |",
-                f"",
+                "",
             ])
             
             if safety.severity_breakdown:
                 lines.extend([
-                    f"### Severity Breakdown",
-                    f"",
+                    "### Severity Breakdown",
+                    "",
                 ])
                 for severity, count in safety.severity_breakdown.items():
                     lines.append(f"- **{severity.title()}:** {count}")
@@ -630,12 +629,12 @@ class ComplianceReporter:
             status = "✅ COMPLIANT" if ret.compliant else "❌ NON-COMPLIANT"
             lines.extend([
                 f"## Data Retention {status}",
-                f"",
+                "",
                 f"- **Total Records:** {ret.total_records:,}",
                 f"- **Retention Policy:** {ret.retention_policy_days} days",
                 f"- **Records Within Policy:** {ret.records_within_policy:,}",
                 f"- **Records Outside Policy:** {ret.records_outside_policy:,}",
-                f"",
+                "",
             ])
             
             if ret.recommendation:
@@ -645,8 +644,8 @@ class ComplianceReporter:
         # Recommendations Section
         if report.recommendations:
             lines.extend([
-                f"## Recommendations",
-                f"",
+                "## Recommendations",
+                "",
             ])
             for i, rec in enumerate(report.recommendations, 1):
                 lines.append(f"{i}. {rec}")

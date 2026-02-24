@@ -11,7 +11,6 @@ that causes RAGAS faithfulness failures.
 """
 
 import json
-import re
 from typing import Any, Optional
 from core.generation.generic_content_filter import clean_response
 

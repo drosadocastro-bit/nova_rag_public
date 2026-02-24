@@ -11,7 +11,6 @@ Comprehensive tests for:
 
 import pytest
 import time
-from typing import List
 
 from core.analytics import (
     QueryAnalytics,
@@ -22,7 +21,6 @@ from core.analytics import (
     QueryFeature,
     QueryCategory,
     AnomalyType,
-    AnomalyAlert,
 )
 from core.trend_analysis import (
     TrendAnalyzer,

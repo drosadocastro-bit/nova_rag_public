@@ -9,7 +9,6 @@ Tests the hybrid injection and multi-query handling including:
 - Refusal logic
 """
 
-from unittest.mock import Mock, patch
 
 import pytest
 

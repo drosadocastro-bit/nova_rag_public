@@ -8,7 +8,6 @@ Use to simulate stale embeddings vs corrupted source text.
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
 

@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from app.nic_fastapi_app import app
 
 pytestmark = pytest.mark.integration

@@ -12,7 +12,6 @@ This module provides visibility into all aspects of NIC operation
 across all hardware tiers (ultra_lite to full).
 """
 
-import os
 import json
 import time
 import logging

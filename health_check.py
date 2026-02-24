@@ -2,7 +2,6 @@
 Comprehensive health check for NIC RAG system.
 """
 
-import sys
 from pathlib import Path
 import json
 
@@ -58,7 +57,7 @@ for pdf_path in pdf_files:
     total_size += size_mb
     print(f"  - {rel_path} ({size_mb:.1f} MB)")
 
-print(f"\n📊 Domain distribution:")
+print("\n📊 Domain distribution:")
 for domain, count in sorted(domain_counts.items()):
     print(f"  - {domain}: {count} PDFs")
 print(f"\n💾 Total size: {total_size:.1f} MB")
@@ -70,14 +69,14 @@ print("-" * 70)
 try:
     import pypdf
     print(f"✅ pypdf: {pypdf.__version__}")
-except ImportError as e:
-    print(f"❌ pypdf: NOT INSTALLED")
+except ImportError:
+    print("❌ pypdf: NOT INSTALLED")
 
 try:
     import pdfplumber
     print(f"✅ pdfplumber: {pdfplumber.__version__}")
 except ImportError:
-    print(f"❌ pdfplumber: NOT INSTALLED")
+    print("❌ pdfplumber: NOT INSTALLED")
 
 try:
     import pytesseract
@@ -86,22 +85,22 @@ try:
         version = pytesseract.get_tesseract_version()
         print(f"   Tesseract OCR: v{version}")
     except:
-        print(f"   ⚠️  Tesseract binary NOT FOUND in PATH")
+        print("   ⚠️  Tesseract binary NOT FOUND in PATH")
 except ImportError:
-    print(f"❌ pytesseract: NOT INSTALLED")
+    print("❌ pytesseract: NOT INSTALLED")
 
 try:
     from pdf2image import convert_from_path
-    print(f"✅ pdf2image: installed")
+    print("✅ pdf2image: installed")
     # Check poppler
     try:
         from pdf2image.exceptions import PDFInfoNotInstalledError
         # Try to use it
-        print(f"   ⚠️  Poppler status unknown (need to test conversion)")
+        print("   ⚠️  Poppler status unknown (need to test conversion)")
     except:
         pass
 except ImportError:
-    print(f"❌ pdf2image: NOT INSTALLED")
+    print("❌ pdf2image: NOT INSTALLED")
 
 # 4. Check embedding model
 print("\n🤖 4. EMBEDDING MODEL")
@@ -120,10 +119,10 @@ try:
         if torch.cuda.is_available():
             print(f"   CUDA device: {torch.cuda.get_device_name(0)}")
     else:
-        print(f"⚠️  Local model not found, will download from HuggingFace")
+        print("⚠️  Local model not found, will download from HuggingFace")
         
-except ImportError as e:
-    print(f"❌ sentence-transformers: NOT INSTALLED")
+except ImportError:
+    print("❌ sentence-transformers: NOT INSTALLED")
 
 # 5. Check Flask vs FastAPI
 print("\n🌐 5. WEB SERVER STATUS")
@@ -140,7 +139,7 @@ if flask_app.exists():
         import_count = content.count('from flask')
         print(f"   Flask imports: {import_count}")
 else:
-    print(f"❌ Flask app NOT FOUND")
+    print("❌ Flask app NOT FOUND")
 
 if fastapi_app.exists():
     print(f"✅ FastAPI app exists: {fastapi_app}")
@@ -149,7 +148,7 @@ if fastapi_app.exists():
         import_count = content.count('from fastapi')
         print(f"   FastAPI imports: {import_count}")
 else:
-    print(f"❌ FastAPI app NOT FOUND")
+    print("❌ FastAPI app NOT FOUND")
 
 # 6. Check which apps reference Flask
 print("\n🔍 6. FLASK REFERENCES IN CODEBASE")
@@ -170,7 +169,7 @@ if flask_refs:
     for filepath, count in sorted(flask_refs, key=lambda x: x[1], reverse=True)[:10]:
         print(f"   - {filepath} ({count} references)")
 else:
-    print(f"✅ No files referencing nova_flask_app.py")
+    print("✅ No files referencing nova_flask_app.py")
 
 # 7. Check retrieval engine config
 print("\n⚙️  7. RETRIEVAL ENGINE CONFIGURATION")
@@ -178,7 +177,7 @@ print("-" * 70)
 
 try:
     from core.retrieval.retrieval_engine import INDEX_PATH, DOCS_PATH, DOCS_DIR
-    print(f"✅ Retrieval engine loaded")
+    print("✅ Retrieval engine loaded")
     print(f"   DOCS_DIR: {DOCS_DIR}")
     print(f"   INDEX_PATH: {INDEX_PATH}")
     print(f"   DOCS_PATH: {DOCS_PATH}")

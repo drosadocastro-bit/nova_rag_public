@@ -5,15 +5,9 @@ Delegates retrieval, generation, and session helpers to modular core packages.
 
 from __future__ import annotations
 
-import os
-import re
 
-from agents import agent_router
-from core.safety import handle_injection_and_multi_query
 from core.utils.search_history import SearchHistory
-from response_normalizer import normalize_response
 
-from core.app_state import get_app_state
 from core.handlers.query_handler import nova_query_core  # Stage 3: Framework-agnostic core
 from core.retrieval.retrieval_engine import (
     BASE_DIR,
@@ -31,7 +25,6 @@ from core.retrieval.retrieval_engine import (
     get_text_embed_model,
     get_cross_encoder,
     ensure_vision_loaded,
-    ensure_index_loaded,  # ADDED: Critical for lazy init
     build_index,
     load_index,
     index,

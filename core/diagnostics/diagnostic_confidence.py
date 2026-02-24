@@ -180,7 +180,7 @@ class DiagnosticConfidenceAggregator:
         if rerank_conf is not None:
             logger.debug(f"  Rerank Confidence:    {rerank_conf:.3f}")
         else:
-            logger.debug(f"  Rerank Confidence:    (not used)")
+            logger.debug("  Rerank Confidence:    (not used)")
         logger.debug(f"  → Combined:           {combined:.3f}")
 
 

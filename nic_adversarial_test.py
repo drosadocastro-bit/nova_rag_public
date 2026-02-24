@@ -10,7 +10,7 @@ import json
 import time
 import os
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 
 # Configuration
 NIC_API_URL = os.environ.get("NIC_API_URL", "http://localhost:5000/api/ask")

@@ -10,15 +10,13 @@ Comprehensive analytics framework built on Phase 4.1 observability data:
 - Custom reports and dashboards
 """
 
-import json
 import logging
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, asdict, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from statistics import mean, median, stdev
 
 logger = logging.getLogger(__name__)

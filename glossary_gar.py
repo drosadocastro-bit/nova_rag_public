@@ -156,7 +156,7 @@ if __name__ == "__main__":
     print("=== Glossary Augmented Retrieval (GAR) Test ===\n")
     
     stats = get_glossary_stats()
-    print(f"Glossary Stats:")
+    print("Glossary Stats:")
     print(f"  Categories: {stats['categories']}")
     print(f"  Terms: {stats['total_terms']}")
     print(f"  Total Synonyms: {stats['total_synonyms']}")
@@ -183,5 +183,5 @@ if __name__ == "__main__":
             print()
         else:
             print(f"  IN:  {q}")
-            print(f"  OUT: (no expansion)")
+            print("  OUT: (no expansion)")
             print()

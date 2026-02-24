@@ -32,7 +32,6 @@ def example_incremental_indexing():
         IncrementalFAISSIndex,
         IncrementalBM25,
         BM25Document,
-        IncrementalReloader,
         detect_changes,
         get_next_chunk_id,
     )
@@ -133,7 +132,7 @@ def example_incremental_indexing():
             chunk_ids=chunk_ids,
             domain="example_domain"
         )
-        logger.info(f"    ✓ Updated manifest")
+        logger.info("    ✓ Updated manifest")
     
     # Step 4: Save state
     logger.info("\n[Step 4] Saving updated indices...")

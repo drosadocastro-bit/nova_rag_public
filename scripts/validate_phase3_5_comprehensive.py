@@ -5,8 +5,6 @@ Simplified version that doesn't require running server in background
 """
 
 import json
-import time
-import os
 from datetime import datetime
 
 print("=" * 80)
@@ -67,7 +65,7 @@ for component, details in benchmark_results["components"].items():
 
 print()
 print(f"  Total Estimated Overhead:                  {total:>5.1f}ms")
-print(f"  Target Overhead:                           <15.0ms")
+print("  Target Overhead:                           <15.0ms")
 print(f"  Safety Margin:                             {15.0 - total:>5.1f}ms")
 print()
 
@@ -168,8 +166,8 @@ print("PHASE 3.5 VALIDATION COMPLETE")
 print("=" * 80)
 print()
 print(f"✅ Performance Overhead:       {total:.1f}ms (target: <15ms) - PASS")
-print(f"✅ Adversarial Regression:     0 regressions - PASS")
-print(f"✅ Graceful Degradation:       All scenarios verified - PASS")
+print("✅ Adversarial Regression:     0 regressions - PASS")
+print("✅ Graceful Degradation:       All scenarios verified - PASS")
 print()
 print(f"Results saved to: {results_file}")
 print()

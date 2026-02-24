@@ -1,8 +1,6 @@
 from dataclasses import dataclass, asdict
-from typing import Optional
 import json
 import hashlib
-from datetime import datetime
 
 
 @dataclass

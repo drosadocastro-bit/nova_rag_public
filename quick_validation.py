@@ -8,8 +8,6 @@ Quick test of NIC enhancements (5 mins):
 """
 
 import requests
-import json
-import time
 import subprocess
 import sys
 from pathlib import Path
@@ -89,7 +87,7 @@ def test_fallback_mode():
     
     question = "What is the coolant capacity?"
     print(f"Query: {question}")
-    print(f"Mode: retrieval-only (fast, deterministic)")
+    print("Mode: retrieval-only (fast, deterministic)")
     
     try:
         resp = requests.post(
@@ -135,7 +133,7 @@ def test_validation_generator():
         
         if result.returncode == 0:
             print("[OK] Validation template generated")
-            print(f"  Output: VALIDATION_TEMPLATE.md")
+            print("  Output: VALIDATION_TEMPLATE.md")
             
             # Show summary
             if "CRITICAL SAFETY METRICS" in result.stdout:

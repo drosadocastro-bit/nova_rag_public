@@ -1,9 +1,8 @@
 """Tests for memory profiler module."""
 
-import gc
 import sys
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 

@@ -13,7 +13,7 @@ import json
 import time
 import requests
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 import logging
 
 logging.basicConfig(
@@ -99,7 +99,7 @@ def test_dry_run() -> Dict:
         
         if response.status_code == 200:
             result = response.json()
-            logger.info(f"  Dry-run successful:")
+            logger.info("  Dry-run successful:")
             logger.info(f"    Files to add: {result.get('files_to_add', 0)}")
             logger.info(f"    Chunks to add: {result.get('chunks_to_add', 0)}")
             logger.info(f"    Estimated duration: {result.get('estimated_duration', 'unknown')}")
@@ -130,7 +130,7 @@ def run_hot_reload() -> Dict:
         
         if response.status_code == 200:
             result = response.json()
-            logger.info(f"  Hot-reload successful!")
+            logger.info("  Hot-reload successful!")
             logger.info(f"    Files added: {result.get('files_added', 0)}")
             logger.info(f"    Files modified: {result.get('files_modified', 0)}")
             logger.info(f"    Chunks added: {result.get('chunks_added', 0)}")

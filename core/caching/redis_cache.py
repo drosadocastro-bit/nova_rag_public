@@ -9,8 +9,6 @@ Distributed caching layer for horizontal scaling with:
 - Serialization/compression
 """
 
-import asyncio
-import hashlib
 import json
 import logging
 import os
@@ -20,7 +18,7 @@ import time
 import zlib
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, cast
 
 logger = logging.getLogger(__name__)
 

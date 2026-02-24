@@ -22,13 +22,11 @@ import requests
 import re
 from datetime import datetime
 from typing import Any, Optional
-from pathlib import Path
 
 # RAGAS imports
 from datasets import Dataset
 from ragas import evaluate
 from ragas.metrics._faithfulness import Faithfulness
-from ragas.metrics._answer_relevance import AnswerRelevancy
 from ragas.metrics._context_precision import ContextPrecision
 from ragas.metrics._context_recall import ContextRecall
 
@@ -36,7 +34,6 @@ from ragas.llms import LangchainLLMWrapper
 from ragas.embeddings import LangchainEmbeddingsWrapper
 
 # LangChain for local Ollama integration
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_ollama import ChatOllama  # Native Ollama client with num_ctx/format support
 

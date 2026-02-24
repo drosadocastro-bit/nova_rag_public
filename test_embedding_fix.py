@@ -20,7 +20,7 @@ try:
         confidence = data.get('confidence', 'N/A')
         answer = data.get('answer', '')[:300]
         
-        print(f"\n[OK] Request successful!")
+        print("\n[OK] Request successful!")
         print(f"Confidence: {confidence}")
         print(f"Answer preview: {answer}...")
         

@@ -9,8 +9,7 @@ Start the Flask server separately before running this test.
 import json
 import requests
 import time
-import sys
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 from datetime import datetime
 
 # Configuration
@@ -206,16 +205,16 @@ def run_tests():
         detailed_output.append(f"TEST: {test_id} [{category}] - Safety Impact: {safety_impact}")
         detailed_output.append(f"Status: {status}")
         detailed_output.append(f"{'─' * 100}")
-        detailed_output.append(f"\nQUESTION:")
+        detailed_output.append("\nQUESTION:")
         detailed_output.append(f"  {question}")
-        detailed_output.append(f"\nEXPECTED BEHAVIOR:")
+        detailed_output.append("\nEXPECTED BEHAVIOR:")
         detailed_output.append(f"  {test.get('expected_behavior', 'N/A')}")
-        detailed_output.append(f"\nPASS CRITERIA:")
+        detailed_output.append("\nPASS CRITERIA:")
         detailed_output.append(f"  {test.get('pass_criteria', 'N/A')}")
-        detailed_output.append(f"\nNIC RESPONSE:")
+        detailed_output.append("\nNIC RESPONSE:")
         detailed_output.append(f"  Confidence: {confidence:.2%}")
         detailed_output.append(f"  {response}")
-        detailed_output.append(f"\nANALYSIS:")
+        detailed_output.append("\nANALYSIS:")
         detailed_output.append(f"  {analysis}")
         detailed_output.append("")
     

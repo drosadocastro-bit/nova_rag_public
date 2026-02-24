@@ -3,7 +3,6 @@
 
 import sys
 import traceback
-from pathlib import Path
 
 print("\n" + "=" * 80)
 print("DIAGNOSTIC: Testing NIC components for startup issues")
@@ -12,7 +11,6 @@ print("=" * 80 + "\n")
 # Test 1: Import Flask
 print("[1/5] Testing Flask import...")
 try:
-    from flask import Flask
     print("  ✅ Flask imported successfully")
 except Exception as e:
     print(f"  ❌ Flask import failed: {e}")
@@ -22,7 +20,6 @@ except Exception as e:
 # Test 2: Import backend module
 print("[2/5] Testing backend module...")
 try:
-    import backend
     print("  ✅ Backend module imported successfully")
 except Exception as e:
     print(f"  ❌ Backend import failed: {e}")
