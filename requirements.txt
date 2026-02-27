@@ -24,7 +24,7 @@ ragas==0.4.3
 scikit-learn==1.8.0
 datasets==4.4.2
 langchain==1.2.7
-langchain-openai==1.1.6
+langchain-openai==1.1.9
 pydantic==2.12.5
 numpy==2.4.2
 requests==2.32.5
